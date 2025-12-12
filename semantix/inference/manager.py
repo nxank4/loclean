@@ -103,7 +103,7 @@ class LocalInferenceEngine:
             instruction: User-defined instruction for the task.
 
         Returns:
-            Dictionary mapping original_string -> {"value": float, "unit": str} or None.
+            Dictionary mapping original_string -> {"value": <number>, "unit": <string>} or None.
         """
         results: Dict[str, Optional[Dict[str, Any]]] = {}
 
@@ -134,13 +134,14 @@ Return JSON with keys "value" (number) and "unit" (string).
                 data = json.loads(text)
                 
                 if "value" in data and "unit" in data:
-                     results[item] = data
+                    results[item] = data
                 else:
                     logger.warning(f"Result for '{item}' missing keys. Raw: {text}")
                     results[item] = None
 
             except json.JSONDecodeError as e:
-                logger.warning(f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text if 'text' in locals() else 'N/A'}'")
+                text = output.get('choices', [{}])[0].get('text', 'N/A') if 'output' in locals() else 'N/A'
+                logger.warning(f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text}'")
                 results[item] = None
             except Exception as e:
                 logger.error(f"Inference error for item '{item}': {e}")

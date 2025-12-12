@@ -3,7 +3,7 @@
 **The All-in-One Local AI Data Cleaner.**
 
 Clean messy tabular data using local AI.
-**No API keys required. No GPU required. 100x faster than standard LLM loops.**
+**No API keys required. No GPU required. _Up to 100x faster than standard LLM loops for datasets with high repetition._**
 
 ## 🔥 Why Semantix?
 
