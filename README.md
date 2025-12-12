@@ -66,4 +66,14 @@ Semantix achieves its massive speedup through a **Representative Sampling** arch
 - [ ] **Row-Level Imputation**: Fill `null` values based on other column context.
 - [ ] **Entity Resolution**: "Apple Inc." == "Apple Computer, Inc."
 
+## 🤝 Contributing
+
+We love contributions! Semantix is open source (MIT).
+
+1. **Fork** the repo on GitHub.
+2. **Clone** the project to your own machine.
+3. **Commit** changes to your own branch.
+4. **Push** your work back up to your fork.
+5. Submit a **Pull request** so that we can review your changes.
+
 _Built with ❤️ for the Data Community._
