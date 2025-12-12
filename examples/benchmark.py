@@ -25,9 +25,6 @@ def run_benchmark():
     base_patterns = [f"{i} kg" for i in range(UNIQUE_PATTERNS)]
     
     # Repeat patterns to fill ROWS
-    import numpy as np
-    # Use numpy for efficient repetition or just list mult
-    # list mult is slightly less random but fine for this benchmark
     full_data = (base_patterns * (ROWS // len(base_patterns) + 1))[:ROWS]
     
     df = pl.DataFrame({"raw_weight": full_data})
@@ -61,7 +58,7 @@ def run_benchmark():
     # user Said: "Initialize semantix.clean. Run it on the entire 100,000 row dataset. Measure actual_semantix_time."
     
     start_semantix = time.time()
-    df_clean = semantix.clean(df, "raw_weight")
+    semantix.clean(df, "raw_weight")
     end_semantix = time.time()
     
     actual_semantix_time = end_semantix - start_semantix
