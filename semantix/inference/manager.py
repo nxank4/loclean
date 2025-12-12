@@ -117,6 +117,8 @@ Return JSON with keys "value" (number) and "unit" (string).
 <|end|>
 <|assistant|>"""
             
+            output = None
+            text = None
             try:
                 output = self.llm.create_completion(
                     prompt=prompt,
@@ -140,8 +142,10 @@ Return JSON with keys "value" (number) and "unit" (string).
                     results[item] = None
 
             except json.JSONDecodeError as e:
-                text = output.get('choices', [{}])[0].get('text', 'N/A') if 'output' in locals() else 'N/A'
-                logger.warning(f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text}'")
+                if output and text:
+                    logger.warning(f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text}'")
+                else:
+                    logger.warning(f"Failed to decode JSON for item '{item}': {e}")
                 results[item] = None
             except Exception as e:
                 logger.error(f"Inference error for item '{item}': {e}")
