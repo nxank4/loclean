@@ -50,6 +50,10 @@ class LocalInferenceEngine:
             verbose=False,
         )
         self.grammar = self._get_json_grammar()
+        
+        from semantix.cache import SemantixCache
+        self.cache = SemantixCache(cache_dir=self.cache_dir)
+        
         logger.info("LocalInferenceEngine initialized successfully.")
 
     def _get_model_path(self) -> Path:
@@ -97,6 +101,7 @@ class LocalInferenceEngine:
     ) -> Dict[str, Optional[Dict[str, Any]]]:
         """
         Process a batch of strings and extract structured data using GBNF.
+        Result is cached to avoid re-computation.
 
         Args:
             items: List of raw strings to process.
@@ -105,9 +110,19 @@ class LocalInferenceEngine:
         Returns:
             Dictionary mapping original_string -> {"value": <number>, "unit": <string>} or None.
         """
-        results: Dict[str, Optional[Dict[str, Any]]] = {}
+        # 1. Check Cache
+        cached_results = self.cache.get_batch(items, instruction)
+        
+        # 2. Identify Misses
+        misses = [item for item in items if item not in cached_results]
+        
+        if not misses:
+            return cached_results
 
-        for item in items:
+        logger.info(f"Cache miss for {len(misses)} items. Running inference...")
+        new_results: Dict[str, Optional[Dict[str, Any]]] = {}
+
+        for item in misses:
             # Use Phi-3 Instruct format with dynamic instruction
             prompt = f"""<|user|>
 Task: {instruction}
@@ -136,19 +151,34 @@ Return JSON with keys "value" (number) and "unit" (string).
                 data = json.loads(text)
                 
                 if "value" in data and "unit" in data:
+<<<<<<< HEAD:src/semantix/inference/manager.py
+                     new_results[item] = data
+=======
                     results[item] = data
+>>>>>>> origin/main:semantix/inference/manager.py
                 else:
                     logger.warning(f"Result for '{item}' missing keys. Raw: {text}")
-                    results[item] = None
+                    new_results[item] = None
 
             except json.JSONDecodeError as e:
+<<<<<<< HEAD:src/semantix/inference/manager.py
+                logger.warning(f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text if 'text' in locals() else 'N/A'}'")
+                new_results[item] = None
+=======
                 if output and text:
                     logger.warning(f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text}'")
                 else:
                     logger.warning(f"Failed to decode JSON for item '{item}': {e}")
                 results[item] = None
+>>>>>>> origin/main:semantix/inference/manager.py
             except Exception as e:
                 logger.error(f"Inference error for item '{item}': {e}")
-                results[item] = None
+                new_results[item] = None
+        
+        # 4. Update Cache (only with valid results)
+        valid_new_results = {k: v for k, v in new_results.items() if v is not None}
+        if valid_new_results:
+            self.cache.set_batch(list(valid_new_results.keys()), instruction, valid_new_results)
 
-        return results
+        # 5. Merge
+        return {**cached_results, **new_results}

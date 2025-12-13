@@ -8,9 +8,19 @@ dependencies = [
     "polars>=0.20.0",
     "llama-cpp-python>=0.2.23",
     "huggingface_hub>=0.20.0",
-    "tqdm>=4.66.0"
+    "tqdm>=4.66.0",
+    "pytest>=7.0.0"
 ]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
