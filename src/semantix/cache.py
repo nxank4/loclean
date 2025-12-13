@@ -50,8 +50,9 @@ class SemantixCache:
     def _hash(self, text: str, instruction: str) -> str:
         """
         Generate a SHA256 hash specific to the input text and instruction.
+        V2: Logic updated to Reason-First Generation.
         """
-        uniq_str = f"{instruction}::{text}"
+        uniq_str = f"v3::{instruction}::{text}"
         return hashlib.sha256(uniq_str.encode("utf-8")).hexdigest()
 
     def get_batch(self, items: List[str], instruction: str) -> Dict[str, Any]:
