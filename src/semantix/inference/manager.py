@@ -82,12 +82,12 @@ class LocalInferenceEngine:
 
     def _get_json_grammar(self) -> LlamaGrammar:
         """
-        Returns a GBNF grammar enforcing {"value": <number>, "unit": <string>}.
+        Returns a GBNF grammar enforcing {"reasoning": <string>, "value": <number>, "unit": <string>}.
         """
         # GBNF string
         grammar_str = r"""
             root   ::= object
-            object ::= "{" ws "\"value\"" ws ":" ws number "," ws "\"unit\"" ws ":" ws string ws "}"
+            object ::= "{" ws "\"reasoning\"" ws ":" ws string "," ws "\"value\"" ws ":" ws number "," ws "\"unit\"" ws ":" ws string ws "}"
             number ::= ("-"? ([0-9]+ ("." [0-9]+)?))
             string ::= "\"" ([^"]*) "\""
             ws     ::= [ \t\n]*
@@ -108,7 +108,7 @@ class LocalInferenceEngine:
             instruction: User-defined instruction for the task.
 
         Returns:
-            Dictionary mapping original_string -> {"value": <number>, "unit": <string>} or None.
+            Dictionary mapping original_string -> {"reasoning": str, "value": float, "unit": str} or None.
         """
         # 1. Check Cache
         cached_results = self.cache.get_batch(items, instruction)
@@ -126,9 +126,13 @@ class LocalInferenceEngine:
             # Use Phi-3 Instruct format with dynamic instruction
             prompt = f"""<|user|>
 Task: {instruction}
-Input Data: "{item}"
+Input Item: "{item}"
 
-Return JSON with keys "value" (number) and "unit" (string).
+Step 1: Identify the unit of the Input Item (e.g., "$", "kg", "C").
+Step 2: Identify the target unit from the Task.
+Step 3: CRITICAL: If the units are physically the same (e.g., Input is USD and Target is USD), DO NOT MULTIPLY. The value must remain unchanged.
+Step 4: Only apply conversion formulas if units are different (e.g., EUR to USD).
+Step 5: Output JSON with keys "reasoning", "value", and "unit".
 <|end|>
 <|assistant|>"""
             
@@ -138,7 +142,7 @@ Return JSON with keys "value" (number) and "unit" (string).
                 output = self.llm.create_completion(
                     prompt=prompt,
                     grammar=self.grammar,
-                    max_tokens=128,
+                    max_tokens=256,
                     # Do NOT use '}' as stop, as it strips the closing brace needed for valid JSON.
                     # Grammar restricts output efficiently anyway.
                     stop=["<|end|>", "<|user|>"], 
@@ -150,27 +154,15 @@ Return JSON with keys "value" (number) and "unit" (string).
 
                 data = json.loads(text)
                 
-                if "value" in data and "unit" in data:
-<<<<<<< HEAD:src/semantix/inference/manager.py
+                if "value" in data and "unit" in data and "reasoning" in data:
                      new_results[item] = data
-=======
-                    results[item] = data
->>>>>>> origin/main:semantix/inference/manager.py
                 else:
                     logger.warning(f"Result for '{item}' missing keys. Raw: {text}")
                     new_results[item] = None
 
             except json.JSONDecodeError as e:
-<<<<<<< HEAD:src/semantix/inference/manager.py
                 logger.warning(f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text if 'text' in locals() else 'N/A'}'")
                 new_results[item] = None
-=======
-                if output and text:
-                    logger.warning(f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text}'")
-                else:
-                    logger.warning(f"Failed to decode JSON for item '{item}': {e}")
-                results[item] = None
->>>>>>> origin/main:semantix/inference/manager.py
             except Exception as e:
                 logger.error(f"Inference error for item '{item}': {e}")
                 new_results[item] = None

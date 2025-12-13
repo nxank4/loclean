@@ -85,11 +85,13 @@ class PolarsEngine:
         map_df = pl.DataFrame({
             col_name: keys,
             "clean_value": clean_values,
-            "clean_unit": clean_units
+            "clean_unit": clean_units,
+            "clean_reasoning": [cd.get("reasoning") if cd else None for cd in mapping_results.values()]
         }, schema={
             col_name: pl.String, 
             "clean_value": pl.Float64,
-            "clean_unit": pl.String
+            "clean_unit": pl.String,
+            "clean_reasoning": pl.String
         })
 
         # 5. Perform Left Join
