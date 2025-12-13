@@ -24,6 +24,10 @@ class PolarsEngine:
         """
         Clean a specific column using the inference engine with batching and progress tracking.
         """
+        # Input validation for col_name
+        if col_name not in df.columns:
+            raise ValueError(f"Column '{col_name}' not found in DataFrame")
+        
         # 1. Extract unique values
         # We explicitly cast to String to ensure consistency with the AI's input
         unique_series = df.select(pl.col(col_name).cast(pl.String)).unique().to_series()
@@ -64,11 +68,14 @@ class PolarsEngine:
         clean_units: List[Optional[str]] = []
 
         for original_val, clean_data in mapping_results.items():
+            keys.append(original_val)
             if clean_data:
-                keys.append(original_val)
                 # Safely get values using .get() which returns Optional types
                 clean_values.append(clean_data.get("value"))  # type: ignore
                 clean_units.append(clean_data.get("unit"))    # type: ignore
+            else:
+                clean_values.append(None)
+                clean_units.append(None)
 
         if not keys:
             logger.warning("No concepts were successfully extracted. Returning original DataFrame.")
@@ -99,6 +106,6 @@ class PolarsEngine:
             
         except Exception as e:
             logger.error(f"Join failed: {e}")
-            raise e
+            raise
 
         return result_df

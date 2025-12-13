@@ -108,7 +108,7 @@ class LocalInferenceEngine:
             instruction: User-defined instruction for the task.
 
         Returns:
-            Dictionary mapping original_string -> {"value": float, "unit": str} or None.
+            Dictionary mapping original_string -> {"value": <number>, "unit": <string>} or None.
         """
         # 1. Check Cache
         cached_results = self.cache.get_batch(items, instruction)
@@ -132,6 +132,8 @@ Return JSON with keys "value" (number) and "unit" (string).
 <|end|>
 <|assistant|>"""
             
+            output = None
+            text = None
             try:
                 output = self.llm.create_completion(
                     prompt=prompt,
@@ -149,14 +151,26 @@ Return JSON with keys "value" (number) and "unit" (string).
                 data = json.loads(text)
                 
                 if "value" in data and "unit" in data:
+<<<<<<< HEAD:src/semantix/inference/manager.py
                      new_results[item] = data
+=======
+                    results[item] = data
+>>>>>>> origin/main:semantix/inference/manager.py
                 else:
                     logger.warning(f"Result for '{item}' missing keys. Raw: {text}")
                     new_results[item] = None
 
             except json.JSONDecodeError as e:
+<<<<<<< HEAD:src/semantix/inference/manager.py
                 logger.warning(f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text if 'text' in locals() else 'N/A'}'")
                 new_results[item] = None
+=======
+                if output and text:
+                    logger.warning(f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text}'")
+                else:
+                    logger.warning(f"Failed to decode JSON for item '{item}': {e}")
+                results[item] = None
+>>>>>>> origin/main:semantix/inference/manager.py
             except Exception as e:
                 logger.error(f"Inference error for item '{item}': {e}")
                 new_results[item] = None
