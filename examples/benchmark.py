@@ -52,13 +52,8 @@ def run_benchmark():
     instruction = f"Convert to kg. Run ID {run_id}"
 
     start_semantix = time.time()
-<<<<<<< HEAD
     df_clean = semantix.clean(df, "raw_weight", instruction=instruction)
     actual_semantix_time = time.time() - start_semantix
-=======
-    semantix.clean(df, "raw_weight")
-    end_semantix = time.time()
->>>>>>> origin/main
     
     print(f"    Actual Time: {actual_semantix_time:.2f}s")
     

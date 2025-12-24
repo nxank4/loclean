@@ -3,7 +3,7 @@
 **The All-in-One Local AI Data Cleaner.**
 
 Clean messy tabular data using local AI.
-**No API keys required. No GPU required. _Up to 100x faster than standard LLM loops for datasets with high repetition._**
+**No API keys required. No GPU required.**
 
 ## 🔥 Why Semantix?
 
@@ -15,65 +15,50 @@ _in progress..._
 pip install semantix
 ```
 
-_Note: The first time you run Semantix, it will automatically download the optimized Microsoft Phi-3 Mini model (~2.4GB) to `~/.cache/semantix`. Subsequent runs are instant._
-
 ## ⚡ Quick Start
 
-Clean messy weights, distances, or generic units instantly.
-
-```python
-import semantix
-import polars as pl
-
-# 1. Load messy data
-df = pl.DataFrame({
-    "raw_weight": ["10kg", "500g", "2 lbs", "10 kgs", "not a weight"]
-})
-
-# 2. Clean it! (Default: Extract Value & Unit)
-df_clean = semantix.clean(df, target_col="raw_weight")
-
-print(df_clean)
-```
-
-**Output:**
-
-```text
-┌────────────┬─────────────┬────────────┐
-│ raw_weight ┆ clean_value ┆ clean_unit │
-│ ---        ┆ ---         ┆ ---        │
-│ str        ┆ f64         ┆ str        │
-╞════════════╪═════════════╪════════════╡
-│ 10kg       ┆ 10.0        ┆ kg         │
-│ 500g       ┆ 500.0       ┆ g          │
-│ 2 lbs      ┆ 2.0         ┆ lbs        │
-│ ...        ┆ ...         ┆ ...        │
-└────────────┴─────────────┴────────────┘
-```
+_in progress..._
 
 ## 🏗️ How It Works (The Architecture)
 
-Semantix achieves its massive speedup through a **Representative Sampling** architecture:
-
-1.  **⚡ Vectorized Sampling**: We use `Polars` to extract the `unique()` patterns from your specific column. In a dataset of 1M rows, there are often only ~1k unique "messy formats".
-2.  **🧠 Local Inference**: We feed _only_ the unique patterns to a local, quantized **Phi-3 Mini** model running on `llama.cpp`.
-3.  **🛡️ Structured Decoding**: We use **GBNF Grammars** to force the LLM to output valid JSON `{"value": float, "unit": str}`. It _cannot_ hallucinate conversational filler.
-4.  **🔗 Broadcast Join**: The results are mapped back to your original Big Data frame using a high-performance Left Join.
+_in progress..._
 
 ## 🗺️ Roadmap
 
-- [ ] **Schema Enforcement**: Force output to match Pydantic models.
-- [ ] **Row-Level Imputation**: Fill `null` values based on other column context.
-- [ ] **Entity Resolution**: "Apple Inc." == "Apple Computer, Inc."
+The development of Semantix is focused on three key areas: **Reliability**, **Privacy**, and **Integration**.
+
+### 📍 Phase 1: Core Intelligence (Current Focus)
+
+**Goal: Build a deterministic and smart cleaning engine.**
+
+- [ ] **Strict Schema Mode**: Guarantee valid outputs by forcing the LLM to adhere to **Pydantic** models using GBNF grammar (eliminates JSON parsing errors).
+- [ ] **Contextual Imputation**: Fill `null` values intelligently by reasoning over surrounding column context (e.g., inferring `State` from `Zip Code`).
+- [ ] **Entity Canonicalization**: Map messy variations (e.g., "Apple Inc.", "apple comp", "AAPL") to a single "Golden Record" standard.
+
+### 📍 Phase 2: Privacy & Advanced Extraction
+
+**Goal: Specialized features for enterprise-grade data handling.**
+
+- [ ] **Unstructured Extraction**: Parse free-text fields (Logs, Bios, Reviews) into structured tabular data.
+- [ ] **Semantic PII Redaction**: Automatically detect and mask sensitive entities (Names, SSNs, Emails) locally to ensure data privacy.
+- [ ] **Semantic Outlier Detection**: Flag values that are *statistically* normal but *contextually* impossible (e.g., "Age: 200").
+
+### 📍 Phase 3: Ecosystem & DX
+
+**Goal: Make Semantix a first-class citizen in the Python data stack.**
+
+- [ ] **Native Dataframe Accessors**: Direct integration for **Pandas** and **Polars** (e.g., `df.semantix.clean(...)`) via PyArrow.
+- [ ] **Interactive CLI Review**: A "Human-in-the-loop" mode to review and approve low-confidence AI changes via the terminal.
+- [ ] **Custom LoRA Adapters**: Support for loading lightweight, domain-specific fine-tunes (e.g., Medical, Legal) without replacing the base model.
 
 ## 🤝 Contributing
 
-We love contributions! Semantix is open source (MIT).
+We love contributions! Semantix is strictly open-source under the **Apache 2.0 License**.
 
 1. **Fork** the repo on GitHub.
-2. **Clone** the project to your own machine.
-3. **Commit** changes to your own branch.
-4. **Push** your work back up to your fork.
-5. Submit a **Pull request** so that we can review your changes.
+2. **Clone** your fork locally.
+3. **Create** a new branch (`git checkout -b feature/amazing-feature`).
+4. **Commit** your changes.
+5. **Push** to your fork and submit a **Pull Request**.
 
 _Built with ❤️ for the Data Community._
