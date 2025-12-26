@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Code Quality (Lint & Type)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.11"
+          enable-cache: "auto"
+          cache-dependency-glob: |
+            **/pyproject.toml
+            **/uv.lock
+          github-token: ${{ github.token }}
+          add-problem-matchers: "true"
+          restore-cache: "true"
+          save-cache: "true"
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Lint with Ruff
+        run: uv run ruff check .
+
+      - name: Format check with Ruff
+        run: uv run ruff format --check .
+
+      - name: Type check with Mypy
+        run: uv run mypy .
+
+  tests:
+    name: Test on ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    needs: quality
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: "auto"
+          cache-dependency-glob: |
+            **/pyproject.toml
+            **/uv.lock
+          github-token: ${{ github.token }}
+          add-problem-matchers: "true"
+          restore-cache: "true"
+          save-cache: "true"
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run Tests
+        run: uv run pytest tests/ -v -m "not cloud and not slow"

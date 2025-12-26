@@ -1,0 +1,74 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*" # Chỉ chạy khi push tag bắt đầu bằng v (v1.0.0)
+
+jobs:
+  build-and-publish:
+    name: Build and Publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: pypi
+      url: https://pypi.org/p/semantix
+    permissions:
+      id-token: write # Required for Trusted Publishing
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.11"
+          enable-cache: "auto"
+          cache-dependency-glob: |
+            **/pyproject.toml
+            **/uv.lock
+          github-token: ${{ github.token }}
+          add-problem-matchers: "true"
+          restore-cache: "true"
+          save-cache: "true"
+
+      - name: Extract version from tag
+        id: tag_version
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG_NAME#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Tag: $TAG_NAME -> Version: $VERSION"
+
+      - name: Verify version consistency
+        run: |
+          VERSION="${{ steps.tag_version.outputs.version }}"
+          PYPROJECT_VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          if [ "$VERSION" != "$PYPROJECT_VERSION" ]; then
+            echo "Error: Tag version ($VERSION) does not match pyproject.toml version ($PYPROJECT_VERSION)"
+            exit 1
+          fi
+          echo "Version verified: $VERSION"
+
+      - name: Install build dependencies
+        run: uv sync --dev --no-install-project
+
+      - name: Build package
+        run: uv build
+
+      - name: Verify built packages
+        run: |
+          ls -lh dist/
+          echo "Built packages:"
+          for file in dist/*; do
+            echo "  - $(basename $file) ($(du -h $file | cut -f1))"
+          done
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          print-hash: true
