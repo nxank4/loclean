@@ -43,15 +43,25 @@ def create_engine(config: EngineConfig) -> "InferenceEngine":
 
     if engine_type == "llama-cpp":
         # Lazy import to avoid loading llama-cpp-python unless needed
-        from semantix.inference.manager import LlamaCppEngine
+        try:
+            from semantix.inference.local.llama_cpp import LlamaCppEngine
+        except ImportError as e:
+            raise ImportError(
+                f"Failed to import LlamaCppEngine. "
+                f"Please ensure 'llama-cpp-python' is installed: {e}"
+            ) from e
 
         logger.info(f"Creating LlamaCppEngine with model: {config.model}")
-        return LlamaCppEngine(
-            model_name=config.model,
-            cache_dir=config.cache_dir,
-            n_ctx=config.n_ctx,
-            n_gpu_layers=config.n_gpu_layers,
-        )
+        try:
+            return LlamaCppEngine(
+                model_name=config.model,
+                cache_dir=config.cache_dir,
+                n_ctx=config.n_ctx,
+                n_gpu_layers=config.n_gpu_layers,
+            )
+        except Exception as e:
+            logger.error(f"Failed to create LlamaCppEngine: {e}")
+            raise
 
     elif engine_type == "openai":
         # Placeholder for future OpenAI implementation
