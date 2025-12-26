@@ -13,7 +13,7 @@ from semantix.utils.resources import (
 class TestLoadGrammar:
     """Test cases for load_grammar function."""
 
-    def test_load_json_grammar(self):
+    def test_load_json_grammar(self) -> None:
         """Test loading json.gbnf grammar file."""
         grammar = load_grammar("json.gbnf")
 
@@ -25,14 +25,14 @@ class TestLoadGrammar:
         assert "value" in grammar
         assert "unit" in grammar
 
-    def test_load_nonexistent_grammar_raises_error(self):
+    def test_load_nonexistent_grammar_raises_error(self) -> None:
         """Test that loading nonexistent grammar raises FileNotFoundError."""
         with pytest.raises(FileNotFoundError) as exc_info:
             load_grammar("nonexistent.gbnf")
 
         assert "nonexistent.gbnf" in str(exc_info.value)
 
-    def test_grammar_content_structure(self):
+    def test_grammar_content_structure(self) -> None:
         """Test that grammar has correct structure."""
         grammar = load_grammar("json.gbnf")
 
@@ -51,7 +51,7 @@ class TestLoadGrammar:
 class TestLoadTemplate:
     """Test cases for load_template function."""
 
-    def test_load_nonexistent_template_raises_error(self):
+    def test_load_nonexistent_template_raises_error(self) -> None:
         """Test that loading nonexistent template raises FileNotFoundError."""
         with pytest.raises(FileNotFoundError) as exc_info:
             load_template("nonexistent.j2")
@@ -62,7 +62,7 @@ class TestLoadTemplate:
 class TestListResources:
     """Test cases for list functions."""
 
-    def test_list_grammars(self):
+    def test_list_grammars(self) -> None:
         """Test listing available grammar files."""
         grammars = list_grammars()
 
@@ -70,7 +70,7 @@ class TestListResources:
         assert "json.gbnf" in grammars
         assert all(g.endswith(".gbnf") for g in grammars)
 
-    def test_list_templates(self):
+    def test_list_templates(self) -> None:
         """Test listing available template files."""
         templates = list_templates()
 

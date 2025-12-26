@@ -3,6 +3,7 @@
 import os
 import tempfile
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -19,7 +20,7 @@ from semantix.inference.config import (
 class TestEngineConfig:
     """Test cases for EngineConfig Pydantic model."""
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test that EngineConfig has correct default values."""
         config = EngineConfig()
         assert config.engine == "llama-cpp"
@@ -29,7 +30,7 @@ class TestEngineConfig:
         assert config.n_ctx == 4096
         assert config.n_gpu_layers == 0
 
-    def test_valid_creation_with_all_fields(self):
+    def test_valid_creation_with_all_fields(self) -> None:
         """Test creating EngineConfig with all fields."""
         cache_dir = Path("/tmp/test_cache")
         config = EngineConfig(
@@ -47,29 +48,29 @@ class TestEngineConfig:
         assert config.n_ctx == 8192
         assert config.n_gpu_layers == 10
 
-    def test_valid_engine_types(self):
+    def test_valid_engine_types(self) -> None:
         """Test that all valid engine types are accepted."""
         for engine in ["llama-cpp", "openai", "anthropic", "gemini"]:
-            config = EngineConfig(engine=engine)
+            config = EngineConfig(engine=engine)  # type: ignore[arg-type]
             assert config.engine == engine
 
-    def test_invalid_engine_type(self):
+    def test_invalid_engine_type(self) -> None:
         """Test that invalid engine type raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            EngineConfig(engine="invalid-engine")
+            EngineConfig(engine="invalid-engine")  # type: ignore[arg-type]
 
         errors = exc_info.value.errors()
         assert len(errors) > 0
         assert any(error["loc"] == ("engine",) for error in errors)
 
-    def test_cache_dir_from_string(self):
+    def test_cache_dir_from_string(self) -> None:
         """Test that cache_dir can be created from string."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            config = EngineConfig(cache_dir=tmpdir)
+            config = EngineConfig(cache_dir=tmpdir)  # type: ignore[arg-type]
             assert config.cache_dir == Path(tmpdir)
             assert config.cache_dir.exists()
 
-    def test_cache_dir_auto_creation(self):
+    def test_cache_dir_auto_creation(self) -> None:
         """Test that cache_dir is automatically created if it doesn't exist."""
         with tempfile.TemporaryDirectory() as tmpdir:
             cache_path = Path(tmpdir) / "new_cache"
@@ -77,7 +78,7 @@ class TestEngineConfig:
             assert config.cache_dir.exists()
             assert config.cache_dir == cache_path
 
-    def test_n_ctx_validation_min(self):
+    def test_n_ctx_validation_min(self) -> None:
         """Test that n_ctx below minimum raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             EngineConfig(n_ctx=100)
@@ -86,7 +87,7 @@ class TestEngineConfig:
         assert len(errors) > 0
         assert any(error["loc"] == ("n_ctx",) for error in errors)
 
-    def test_n_ctx_validation_max(self):
+    def test_n_ctx_validation_max(self) -> None:
         """Test that n_ctx above maximum raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             EngineConfig(n_ctx=50000)
@@ -95,7 +96,7 @@ class TestEngineConfig:
         assert len(errors) > 0
         assert any(error["loc"] == ("n_ctx",) for error in errors)
 
-    def test_n_gpu_layers_validation_min(self):
+    def test_n_gpu_layers_validation_min(self) -> None:
         """Test that n_gpu_layers below minimum raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             EngineConfig(n_gpu_layers=-1)
@@ -104,10 +105,10 @@ class TestEngineConfig:
         assert len(errors) > 0
         assert any(error["loc"] == ("n_gpu_layers",) for error in errors)
 
-    def test_extra_fields_forbidden(self):
+    def test_extra_fields_forbidden(self) -> None:
         """Test that extra fields are forbidden."""
         with pytest.raises(ValidationError) as exc_info:
-            EngineConfig(extra_field="should_fail")
+            EngineConfig(extra_field="should_fail")  # type: ignore[call-arg]
 
         errors = exc_info.value.errors()
         assert len(errors) > 0
@@ -117,7 +118,7 @@ class TestEngineConfig:
 class TestLoadFromEnv:
     """Test cases for _load_from_env function."""
 
-    def test_load_all_env_variables(self):
+    def test_load_all_env_variables(self) -> None:
         """Test loading all environment variables."""
         env_vars = {
             "SEMANTIX_ENGINE": "openai",
@@ -137,7 +138,7 @@ class TestLoadFromEnv:
             assert config["n_ctx"] == 8192
             assert config["n_gpu_layers"] == 10
 
-    def test_load_partial_env_variables(self):
+    def test_load_partial_env_variables(self) -> None:
         """Test loading only some environment variables."""
         env_vars = {
             "SEMANTIX_ENGINE": "anthropic",
@@ -150,7 +151,7 @@ class TestLoadFromEnv:
             assert config["model"] == "claude-3"
             assert "api_key" not in config
 
-    def test_load_no_env_variables(self):
+    def test_load_no_env_variables(self) -> None:
         """Test loading when no environment variables are set."""
         # Remove all SEMANTIX_* env vars
         env_to_remove = [
@@ -162,7 +163,7 @@ class TestLoadFromEnv:
             config = _load_from_env()
             assert config == {}
 
-    def test_n_ctx_invalid_int(self):
+    def test_n_ctx_invalid_int(self) -> None:
         """Test that invalid integer for n_ctx is skipped."""
         env_vars = {
             "SEMANTIX_N_CTX": "not_an_int",
@@ -176,7 +177,7 @@ class TestLoadFromEnv:
 class TestLoadFromPyprojectToml:
     """Test cases for _load_from_pyproject_toml function."""
 
-    def test_load_from_existing_pyproject_toml(self, tmp_path):
+    def test_load_from_existing_pyproject_toml(self, tmp_path: Any) -> None:
         """Test loading config from pyproject.toml."""
         pyproject_content = """
 [tool.semantix]
@@ -195,13 +196,13 @@ n_ctx = 2048
             assert config["api_key"] == "test-api-key"
             assert config["n_ctx"] == 2048
 
-    def test_load_from_nonexistent_pyproject_toml(self, tmp_path):
+    def test_load_from_nonexistent_pyproject_toml(self, tmp_path: Any) -> None:
         """Test loading when pyproject.toml doesn't exist."""
         with patch("semantix.inference.config.Path.cwd", return_value=tmp_path):
             config = _load_from_pyproject_toml()
             assert config == {}
 
-    def test_load_from_pyproject_toml_without_semantix_section(self, tmp_path):
+    def test_load_from_pyproject_toml_without_semantix_section(self, tmp_path: Any) -> None:
         """Test loading when pyproject.toml exists but has no
         [tool.semantix] section."""
         pyproject_content = """
@@ -220,7 +221,7 @@ version = "0.1.0"
 class TestLoadConfig:
     """Test cases for load_config function."""
 
-    def test_load_with_defaults(self):
+    def test_load_with_defaults(self) -> None:
         """Test loading config with only defaults."""
         # Clear environment variables
         env_to_remove = [
@@ -240,7 +241,7 @@ class TestLoadConfig:
                 assert config.n_ctx == 4096
                 assert config.n_gpu_layers == 0
 
-    def test_load_with_runtime_params(self):
+    def test_load_with_runtime_params(self) -> None:
         """Test that runtime parameters override everything."""
         env_vars = {
             "SEMANTIX_ENGINE": "openai",
@@ -257,7 +258,7 @@ class TestLoadConfig:
                 assert config.engine == "gemini"
                 assert config.model == "gemini-pro"
 
-    def test_load_with_env_variables(self):
+    def test_load_with_env_variables(self) -> None:
         """Test that environment variables override file config."""
         env_vars = {
             "SEMANTIX_ENGINE": "openai",
@@ -276,7 +277,7 @@ class TestLoadConfig:
                 assert config.model == "gpt-4o"
                 assert config.api_key == "sk-env-key"
 
-    def test_load_with_file_config(self):
+    def test_load_with_file_config(self) -> None:
         """Test that file config is used when env vars are not set."""
         env_to_remove = [
             key for key in os.environ.keys() if key.startswith("SEMANTIX_")
@@ -300,7 +301,7 @@ class TestLoadConfig:
                 assert config.model == "claude-3-opus"
                 assert config.n_ctx == 2048
 
-    def test_priority_order(self):
+    def test_priority_order(self) -> None:
         """Test that priority order is correct: Param > Env > File > Default."""
         # File config
         file_config = {"engine": "llama-cpp", "model": "phi-3"}
@@ -323,7 +324,7 @@ class TestLoadConfig:
                 assert config2.engine == "openai"  # Env wins over file
                 assert config2.model == "gpt-3.5"  # Env wins over file
 
-    def test_load_with_cache_dir(self):
+    def test_load_with_cache_dir(self) -> None:
         """Test loading config with custom cache_dir."""
         with tempfile.TemporaryDirectory() as tmpdir:
             cache_path = Path(tmpdir) / "custom_cache"
@@ -331,7 +332,7 @@ class TestLoadConfig:
             assert config.cache_dir == cache_path
             assert config.cache_dir.exists()
 
-    def test_load_with_kwargs(self):
+    def test_load_with_kwargs(self) -> None:
         """Test loading config with additional kwargs raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             load_config(engine="openai", custom_param="should_fail")
@@ -340,7 +341,7 @@ class TestLoadConfig:
         assert len(errors) > 0
         # Should fail because extra fields are forbidden
 
-    def test_load_merges_partial_configs(self):
+    def test_load_merges_partial_configs(self) -> None:
         """Test that partial configs from different sources are merged correctly."""
         env_vars = {"SEMANTIX_ENGINE": "openai"}
 

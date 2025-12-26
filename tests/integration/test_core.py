@@ -1,3 +1,5 @@
+from typing import Any
+
 import polars as pl
 import pytest
 
@@ -5,7 +7,7 @@ import semantix
 
 
 @pytest.mark.slow
-def test_clean_pipeline_weight(messy_df):
+def test_clean_pipeline_weight(messy_df: Any) -> None:
     """
     Test end-to-end cleaning of a 'weight' column.
     """
@@ -47,7 +49,7 @@ def test_clean_pipeline_weight(messy_df):
 
 
 @pytest.mark.slow
-def test_clean_pipeline_price(messy_df):
+def test_clean_pipeline_price(messy_df: Any) -> None:
     """
     Test end-to-end cleaning of a 'price' column.
     """
@@ -67,7 +69,7 @@ def test_clean_pipeline_price(messy_df):
 
 
 @pytest.mark.slow
-def test_idempotency(messy_df):
+def test_idempotency(messy_df: Any) -> None:
     """
     Verify that running the same clean command twice produces identical results.
     """

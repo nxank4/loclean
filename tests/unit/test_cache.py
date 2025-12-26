@@ -1,7 +1,9 @@
+from typing import Any
+
 from semantix.cache import SemantixCache
 
 
-def test_hashing_determinism(temp_cache_db):
+def test_hashing_determinism(temp_cache_db: Any) -> None:
     """
     Verify that _hash produces consistent output for the same input.
     """
@@ -26,7 +28,7 @@ def test_hashing_determinism(temp_cache_db):
     assert h1 != h3
 
 
-def test_set_and_get_batch(temp_cache_db):
+def test_set_and_get_batch(temp_cache_db: Any) -> None:
     """
     Verify that we can save to and retrieve from the cache.
     """
@@ -49,7 +51,7 @@ def test_set_and_get_batch(temp_cache_db):
     assert cached_items["500g"] == results["500g"]
 
 
-def test_cache_miss(temp_cache_db):
+def test_cache_miss(temp_cache_db: Any) -> None:
     """
     Verify that get_batch returns empty dict for unknown keys.
     """

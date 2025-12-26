@@ -5,7 +5,7 @@ import semantix
 
 
 @pytest.mark.slow
-def test_smart_no_op():
+def test_smart_no_op() -> None:
     """
     Test that the model uses reasoning to avoid 'Blind Math'.
     Scenario: Input is already in target currency. Should NOT apply conversion rate.
@@ -34,7 +34,7 @@ def test_smart_no_op():
 
 
 @pytest.mark.slow
-def test_complex_reasoning():
+def test_complex_reasoning() -> None:
     """
     Test reasoning on mixed logic (Conversion vs No-Op).
     """
@@ -55,7 +55,7 @@ def test_complex_reasoning():
 
 
 @pytest.mark.slow
-def test_reasoning_column_exists():
+def test_reasoning_column_exists() -> None:
     """
     Verify that the 'clean_reasoning' column is exposed to the user.
     """
