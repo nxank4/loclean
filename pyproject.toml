@@ -1,30 +1,107 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "semantix"
-version = "0.1.0"
-description = "High-performance semantic data cleaning library"
+dynamic = ["version"]
+description = "High-performance, local-first semantic data cleaning library"
 readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Semantix Contributors" },
+]
+keywords = ["data-cleaning", "llm", "semantic", "etl", "data-engineering", "narwhals", "local-ai"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
 dependencies = [
-    "polars>=0.20.0",
+    "narwhals>=2.14.0",
+    "pydantic>=2.12.5",
     "llama-cpp-python>=0.2.23",
     "huggingface_hub>=0.20.0",
+    "jinja2>=3.0.0",
     "tqdm>=4.66.0",
-    "pytest>=7.0.0",
-    "narwhals>=2.14.0",
-    "pyarrow>=22.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/nxank4/semantix"
+Repository = "https://github.com/nxank4/semantix"
+Issues = "https://github.com/nxank4/semantix/issues"
+
+[project.optional-dependencies]
+data = [
     "pandas>=2.3.3",
-    "pydantic>=2.12.5",
+    "polars>=0.20.0",
+    "pyarrow>=22.0.0",
 ]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+cloud = [
+    "openai>=1.0.0",
+    "google-generativeai>=0.3.0",
+    "anthropic>=0.18.0",
+    "instructor>=1.0.0",
 ]
-
-
+all = [
+    "semantix[data]",
+    "semantix[cloud]",
+]
 
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
+    "pytest-mock>=3.10.0",
+    "ruff>=0.3.0",
+    "mypy>=1.9.0",
+    "pandas-stubs>=2.0.0",
+    "types-tqdm",
+]
+
+[tool.hatch.version]
+path = "src/semantix/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/semantix"]
+
+[tool.hatch.build]
+include = [
+    "src/semantix/resources",
+    "LICENSE",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/semantix/resources",
+    "tests",
+    "LICENSE",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow",
+    "cloud: marks tests that require cloud API access",
 ]
