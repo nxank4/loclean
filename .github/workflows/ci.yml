@@ -41,8 +41,7 @@ jobs:
         run: uv run ruff format --check .
 
       - name: Type check with Mypy
-        run: uv run mypy . || true
-        continue-on-error: true
+        run: uv run mypy .
 
   tests:
     name: Test on ${{ matrix.os }} / Python ${{ matrix.python-version }}
