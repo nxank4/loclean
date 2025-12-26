@@ -36,7 +36,8 @@ class PromptAdapter(ABC):
         Get stop tokens specific to this model format.
 
         Returns:
-            List of stop token strings to prevent model from generating beyond the response.
+            List of stop token strings to prevent model from generating
+            beyond the response.
         """
         pass
 
@@ -65,7 +66,9 @@ Input Item: "{item}"
 
 Step 1: Identify the unit of the Input Item (e.g., "$", "kg", "C").
 Step 2: Identify the target unit from the Task.
-Step 3: CRITICAL: If the units are physically the same (e.g., Input is USD and Target is USD), DO NOT MULTIPLY. The value must remain unchanged.
+Step 3: CRITICAL: If the units are physically the same
+(e.g., Input is USD and Target is USD), DO NOT MULTIPLY.
+The value must remain unchanged.
 Step 4: Only apply conversion formulas if units are different (e.g., EUR to USD).
 Step 5: Output JSON with keys "reasoning", "value", and "unit".
 <|end|>
@@ -101,7 +104,9 @@ Input Item: "{item}"
 
 Step 1: Identify the unit of the Input Item (e.g., "$", "kg", "C").
 Step 2: Identify the target unit from the Task.
-Step 3: CRITICAL: If the units are physically the same (e.g., Input is USD and Target is USD), DO NOT MULTIPLY. The value must remain unchanged.
+Step 3: CRITICAL: If the units are physically the same
+(e.g., Input is USD and Target is USD), DO NOT MULTIPLY.
+The value must remain unchanged.
 Step 4: Only apply conversion formulas if units are different (e.g., EUR to USD).
 Step 5: Output JSON with keys "reasoning", "value", and "unit".
 <|im_end|>
@@ -132,13 +137,17 @@ class LlamaAdapter(PromptAdapter):
         Returns:
             Formatted prompt string in Llama-3 format.
         """
-        system_message = "You are a helpful assistant that extracts structured data from text."
+        system_message = (
+            "You are a helpful assistant that extracts structured data from text."
+        )
         user_message = f"""Task: {instruction}
 Input Item: "{item}"
 
 Step 1: Identify the unit of the Input Item (e.g., "$", "kg", "C").
 Step 2: Identify the target unit from the Task.
-Step 3: CRITICAL: If the units are physically the same (e.g., Input is USD and Target is USD), DO NOT MULTIPLY. The value must remain unchanged.
+Step 3: CRITICAL: If the units are physically the same
+(e.g., Input is USD and Target is USD), DO NOT MULTIPLY.
+The value must remain unchanged.
 Step 4: Only apply conversion formulas if units are different (e.g., EUR to USD).
 Step 5: Output JSON with keys "reasoning", "value", and "unit"."""
 
