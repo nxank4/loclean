@@ -1,3 +1,13 @@
+<p align="center">
+  <a href="https://pypi.org/project/semantix"><img src="https://img.shields.io/pypi/v/semantix?color=blue&style=flat-square" alt="PyPI"></a>
+  <a href="https://pypi.org/project/semantix"><img src="https://img.shields.io/pypi/pyversions/semantix?style=flat-square" alt="Python Versions"></a>
+  <a href="https://github.com/nxank4/semantix/actions/workflows/ci.yml"><img src="https://github.com/nxank4/semantix/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
+  <a href="https://github.com/nxank4/semantix/blob/main/LICENSE"><img src="https://img.shields.io/github/license/nxank4/semantix?style=flat-square" alt="License"></a>
+  <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv"></a>
+</p>
+
+---
+
 # Semantix ⚡🧠
 
 **The All-in-One Local AI Data Cleaner.**
