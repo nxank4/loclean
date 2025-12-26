@@ -1,0 +1,37 @@
+name: 🚀 Feature Request
+description: Suggest an idea for this project
+title: "[Feat]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please verify if this feature request fits into the current Roadmap Phase.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear and concise description of what the problem is.
+      placeholder: I'm frustrated when I have to manually...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear and concise description of what you want to happen.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Low (Nice to have)
+        - Medium (Important but not urgent)
+        - High (Blocking my workflow)
+    validations:
+      required: true
