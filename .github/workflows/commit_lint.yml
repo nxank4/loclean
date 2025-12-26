@@ -26,5 +26,6 @@ jobs:
             ci
             chore
             revert
-          # Require scope (e.g., feat(core): ...)? Set to false for flexibility
+          # Require scope (e.g., feat(core): ...)?
+          # Set to false for flexibility
           requireScope: false
