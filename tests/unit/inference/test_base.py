@@ -19,7 +19,8 @@ class TestInferenceEngine:
         assert "abstract" in error_msg.lower() or "clean_batch" in error_msg.lower()
 
     def test_subclass_without_implementation_raises_error(self):
-        """Test that subclass without clean_batch implementation cannot be instantiated."""
+        """Test that subclass without clean_batch implementation
+        cannot be instantiated."""
 
         class IncompleteEngine(InferenceEngine):
             """Subclass that doesn't implement clean_batch."""
@@ -44,7 +45,10 @@ class TestInferenceEngine:
                 instruction: str,
             ) -> Dict[str, Optional[Dict[str, Any]]]:
                 """Mock implementation of clean_batch."""
-                return {item: {"reasoning": "test", "value": 1.0, "unit": "kg"} for item in items}
+                return {
+                    item: {"reasoning": "test", "value": 1.0, "unit": "kg"}
+                    for item in items
+                }
 
         # Should not raise TypeError
         engine = MockEngine()
@@ -92,7 +96,11 @@ class TestInferenceEngine:
         assert isinstance(result, dict)
         assert "test" in result
         assert "failed" in result
-        assert result["test"] == {"reasoning": "test reasoning", "value": 5.5, "unit": "kg"}
+        assert result["test"] == {
+            "reasoning": "test reasoning",
+            "value": 5.5,
+            "unit": "kg",
+        }
         assert result["failed"] is None
 
     def test_clean_batch_with_empty_items(self):
@@ -197,7 +205,9 @@ class TestInferenceEngine:
         engine = MockEngine()
         instruction = "Convert to kilograms"
         result = engine.clean_batch(["10kg"], instruction)
-        assert "Following instruction: Convert to kilograms" in result["10kg"]["reasoning"]
+        assert (
+            "Following instruction: Convert to kilograms" in result["10kg"]["reasoning"]
+        )
 
     def test_isinstance_check(self):
         """Test that subclasses pass isinstance check."""

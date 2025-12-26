@@ -356,7 +356,12 @@ class TestGetAdapter:
 
     def test_get_phi3_adapter_variations(self):
         """Test getting Phi3Adapter with various Phi-3 model names."""
-        for model_name in ["phi-3-mini", "phi-3-mini-4k-instruct", "phi-3-medium", "phi-3"]:
+        for model_name in [
+            "phi-3-mini",
+            "phi-3-mini-4k-instruct",
+            "phi-3-medium",
+            "phi-3",
+        ]:
             adapter = get_adapter(model_name)
             assert isinstance(adapter, Phi3Adapter), f"Failed for {model_name}"
 

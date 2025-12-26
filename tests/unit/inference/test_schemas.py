@@ -18,18 +18,24 @@ class TestExtractionResult:
 
     def test_valid_creation_with_negative_value(self):
         """Test creating ExtractionResult with negative value."""
-        result = ExtractionResult(reasoning="Temperature is -10 degrees", value=-10.0, unit="C")
+        result = ExtractionResult(
+            reasoning="Temperature is -10 degrees", value=-10.0, unit="C"
+        )
         assert result.value == -10.0
         assert result.unit == "C"
 
     def test_valid_creation_with_zero_value(self):
         """Test creating ExtractionResult with zero value."""
-        result = ExtractionResult(reasoning="Zero value extracted", value=0.0, unit="USD")
+        result = ExtractionResult(
+            reasoning="Zero value extracted", value=0.0, unit="USD"
+        )
         assert result.value == 0.0
 
     def test_valid_creation_with_decimal_value(self):
         """Test creating ExtractionResult with decimal value."""
-        result = ExtractionResult(reasoning="Decimal value extracted", value=3.14159, unit="m")
+        result = ExtractionResult(
+            reasoning="Decimal value extracted", value=3.14159, unit="m"
+        )
         assert result.value == 3.14159
 
     def test_missing_reasoning(self):
@@ -155,7 +161,9 @@ class TestExtractionResult:
 
     def test_unicode_in_reasoning(self):
         """Test that unicode characters in reasoning are handled correctly."""
-        result = ExtractionResult(reasoning="Test với unicode: 测试", value=5.5, unit="kg")
+        result = ExtractionResult(
+            reasoning="Test với unicode: 测试", value=5.5, unit="kg"
+        )
         assert "测试" in result.reasoning
 
     def test_unicode_in_unit(self):
