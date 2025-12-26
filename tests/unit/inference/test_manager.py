@@ -1,9 +1,13 @@
+"""Test cases for LlamaCppEngine and LocalInferenceEngine."""
+
+import warnings
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
-from semantix.inference.manager import LocalInferenceEngine
+from semantix.inference.adapters import LlamaAdapter, Phi3Adapter, QwenAdapter
+from semantix.inference.manager import LlamaCppEngine, LocalInferenceEngine
 
 
 @pytest.fixture
@@ -70,287 +74,503 @@ def mock_hf_download(mock_model_path):
         yield
 
 
-def test_init_with_custom_cache_dir(
-    temp_cache_dir,
-    mock_model_path,
-    mock_llama_class,
-    mock_grammar_class,
-    mock_cache_class,
-    mock_hf_download,
-):
-    engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
-
-    assert engine.cache_dir == temp_cache_dir
-    assert engine.model_path == mock_model_path
-    assert engine.llm is not None
-    assert engine.grammar is not None
-    assert engine.cache is not None
+# ==================== LlamaCppEngine Tests ====================
 
 
-def test_init_with_default_cache_dir(
-    mock_llama_class, mock_grammar_class, mock_cache_class, mock_hf_download
-):
-    with patch("semantix.inference.manager.Path.home", return_value=Path("/home/test")):
-        with patch("pathlib.Path.mkdir"):
-            expected_cache_dir = Path("/home/test/.cache/semantix")
-            mock_model_path = expected_cache_dir / LocalInferenceEngine.MODEL_FILENAME
+class TestLlamaCppEngine:
+    """Test cases for LlamaCppEngine."""
 
-            def mock_exists(*args):
-                path_self = args[0] if args else None
-                return str(path_self) == str(mock_model_path) if path_self else False
+    def test_init_with_custom_cache_dir(
+        self,
+        temp_cache_dir,
+        mock_model_path,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+    ):
+        """Test LlamaCppEngine initialization with custom cache directory."""
+        engine = LlamaCppEngine(cache_dir=temp_cache_dir)
 
-            with patch("pathlib.Path.exists", side_effect=mock_exists):
-                engine = LocalInferenceEngine()
+        assert engine.cache_dir == temp_cache_dir
+        assert engine.model_path == mock_model_path
+        assert engine.llm is not None
+        assert engine.grammar is not None
+        assert engine.cache is not None
+        assert engine.model_name == "phi-3-mini"
+        assert isinstance(engine.adapter, Phi3Adapter)
 
-                assert engine.cache_dir == expected_cache_dir
+    def test_init_with_default_cache_dir(
+        self, mock_llama_class, mock_grammar_class, mock_cache_class, mock_hf_download
+    ):
+        """Test LlamaCppEngine initialization with default cache directory."""
+        with patch("semantix.inference.manager.Path.home", return_value=Path("/home/test")):
+            with patch("pathlib.Path.mkdir"):
+                expected_cache_dir = Path("/home/test/.cache/semantix")
+                mock_model_path = expected_cache_dir / "Phi-3-mini-4k-instruct-q4.gguf"
 
+                def mock_exists(*args):
+                    path_self = args[0] if args else None
+                    return str(path_self) == str(mock_model_path) if path_self else False
 
-def test_get_model_path_existing_file(temp_cache_dir, mock_model_path, mock_hf_download):
-    with patch("semantix.inference.manager.Llama"):
-        with patch("semantix.inference.manager.LlamaGrammar"):
-            with patch("semantix.cache.SemantixCache"):
-                engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
-                path = engine._get_model_path()
+                with patch("pathlib.Path.exists", side_effect=mock_exists):
+                    engine = LlamaCppEngine()
 
-                assert path == mock_model_path
+                    assert engine.cache_dir == expected_cache_dir
+                    assert engine.model_name == "phi-3-mini"
 
+    def test_init_with_model_name(
+        self,
+        temp_cache_dir,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+    ):
+        """Test LlamaCppEngine initialization with specific model name."""
+        with patch("pathlib.Path.exists", return_value=True):
+            engine = LlamaCppEngine(model_name="qwen3-4b", cache_dir=temp_cache_dir)
 
-def test_get_model_path_downloads_when_missing(temp_cache_dir):
-    with patch("semantix.inference.manager.Path.exists", return_value=False):
+            assert engine.model_name == "qwen3-4b"
+            assert engine.model_repo == "unsloth/Qwen3-4B-Instruct-2507-GGUF"
+            assert isinstance(engine.adapter, QwenAdapter)
+
+    def test_init_with_unknown_model_falls_back(
+        self,
+        temp_cache_dir,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+    ):
+        """Test that unknown model name falls back to phi-3-mini."""
+        with patch("pathlib.Path.exists", return_value=True):
+            with patch("semantix.inference.manager.logger") as mock_logger:
+                engine = LlamaCppEngine(model_name="unknown-model", cache_dir=temp_cache_dir)
+
+                assert engine.model_name == "phi-3-mini"
+                mock_logger.warning.assert_called()
+
+    def test_init_with_n_ctx_and_n_gpu_layers(
+        self,
+        temp_cache_dir,
+        mock_model_path,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+    ):
+        """Test LlamaCppEngine initialization with n_ctx and n_gpu_layers."""
+        with patch("semantix.inference.manager.Llama") as mock_llama_class:
+            mock_llama_instance = Mock()
+            mock_llama_class.return_value = mock_llama_instance
+
+            engine = LlamaCppEngine(cache_dir=temp_cache_dir, n_ctx=8192, n_gpu_layers=10)
+
+            assert engine.llm is not None
+            mock_llama_class.assert_called_once_with(
+                model_path=str(mock_model_path),
+                n_ctx=8192,
+                n_gpu_layers=10,
+                verbose=False,
+            )
+
+    def test_get_model_path_existing_file(self, temp_cache_dir, mock_model_path, mock_hf_download):
+        """Test _get_model_path returns existing file."""
         with patch("semantix.inference.manager.Llama"):
             with patch("semantix.inference.manager.LlamaGrammar"):
                 with patch("semantix.cache.SemantixCache"):
-                    with patch("semantix.inference.manager.hf_hub_download") as mock_download:
-                        mock_download.return_value = str(temp_cache_dir / "downloaded_model.gguf")
+                    engine = LlamaCppEngine(cache_dir=temp_cache_dir)
+                    path = engine._get_model_path()
 
-                        engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
-                        mock_download.reset_mock()
-                        engine._get_model_path()
+                    assert path == mock_model_path
 
-                        mock_download.assert_called_once_with(
-                            repo_id=LocalInferenceEngine.MODEL_REPO,
-                            filename=LocalInferenceEngine.MODEL_FILENAME,
-                            local_dir=temp_cache_dir,
-                        )
+    def test_get_model_path_downloads_when_missing(self, temp_cache_dir):
+        """Test _get_model_path downloads model when missing."""
+        with patch("semantix.inference.manager.Path.exists", return_value=False):
+            with patch("semantix.inference.manager.Llama"):
+                with patch("semantix.inference.manager.LlamaGrammar"):
+                    with patch("semantix.cache.SemantixCache"):
+                        with patch("semantix.inference.manager.hf_hub_download") as mock_download:
+                            mock_download.return_value = str(
+                                temp_cache_dir / "downloaded_model.gguf"
+                            )
+
+                            engine = LlamaCppEngine(cache_dir=temp_cache_dir)
+                            expected_repo = engine.model_repo
+                            expected_filename = engine.model_filename
+                            mock_download.reset_mock()
+                            engine._get_model_path()
+
+                            mock_download.assert_called_once_with(
+                                repo_id=expected_repo,
+                                filename=expected_filename,
+                                local_dir=temp_cache_dir,
+                            )
+
+    def test_get_json_grammar(
+        self,
+        temp_cache_dir,
+        mock_model_path,
+        mock_llama_class,
+        mock_cache_class,
+        mock_hf_download,
+    ):
+        """Test _get_json_grammar returns correct grammar."""
+        with patch("semantix.inference.manager.LlamaGrammar") as mock_grammar_class:
+            mock_grammar_instance = Mock()
+            mock_grammar_class.from_string = Mock(return_value=mock_grammar_instance)
+
+            engine = LlamaCppEngine(cache_dir=temp_cache_dir)
+            mock_grammar_class.from_string.reset_mock()
+            grammar = engine._get_json_grammar()
+
+            assert grammar == mock_grammar_instance
+            mock_grammar_class.from_string.assert_called_once()
+
+    def test_adapter_selection_for_different_models(
+        self,
+        temp_cache_dir,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+    ):
+        """Test that correct adapter is selected for different models."""
+        with patch("pathlib.Path.exists", return_value=True):
+            # Phi-3 model
+            engine_phi = LlamaCppEngine(model_name="phi-3-mini", cache_dir=temp_cache_dir)
+            assert isinstance(engine_phi.adapter, Phi3Adapter)
+
+            # Qwen model
+            engine_qwen = LlamaCppEngine(model_name="qwen3-4b", cache_dir=temp_cache_dir)
+            assert isinstance(engine_qwen.adapter, QwenAdapter)
+
+            # Gemma model (uses LlamaAdapter)
+            engine_gemma = LlamaCppEngine(model_name="gemma-3-4b", cache_dir=temp_cache_dir)
+            assert isinstance(engine_gemma.adapter, LlamaAdapter)
+
+            # DeepSeek model (uses QwenAdapter)
+            engine_deepseek = LlamaCppEngine(model_name="deepseek-r1", cache_dir=temp_cache_dir)
+            assert isinstance(engine_deepseek.adapter, QwenAdapter)
+
+    def test_clean_batch_uses_adapter(
+        self,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+        temp_cache_dir,
+        mock_model_path,
+    ):
+        """Test that clean_batch uses adapter for prompt formatting."""
+        llm_output = {"choices": [{"text": '{"reasoning": "test", "value": 10.0, "unit": "kg"}'}]}
+        mock_llama_class.create_completion = Mock(return_value=llm_output)
+
+        engine = LlamaCppEngine(cache_dir=temp_cache_dir)
+        result = engine.clean_batch(["10kg"], "Extract weight")
+
+        # Verify adapter was used
+        assert mock_llama_class.create_completion.called
+        call_kwargs = mock_llama_class.create_completion.call_args[1]
+        assert "prompt" in call_kwargs
+        assert "<|user|>" in call_kwargs["prompt"]  # Phi-3 format
+        assert call_kwargs["stop"] == ["<|end|>", "<|user|>"]  # Phi-3 stop tokens
+        assert "10kg" in result
+        assert result["10kg"]["value"] == 10.0
+
+    def test_clean_batch_all_cached(
+        self,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+        temp_cache_dir,
+        mock_model_path,
+    ):
+        """Test clean_batch returns cached results when all items are cached."""
+        cached_results = {
+            "10kg": {"reasoning": "test", "value": 10.0, "unit": "kg"},
+            "500g": {"reasoning": "test", "value": 500.0, "unit": "g"},
+        }
+
+        mock_cache_class.get_batch = Mock(return_value=cached_results)
+
+        engine = LlamaCppEngine(cache_dir=temp_cache_dir)
+        result = engine.clean_batch(["10kg", "500g"], "Extract weight")
+
+        assert result == cached_results
+        assert not engine.llm.create_completion.called
+        assert not mock_cache_class.set_batch.called
+
+    def test_clean_batch_partial_cache(
+        self,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+        temp_cache_dir,
+        mock_model_path,
+    ):
+        """Test clean_batch handles partial cache hits."""
+        cached_results = {"10kg": {"reasoning": "test", "value": 10.0, "unit": "kg"}}
+        mock_cache_class.get_batch = Mock(return_value=cached_results)
+
+        llm_output = {"choices": [{"text": '{"reasoning": "test", "value": 500.0, "unit": "g"}'}]}
+        mock_llama_class.create_completion = Mock(return_value=llm_output)
+
+        engine = LlamaCppEngine(cache_dir=temp_cache_dir)
+        result = engine.clean_batch(["10kg", "500g"], "Extract weight")
+
+        assert "10kg" in result
+        assert "500g" in result
+        assert result["10kg"] == cached_results["10kg"]
+        assert result["500g"]["value"] == 500.0
+        assert result["500g"]["unit"] == "g"
+        mock_cache_class.set_batch.assert_called_once()
+
+    def test_clean_batch_successful_inference(
+        self,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+        temp_cache_dir,
+        mock_model_path,
+    ):
+        """Test clean_batch successful inference."""
+        llm_output = {
+            "choices": [{"text": '{"reasoning": "Extracted weight", "value": 10.0, "unit": "kg"}'}]
+        }
+        mock_llama_class.create_completion = Mock(return_value=llm_output)
+
+        engine = LlamaCppEngine(cache_dir=temp_cache_dir)
+        result = engine.clean_batch(["10kg"], "Extract weight")
+
+        assert "10kg" in result
+        assert result["10kg"]["value"] == 10.0
+        assert result["10kg"]["unit"] == "kg"
+        assert result["10kg"]["reasoning"] == "Extracted weight"
+        mock_cache_class.set_batch.assert_called_once()
+
+    def test_clean_batch_json_decode_error(
+        self,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+        temp_cache_dir,
+        mock_model_path,
+    ):
+        """Test clean_batch handles JSON decode errors."""
+        llm_output = {"choices": [{"text": "invalid json {"}]}
+        mock_llama_class.create_completion = Mock(return_value=llm_output)
+
+        engine = LlamaCppEngine(cache_dir=temp_cache_dir)
+        result = engine.clean_batch(["10kg"], "Extract weight")
+
+        assert "10kg" in result
+        assert result["10kg"] is None
+        assert not mock_cache_class.set_batch.called
+
+    def test_clean_batch_missing_keys(
+        self,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+        temp_cache_dir,
+        mock_model_path,
+    ):
+        """Test clean_batch handles missing keys in response."""
+        llm_output = {"choices": [{"text": '{"value": 10.0}'}]}
+        mock_llama_class.create_completion = Mock(return_value=llm_output)
+
+        engine = LlamaCppEngine(cache_dir=temp_cache_dir)
+        result = engine.clean_batch(["10kg"], "Extract weight")
+
+        assert "10kg" in result
+        assert result["10kg"] is None
+        assert not mock_cache_class.set_batch.called
+
+    def test_clean_batch_inference_exception(
+        self,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+        temp_cache_dir,
+        mock_model_path,
+    ):
+        """Test clean_batch handles inference exceptions."""
+        mock_llama_class.create_completion = Mock(side_effect=Exception("LLM error"))
+
+        engine = LlamaCppEngine(cache_dir=temp_cache_dir)
+        result = engine.clean_batch(["10kg"], "Extract weight")
+
+        assert "10kg" in result
+        assert result["10kg"] is None
+        assert not mock_cache_class.set_batch.called
+
+    def test_clean_batch_multiple_items_with_mixed_results(
+        self,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+        temp_cache_dir,
+        mock_model_path,
+    ):
+        """Test clean_batch handles multiple items with mixed results."""
+        cached_results = {"item1": {"reasoning": "cached", "value": 1.0, "unit": "kg"}}
+        mock_cache_class.get_batch = Mock(return_value=cached_results)
+
+        def create_completion_side_effect(*args, **kwargs):
+            prompt = kwargs.get("prompt", "")
+            if "item2" in prompt:
+                return {
+                    "choices": [{"text": '{"reasoning": "inferred", "value": 2.0, "unit": "g"}'}]
+                }
+            elif "item3" in prompt:
+                return {"choices": [{"text": "invalid json"}]}
+            return {"choices": [{"text": '{"reasoning": "test", "value": 0.0, "unit": "kg"}'}]}
+
+        mock_llama_class.create_completion = Mock(side_effect=create_completion_side_effect)
+
+        engine = LlamaCppEngine(cache_dir=temp_cache_dir)
+        result = engine.clean_batch(["item1", "item2", "item3"], "Extract weight")
+
+        assert result["item1"]["value"] == 1.0
+        assert result["item2"]["value"] == 2.0
+        assert result["item3"] is None
+        assert mock_llama_class.create_completion.call_count == 2
+
+    def test_clean_batch_only_caches_valid_results(
+        self,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+        temp_cache_dir,
+        mock_model_path,
+    ):
+        """Test that only valid results are cached."""
+
+        def create_completion_side_effect(*args, **kwargs):
+            prompt = kwargs.get("prompt", "")
+            if '"valid_item"' in prompt:
+                return {"choices": [{"text": '{"reasoning": "ok", "value": 10.0, "unit": "kg"}'}]}
+            return {"choices": [{"text": "invalid json {"}]}
+
+        mock_llama_class.create_completion = Mock(side_effect=create_completion_side_effect)
+        mock_cache_class.get_batch = Mock(return_value={})
+        mock_cache_class.set_batch.reset_mock()
+
+        engine = LlamaCppEngine(cache_dir=temp_cache_dir)
+
+        assert engine.cache is mock_cache_class
+
+        result = engine.clean_batch(["valid_item", "invalid_item"], "Extract weight")
+
+        assert engine.cache.set_batch.called
+
+        call_args = engine.cache.set_batch.call_args
+        assert call_args is not None
+
+        cached_items = call_args[0][0]
+        cached_results = call_args[0][2]
+
+        assert "valid_item" in cached_items
+        assert "invalid_item" not in cached_items
+        assert "valid_item" in cached_results
+        assert "invalid_item" not in cached_results
+
+        assert result["valid_item"] is not None
+        assert result["invalid_item"] is None
 
 
-def test_get_json_grammar(
-    temp_cache_dir, mock_model_path, mock_llama_class, mock_cache_class, mock_hf_download
-):
-    with patch("semantix.inference.manager.LlamaGrammar") as mock_grammar_class:
-        mock_grammar_instance = Mock()
-        mock_grammar_class.from_string = Mock(return_value=mock_grammar_instance)
-
-        engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
-        mock_grammar_class.from_string.reset_mock()
-        grammar = engine._get_json_grammar()
-
-        assert grammar == mock_grammar_instance
-        mock_grammar_class.from_string.assert_called_once()
+# ==================== LocalInferenceEngine Tests (Backward Compatibility) ====================
 
 
-def test_clean_batch_all_cached(
-    mock_llama_class,
-    mock_grammar_class,
-    mock_cache_class,
-    mock_hf_download,
-    temp_cache_dir,
-    mock_model_path,
-):
-    cached_results = {
-        "10kg": {"reasoning": "test", "value": 10.0, "unit": "kg"},
-        "500g": {"reasoning": "test", "value": 500.0, "unit": "g"},
-    }
+class TestLocalInferenceEngine:
+    """Test cases for LocalInferenceEngine (deprecated alias)."""
 
-    mock_cache_class.get_batch = Mock(return_value=cached_results)
+    def test_deprecation_warning(
+        self,
+        temp_cache_dir,
+        mock_model_path,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+    ):
+        """Test that LocalInferenceEngine raises DeprecationWarning."""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
 
-    engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
-    result = engine.clean_batch(["10kg", "500g"], "Extract weight")
+            assert len(w) == 1
+            assert issubclass(w[0].category, DeprecationWarning)
+            assert "deprecated" in str(w[0].message).lower()
+            assert isinstance(engine, LlamaCppEngine)
 
-    assert result == cached_results
-    assert not engine.llm.create_completion.called
-    assert not mock_cache_class.set_batch.called
+    def test_backward_compatibility_attributes(
+        self,
+        temp_cache_dir,
+        mock_model_path,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+    ):
+        """Test that LocalInferenceEngine maintains backward compatibility attributes."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
 
+            # Check that old attributes exist
+            assert hasattr(engine, "MODEL_REPO")
+            assert hasattr(engine, "MODEL_FILENAME")
+            assert engine.MODEL_REPO == engine.model_repo
+            assert engine.MODEL_FILENAME == engine.model_filename
 
-def test_clean_batch_partial_cache(
-    mock_llama_class,
-    mock_grammar_class,
-    mock_cache_class,
-    mock_hf_download,
-    temp_cache_dir,
-    mock_model_path,
-):
-    cached_results = {"10kg": {"reasoning": "test", "value": 10.0, "unit": "kg"}}
-    mock_cache_class.get_batch = Mock(return_value=cached_results)
+    def test_backward_compatibility_init_signature(
+        self,
+        temp_cache_dir,
+        mock_model_path,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+    ):
+        """Test that LocalInferenceEngine accepts old init signature."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            # Old signature: only cache_dir
+            engine1 = LocalInferenceEngine(cache_dir=temp_cache_dir)
+            assert engine1.model_name == "phi-3-mini"
 
-    llm_output = {"choices": [{"text": '{"reasoning": "test", "value": 500.0, "unit": "g"}'}]}
-    mock_llama_class.create_completion = Mock(return_value=llm_output)
+            # New signature: with model_name
+            engine2 = LocalInferenceEngine(cache_dir=temp_cache_dir, model_name="qwen3-4b")
+            assert engine2.model_name == "qwen3-4b"
 
-    engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
-    result = engine.clean_batch(["10kg", "500g"], "Extract weight")
+    def test_clean_batch_still_works(
+        self,
+        mock_llama_class,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+        temp_cache_dir,
+        mock_model_path,
+    ):
+        """Test that clean_batch still works with LocalInferenceEngine."""
+        llm_output = {"choices": [{"text": '{"reasoning": "test", "value": 10.0, "unit": "kg"}'}]}
+        mock_llama_class.create_completion = Mock(return_value=llm_output)
 
-    assert "10kg" in result
-    assert "500g" in result
-    assert result["10kg"] == cached_results["10kg"]
-    assert result["500g"]["value"] == 500.0
-    assert result["500g"]["unit"] == "g"
-    mock_cache_class.set_batch.assert_called_once()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
+            result = engine.clean_batch(["10kg"], "Extract weight")
 
-
-def test_clean_batch_successful_inference(
-    mock_llama_class,
-    mock_grammar_class,
-    mock_cache_class,
-    mock_hf_download,
-    temp_cache_dir,
-    mock_model_path,
-):
-    llm_output = {
-        "choices": [{"text": '{"reasoning": "Extracted weight", "value": 10.0, "unit": "kg"}'}]
-    }
-    mock_llama_class.create_completion = Mock(return_value=llm_output)
-
-    engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
-    result = engine.clean_batch(["10kg"], "Extract weight")
-
-    assert "10kg" in result
-    assert result["10kg"]["value"] == 10.0
-    assert result["10kg"]["unit"] == "kg"
-    assert result["10kg"]["reasoning"] == "Extracted weight"
-    mock_cache_class.set_batch.assert_called_once()
-
-
-def test_clean_batch_json_decode_error(
-    mock_llama_class,
-    mock_grammar_class,
-    mock_cache_class,
-    mock_hf_download,
-    temp_cache_dir,
-    mock_model_path,
-):
-    llm_output = {"choices": [{"text": "invalid json {"}]}
-    mock_llama_class.create_completion = Mock(return_value=llm_output)
-
-    engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
-    result = engine.clean_batch(["10kg"], "Extract weight")
-
-    assert "10kg" in result
-    assert result["10kg"] is None
-    assert not mock_cache_class.set_batch.called
-
-
-def test_clean_batch_missing_keys(
-    mock_llama_class,
-    mock_grammar_class,
-    mock_cache_class,
-    mock_hf_download,
-    temp_cache_dir,
-    mock_model_path,
-):
-    llm_output = {"choices": [{"text": '{"value": 10.0}'}]}
-    mock_llama_class.create_completion = Mock(return_value=llm_output)
-
-    engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
-    result = engine.clean_batch(["10kg"], "Extract weight")
-
-    assert "10kg" in result
-    assert result["10kg"] is None
-    assert not mock_cache_class.set_batch.called
-
-
-def test_clean_batch_inference_exception(
-    mock_llama_class,
-    mock_grammar_class,
-    mock_cache_class,
-    mock_hf_download,
-    temp_cache_dir,
-    mock_model_path,
-):
-    mock_llama_class.create_completion = Mock(side_effect=Exception("LLM error"))
-
-    engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
-    result = engine.clean_batch(["10kg"], "Extract weight")
-
-    assert "10kg" in result
-    assert result["10kg"] is None
-    assert not mock_cache_class.set_batch.called
-
-
-def test_clean_batch_multiple_items_with_mixed_results(
-    mock_llama_class,
-    mock_grammar_class,
-    mock_cache_class,
-    mock_hf_download,
-    temp_cache_dir,
-    mock_model_path,
-):
-    cached_results = {"item1": {"reasoning": "cached", "value": 1.0, "unit": "kg"}}
-    mock_cache_class.get_batch = Mock(return_value=cached_results)
-
-    def create_completion_side_effect(*args, **kwargs):
-        prompt = kwargs.get("prompt", "")
-        if "item2" in prompt:
-            return {"choices": [{"text": '{"reasoning": "inferred", "value": 2.0, "unit": "g"}'}]}
-        elif "item3" in prompt:
-            return {"choices": [{"text": "invalid json"}]}
-        return {"choices": [{"text": '{"reasoning": "test", "value": 0.0, "unit": "kg"}'}]}
-
-    mock_llama_class.create_completion = Mock(side_effect=create_completion_side_effect)
-
-    engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
-    result = engine.clean_batch(["item1", "item2", "item3"], "Extract weight")
-
-    assert result["item1"]["value"] == 1.0
-    assert result["item2"]["value"] == 2.0
-    assert result["item3"] is None
-    assert mock_llama_class.create_completion.call_count == 2
-
-
-def test_clean_batch_only_caches_valid_results(
-    mock_llama_class,
-    mock_grammar_class,
-    mock_cache_class,
-    mock_hf_download,
-    temp_cache_dir,
-    mock_model_path,
-):
-    call_order = []
-
-    def create_completion_side_effect(*args, **kwargs):
-        prompt = kwargs.get("prompt", "")
-        call_order.append(prompt)
-        if '"valid_item"' in prompt:
-            return {"choices": [{"text": '{"reasoning": "ok", "value": 10.0, "unit": "kg"}'}]}
-        return {"choices": [{"text": "invalid json {"}]}
-
-    mock_llama_class.create_completion = Mock(side_effect=create_completion_side_effect)
-    mock_cache_class.get_batch = Mock(return_value={})
-    mock_cache_class.set_batch.reset_mock()
-
-    engine = LocalInferenceEngine(cache_dir=temp_cache_dir)
-
-    assert engine.cache is mock_cache_class, "engine.cache should be the mocked instance"
-
-    result = engine.clean_batch(["valid_item", "invalid_item"], "Extract weight")
-
-    assert engine.cache.set_batch.called, "set_batch should be called"
-
-    call_args = engine.cache.set_batch.call_args
-    assert call_args is not None, "set_batch should have been called with arguments"
-
-    cached_items = call_args[0][0]
-    cached_results = call_args[0][2]
-
-    assert "valid_item" in cached_items, f"valid_item should be in cached items: {cached_items}"
-    assert "invalid_item" not in cached_items, (
-        f"invalid_item should not be in cached items: {cached_items}"
-    )
-    assert "valid_item" in cached_results, (
-        f"valid_item should be in cached results: {list(cached_results.keys())}"
-    )
-    assert "invalid_item" not in cached_results, (
-        f"invalid_item should not be in cached results: {list(cached_results.keys())}"
-    )
-
-    assert result["valid_item"] is not None
-    assert result["invalid_item"] is None
+            assert "10kg" in result
+            assert result["10kg"]["value"] == 10.0
+            assert result["10kg"]["unit"] == "kg"
