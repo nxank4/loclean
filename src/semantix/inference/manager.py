@@ -1,38 +1,77 @@
+"""Llama.cpp inference engine implementation.
+
+This module provides the LlamaCppEngine class for local inference using
+Llama.cpp with GBNF grammar constraints and prompt adapters.
+"""
+
 import json
 import logging
+import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from huggingface_hub import hf_hub_download
 from llama_cpp import Llama, LlamaGrammar
 
+from semantix.inference.adapters import PromptAdapter, get_adapter
+from semantix.inference.base import InferenceEngine
+
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 if not logger.handlers:
     handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
 
-class LocalInferenceEngine:
+# Model registry mapping model names to their HuggingFace repo and filename
+_MODEL_REGISTRY: Dict[str, Dict[str, str]] = {
+    "phi-3-mini": {
+        "repo": "microsoft/Phi-3-mini-4k-instruct-gguf",
+        "filename": "Phi-3-mini-4k-instruct-q4.gguf",
+    },
+    "qwen3-4b": {
+        "repo": "unsloth/Qwen3-4B-Instruct-2507-GGUF",
+        "filename": "Qwen3-4B-Instruct-2507-GGUF.q4_k_m.gguf",
+    },
+    "gemma-3-4b": {
+        "repo": "unsloth/gemma-3-4b-it-GGUF",
+        "filename": "gemma-3-4b-it-GGUF.q4_k_m.gguf",
+    },
+    "deepseek-r1": {
+        "repo": "unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
+        "filename": "DeepSeek-R1-Distill-Qwen-1.5B-GGUF.q4_k_m.gguf",
+    },
+}
+
+
+class LlamaCppEngine(InferenceEngine):
     """
-    A local inference engine using Llama.cpp with GBNF grammar constraints.
+    Local inference engine using Llama.cpp with GBNF grammar constraints.
+
+    Supports multiple GGUF models (Phi-3, Qwen, Gemma, DeepSeek) with automatic
+    prompt adapter selection based on model name.
     """
 
-    MODEL_REPO = "microsoft/Phi-3-mini-4k-instruct-gguf"
-    MODEL_FILENAME = "Phi-3-mini-4k-instruct-q4.gguf"
-
-    def __init__(self, cache_dir: Optional[Path] = None):
+    def __init__(
+        self,
+        model_name: str = "phi-3-mini",
+        cache_dir: Optional[Path] = None,
+        n_ctx: int = 4096,
+        n_gpu_layers: int = 0,
+    ):
         """
-        Initialize the inference engine. Auto-downloads the model if missing.
+        Initialize the LlamaCppEngine.
 
         Args:
+            model_name: Name of the model to use (e.g., "phi-3-mini", "qwen3-4b").
+                       Must be in MODEL_REGISTRY. Defaults to "phi-3-mini".
             cache_dir: Optional custom directory for caching models.
                        Defaults to ~/.cache/semantix.
+            n_ctx: Context window size. Defaults to 4096.
+            n_gpu_layers: Number of GPU layers to use (0 = CPU only). Defaults to 0.
         """
         if cache_dir is None:
             self.cache_dir = Path.home() / ".cache" / "semantix"
@@ -40,42 +79,56 @@ class LocalInferenceEngine:
             self.cache_dir = cache_dir
 
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.model_name = model_name
+
+        # Get model info from registry
+        if model_name not in _MODEL_REGISTRY:
+            logger.warning(f"Model '{model_name}' not in registry. Falling back to 'phi-3-mini'.")
+            model_name = "phi-3-mini"
+            self.model_name = model_name
+
+        model_info = _MODEL_REGISTRY[model_name]
+        self.model_repo = model_info["repo"]
+        self.model_filename = model_info["filename"]
+
+        # Get prompt adapter based on model name
+        self.adapter: PromptAdapter = get_adapter(model_name)
+        logger.info(f"Using adapter: {type(self.adapter).__name__} for model: {model_name}")
+
+        # Get model path (download if needed)
         self.model_path = self._get_model_path()
 
         logger.info(f"Loading model from {self.model_path}...")
         self.llm = Llama(
             model_path=str(self.model_path),
-            n_ctx=4096,
-            n_gpu_layers=0,  # CPU mode
+            n_ctx=n_ctx,
+            n_gpu_layers=n_gpu_layers,
             verbose=False,
         )
         self.grammar = self._get_json_grammar()
-        
+
         from semantix.cache import SemantixCache
+
         self.cache = SemantixCache(cache_dir=self.cache_dir)
-        
-        logger.info("LocalInferenceEngine initialized successfully.")
+
+        logger.info(f"LlamaCppEngine initialized successfully with model: {model_name}")
 
     def _get_model_path(self) -> Path:
         """
         Ensure the model exists locally. Download if necessary.
+
+        Returns:
+            Path to the model file.
         """
-        local_path = self.cache_dir / self.MODEL_FILENAME
+        local_path = self.cache_dir / self.model_filename
         if local_path.exists():
             logger.info(f"Model found at {local_path}")
             return local_path
 
-        logger.info(f"Model not found. Downloading {self.MODEL_FILENAME}...")
-        # We explicitly download to our cache dir effectively by just returning the path
-        # customized via hf_hub_download if we wanted strict control,
-        # but hf_hub_download manages its own cache typically.
-        # User requested: "Check ~/.cache/semantix... If not, use hf_hub_download to fetch it."
-        # hf_hub_download by default downloads to ~/.cache/huggingface.
-        # To strictly follow "fetch TO ~/.cache/semantix", we use local_dir.
-        
+        logger.info(f"Model not found. Downloading {self.model_filename}...")
         path = hf_hub_download(
-            repo_id=self.MODEL_REPO,
-            filename=self.MODEL_FILENAME,
+            repo_id=self.model_repo,
+            filename=self.model_filename,
             local_dir=self.cache_dir,
         )
         return Path(path)
@@ -83,8 +136,10 @@ class LocalInferenceEngine:
     def _get_json_grammar(self) -> LlamaGrammar:
         """
         Returns a GBNF grammar enforcing {"reasoning": <string>, "value": <number>, "unit": <string>}.
+
+        Returns:
+            LlamaGrammar instance for JSON extraction.
         """
-        # GBNF string
         grammar_str = r"""
             root   ::= object
             object ::= "{" ws "\"reasoning\"" ws ":" ws string "," ws "\"value\"" ws ":" ws number "," ws "\"unit\"" ws ":" ws string ws "}"
@@ -95,12 +150,13 @@ class LocalInferenceEngine:
         return LlamaGrammar.from_string(grammar_str)
 
     def clean_batch(
-        self, 
-        items: List[str], 
-        instruction: str
+        self,
+        items: List[str],
+        instruction: str,
     ) -> Dict[str, Optional[Dict[str, Any]]]:
         """
         Process a batch of strings and extract structured data using GBNF.
+
         Result is cached to avoid re-computation.
 
         Args:
@@ -112,30 +168,23 @@ class LocalInferenceEngine:
         """
         # 1. Check Cache
         cached_results = self.cache.get_batch(items, instruction)
-        
+
         # 2. Identify Misses
         misses = [item for item in items if item not in cached_results]
-        
+
         if not misses:
             return cached_results
 
         logger.info(f"Cache miss for {len(misses)} items. Running inference...")
         new_results: Dict[str, Optional[Dict[str, Any]]] = {}
 
-        for item in misses:
-            # Use Phi-3 Instruct format with dynamic instruction
-            prompt = f"""<|user|>
-Task: {instruction}
-Input Item: "{item}"
+        # Get stop tokens from adapter
+        stop_tokens = self.adapter.get_stop_tokens()
 
-Step 1: Identify the unit of the Input Item (e.g., "$", "kg", "C").
-Step 2: Identify the target unit from the Task.
-Step 3: CRITICAL: If the units are physically the same (e.g., Input is USD and Target is USD), DO NOT MULTIPLY. The value must remain unchanged.
-Step 4: Only apply conversion formulas if units are different (e.g., EUR to USD).
-Step 5: Output JSON with keys "reasoning", "value", and "unit".
-<|end|>
-<|assistant|>"""
-            
+        for item in misses:
+            # Use adapter to format prompt
+            prompt = self.adapter.format(instruction, item)
+
             output = None
             text = None
             try:
@@ -143,30 +192,29 @@ Step 5: Output JSON with keys "reasoning", "value", and "unit".
                     prompt=prompt,
                     grammar=self.grammar,
                     max_tokens=256,
-                    # Do NOT use '}' as stop, as it strips the closing brace needed for valid JSON.
-                    # Grammar restricts output efficiently anyway.
-                    stop=["<|end|>", "<|user|>"], 
-                    echo=False
+                    stop=stop_tokens,
+                    echo=False,
                 )
-                
-                text = output['choices'][0]['text'].strip()
-                # logger.debug(f"Raw LLM output for '{item}': {text}")
+
+                text = output["choices"][0]["text"].strip()
 
                 data = json.loads(text)
-                
+
                 if "value" in data and "unit" in data and "reasoning" in data:
-                     new_results[item] = data
+                    new_results[item] = data
                 else:
                     logger.warning(f"Result for '{item}' missing keys. Raw: {text}")
                     new_results[item] = None
 
             except json.JSONDecodeError as e:
-                logger.warning(f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text if 'text' in locals() else 'N/A'}'")
+                logger.warning(
+                    f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text if 'text' in locals() else 'N/A'}'"
+                )
                 new_results[item] = None
             except Exception as e:
                 logger.error(f"Inference error for item '{item}': {e}")
                 new_results[item] = None
-        
+
         # 4. Update Cache (only with valid results)
         valid_new_results = {k: v for k, v in new_results.items() if v is not None}
         if valid_new_results:
@@ -174,3 +222,47 @@ Step 5: Output JSON with keys "reasoning", "value", and "unit".
 
         # 5. Merge
         return {**cached_results, **new_results}
+
+
+class LocalInferenceEngine(LlamaCppEngine):
+    """
+    Deprecated alias for LlamaCppEngine.
+
+    This class is kept for backward compatibility but will be removed in a future version.
+    Use LlamaCppEngine instead.
+    """
+
+    def __init__(
+        self,
+        cache_dir: Optional[Path] = None,
+        model_name: Optional[str] = None,
+        **kwargs,
+    ):
+        """
+        Initialize LocalInferenceEngine (deprecated).
+
+        Args:
+            cache_dir: Optional custom directory for caching models.
+                       Defaults to ~/.cache/semantix.
+            model_name: Optional model name. If not provided, defaults to "phi-3-mini".
+            **kwargs: Additional arguments passed to LlamaCppEngine.
+
+        Deprecated:
+            This class is deprecated. Use LlamaCppEngine instead.
+        """
+        warnings.warn(
+            "LocalInferenceEngine is deprecated and will be removed in a future version. "
+            "Use LlamaCppEngine instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        # For backward compatibility: if model_name not provided, use default
+        if model_name is None:
+            model_name = "phi-3-mini"
+
+        super().__init__(model_name=model_name, cache_dir=cache_dir, **kwargs)
+
+        # Keep old class attributes for backward compatibility
+        self.MODEL_REPO = self.model_repo
+        self.MODEL_FILENAME = self.model_filename
