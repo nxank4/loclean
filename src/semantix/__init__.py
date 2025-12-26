@@ -28,7 +28,9 @@ def get_engine() -> LocalInferenceEngine:
 
 
 def clean(
-    df: IntoFrameT, target_col: str, instruction: str = "Extract the numeric value and unit as-is."
+    df: IntoFrameT,
+    target_col: str,
+    instruction: str = "Extract the numeric value and unit as-is.",
 ) -> IntoFrameT:
     """
     Clean a column in a DataFrame using semantic extraction.
@@ -37,7 +39,8 @@ def clean(
     Args:
         df: Input DataFrame (pandas, Polars, Modin, cuDF, PyArrow, etc.).
         target_col: Name of the column to clean.
-        instruction: Instruction to guide the LLM (e.g. 'Extract the numeric value and unit as-is.').
+        instruction: Instruction to guide the LLM
+            (e.g. 'Extract the numeric value and unit as-is.').
 
     Returns:
         DataFrame with added 'clean_value' and 'clean_unit' columns.

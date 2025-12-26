@@ -21,7 +21,8 @@ class LocalInferenceEngine(LlamaCppEngine):
     """
     Deprecated alias for LlamaCppEngine.
 
-    This class is kept for backward compatibility but will be removed in a future version.
+    This class is kept for backward compatibility but will be removed
+    in a future version.
     Use LlamaCppEngine instead.
     """
 
@@ -44,7 +45,8 @@ class LocalInferenceEngine(LlamaCppEngine):
             This class is deprecated. Use LlamaCppEngine instead.
         """
         warnings.warn(
-            "LocalInferenceEngine is deprecated and will be removed in a future version. "
+            "LocalInferenceEngine is deprecated and will be removed "
+            "in a future version. "
             "Use LlamaCppEngine instead.",
             DeprecationWarning,
             stacklevel=2,

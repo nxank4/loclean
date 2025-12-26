@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 if not logger.handlers:
     handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
@@ -82,7 +84,9 @@ class LlamaCppEngine(InferenceEngine):
 
         # Get model info from registry
         if model_name not in _MODEL_REGISTRY:
-            logger.warning(f"Model '{model_name}' not in registry. Falling back to 'phi-3-mini'.")
+            logger.warning(
+                f"Model '{model_name}' not in registry. Falling back to 'phi-3-mini'."
+            )
             model_name = "phi-3-mini"
             self.model_name = model_name
 
@@ -92,7 +96,9 @@ class LlamaCppEngine(InferenceEngine):
 
         # Get prompt adapter based on model name
         self.adapter: PromptAdapter = get_adapter(model_name)
-        logger.info(f"Using adapter: {type(self.adapter).__name__} for model: {model_name}")
+        logger.info(
+            f"Using adapter: {type(self.adapter).__name__} for model: {model_name}"
+        )
 
         # Get model path (download if needed)
         self.model_path = self._get_model_path()
@@ -134,7 +140,8 @@ class LlamaCppEngine(InferenceEngine):
 
     def _get_json_grammar(self) -> LlamaGrammar:
         """
-        Returns a GBNF grammar enforcing {"reasoning": <string>, "value": <number>, "unit": <string>}.
+        Returns a GBNF grammar enforcing
+        {"reasoning": <string>, "value": <number>, "unit": <string>}.
 
         Loads grammar from resources/grammars/json.gbnf using importlib.resources
         for zip-safe compatibility.
@@ -162,7 +169,8 @@ class LlamaCppEngine(InferenceEngine):
             instruction: User-defined instruction for the task.
 
         Returns:
-            Dictionary mapping original_string -> {"reasoning": str, "value": float, "unit": str} or None.
+            Dictionary mapping original_string ->
+            {"reasoning": str, "value": float, "unit": str} or None.
         """
         # 1. Check Cache
         cached_results = self.cache.get_batch(items, instruction)
@@ -205,8 +213,10 @@ class LlamaCppEngine(InferenceEngine):
                     new_results[item] = None
 
             except json.JSONDecodeError as e:
+                raw_text = text if "text" in locals() else "N/A"
                 logger.warning(
-                    f"Failed to decode JSON for item '{item}': {e}. Raw text: '{text if 'text' in locals() else 'N/A'}'"
+                    f"Failed to decode JSON for item '{item}': {e}. "
+                    f"Raw text: '{raw_text}'"
                 )
                 new_results[item] = None
             except Exception as e:
@@ -216,8 +226,9 @@ class LlamaCppEngine(InferenceEngine):
         # 4. Update Cache (only with valid results)
         valid_new_results = {k: v for k, v in new_results.items() if v is not None}
         if valid_new_results:
-            self.cache.set_batch(list(valid_new_results.keys()), instruction, valid_new_results)
+            self.cache.set_batch(
+                list(valid_new_results.keys()), instruction, valid_new_results
+            )
 
         # 5. Merge
         return {**cached_results, **new_results}
-

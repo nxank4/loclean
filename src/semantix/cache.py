@@ -1,11 +1,12 @@
-import sqlite3
-import json
 import hashlib
+import json
 import logging
+import sqlite3
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
 
 class SemantixCache:
     """
@@ -15,7 +16,7 @@ class SemantixCache:
     def __init__(self, cache_dir: Optional[Path] = None):
         """
         Initialize the cache.
-        
+
         Args:
             cache_dir: Optional directory for the cache database.
                        Defaults to ~/.cache/semantix.
@@ -27,7 +28,7 @@ class SemantixCache:
 
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.db_path = self.cache_dir / "cache.db"
-        
+
         # Connect to SQLite, identifying it as thread-safe enough for our use
         self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
         self._init_db()
@@ -69,20 +70,23 @@ class SemantixCache:
         """
         item_map = {self._hash(item, instruction): item for item in items}
         hashes = list(item_map.keys())
-        
+
         if not hashes:
             return {}
 
         placeholders = ",".join(["?"] * len(hashes))
-        query = f"SELECT hash_key, json_response FROM inference_cache WHERE hash_key IN ({placeholders})"
-        
+        query = (
+            f"SELECT hash_key, json_response FROM inference_cache "
+            f"WHERE hash_key IN ({placeholders})"
+        )
+
         cursor = self.conn.cursor()
         results = {}
-        
+
         try:
             cursor.execute(query, hashes)
             rows = cursor.fetchall()
-            
+
             for hash_key, json_str in rows:
                 original_text = item_map.get(hash_key)
                 if original_text:
@@ -125,10 +129,11 @@ class SemantixCache:
 
         cursor = self.conn.cursor()
         try:
-            cursor.executemany(
-                "INSERT OR IGNORE INTO inference_cache (hash_key, json_response) VALUES (?, ?)", 
-                data_to_insert
+            insert_query = (
+                "INSERT OR IGNORE INTO inference_cache "
+                "(hash_key, json_response) VALUES (?, ?)"
             )
+            cursor.executemany(insert_query, data_to_insert)
             self.conn.commit()
         except Exception as e:
             logger.error(f"Error writing to cache: {e}")

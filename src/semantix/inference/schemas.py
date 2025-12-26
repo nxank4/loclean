@@ -25,7 +25,12 @@ class ExtractionResult(BaseModel):
     )
 
     reasoning: str = Field(
-        ..., description="Explanation of how the value and unit were extracted from the input"
+        ...,
+        description=(
+            "Explanation of how the value and unit were extracted from the input"
+        ),
     )
     value: float = Field(..., description="The extracted numeric value")
-    unit: str = Field(..., description="The unit of measurement (e.g., 'kg', 'USD', 'C', 'm')")
+    unit: str = Field(
+        ..., description="The unit of measurement (e.g., 'kg', 'USD', 'C', 'm')"
+    )
