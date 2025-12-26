@@ -40,9 +40,12 @@ def mock_grammar():
 @pytest.fixture
 def mock_grammar_class(mock_grammar):
     """Patch LlamaGrammar class to return mock instance."""
-    with patch("semantix.inference.local.llama_cpp.LlamaGrammar", return_value=mock_grammar):
+    with patch(
+        "semantix.inference.local.llama_cpp.LlamaGrammar", return_value=mock_grammar
+    ):
         with patch(
-            "semantix.inference.local.llama_cpp.LlamaGrammar.from_string", return_value=mock_grammar
+            "semantix.inference.local.llama_cpp.LlamaGrammar.from_string",
+            return_value=mock_grammar,
         ):
             yield mock_grammar
 
@@ -79,7 +82,8 @@ def mock_model_path(temp_cache_dir):
 def mock_hf_download(mock_model_path):
     """Patch hf_hub_download to return mock model path."""
     with patch(
-        "semantix.inference.local.llama_cpp.hf_hub_download", return_value=str(mock_model_path)
+        "semantix.inference.local.llama_cpp.hf_hub_download",
+        return_value=str(mock_model_path),
     ):
         yield
 
@@ -115,7 +119,10 @@ class TestLlamaCppEngine:
         mock_hf_download,
     ):
         """Test LlamaCppEngine initialization with default cache directory."""
-        with patch("semantix.inference.local.llama_cpp.Path.home", return_value=Path("/home/test")):
+        with patch(
+            "semantix.inference.local.llama_cpp.Path.home",
+            return_value=Path("/home/test"),
+        ):
             with patch("pathlib.Path.mkdir"):  # Patch mkdir to avoid permission errors
                 with patch(
                     "semantix.inference.local.llama_cpp.hf_hub_download",
@@ -123,7 +130,9 @@ class TestLlamaCppEngine:
                 ):
                     engine = LlamaCppEngine()
 
-                    assert engine.cache_dir == Path("/home/test") / ".cache" / "semantix"
+                    assert (
+                        engine.cache_dir == Path("/home/test") / ".cache" / "semantix"
+                    )
                     assert engine.model_path == mock_model_path
 
     def test_init_with_model_name(
@@ -152,9 +161,12 @@ class TestLlamaCppEngine:
         mock_cache_class,
         mock_hf_download,
     ):
-        """Test LlamaCppEngine falls back to default model when unknown model is provided."""
+        """Test LlamaCppEngine falls back to default model when
+        unknown model is provided."""
         with patch("semantix.inference.local.llama_cpp.logger") as mock_logger:
-            engine = LlamaCppEngine(model_name="unknown-model", cache_dir=temp_cache_dir)
+            engine = LlamaCppEngine(
+                model_name="unknown-model", cache_dir=temp_cache_dir
+            )
 
             assert engine.model_name == "phi-3-mini"
             mock_logger.warning.assert_called_once()
@@ -169,11 +181,15 @@ class TestLlamaCppEngine:
         mock_hf_download,
     ):
         """Test LlamaCppEngine initialization with custom n_ctx and n_gpu_layers."""
-        with patch("semantix.inference.local.llama_cpp.Llama") as mock_llama_constructor:
+        with patch(
+            "semantix.inference.local.llama_cpp.Llama"
+        ) as mock_llama_constructor:
             mock_llama_instance = Mock()
             mock_llama_constructor.return_value = mock_llama_instance
 
-            engine = LlamaCppEngine(cache_dir=temp_cache_dir, n_ctx=8192, n_gpu_layers=10)
+            engine = LlamaCppEngine(
+                cache_dir=temp_cache_dir, n_ctx=8192, n_gpu_layers=10
+            )
 
             assert engine.llm is not None
             mock_llama_constructor.assert_called_once_with(
@@ -203,14 +219,18 @@ class TestLlamaCppEngine:
 
     def test_get_model_path_downloads_when_missing(self, temp_cache_dir):
         """Test _get_model_path downloads model when missing."""
-        with patch("semantix.inference.local.llama_cpp.Path.exists", return_value=False):
+        with patch(
+            "semantix.inference.local.llama_cpp.Path.exists", return_value=False
+        ):
             with patch("semantix.inference.local.llama_cpp.Llama"):
                 with patch("semantix.inference.local.llama_cpp.LlamaGrammar"):
                     with patch("semantix.cache.SemantixCache"):
                         with patch(
                             "semantix.inference.local.llama_cpp.hf_hub_download"
                         ) as mock_download:
-                            mock_download.return_value = str(temp_cache_dir / "downloaded.gguf")
+                            mock_download.return_value = str(
+                                temp_cache_dir / "downloaded.gguf"
+                            )
                             engine = LlamaCppEngine(cache_dir=temp_cache_dir)
                             path = engine._get_model_path()
 
@@ -229,9 +249,13 @@ class TestLlamaCppEngine:
         """Test _get_json_grammar loads grammar from resources."""
         with patch("semantix.utils.resources.load_grammar") as mock_load_grammar:
             mock_load_grammar.return_value = "root ::= object"
-            with patch("semantix.inference.local.llama_cpp.LlamaGrammar") as mock_grammar_class:
+            with patch(
+                "semantix.inference.local.llama_cpp.LlamaGrammar"
+            ) as mock_grammar_class:
                 mock_grammar_instance = Mock()
-                mock_grammar_class.from_string = Mock(return_value=mock_grammar_instance)
+                mock_grammar_class.from_string = Mock(
+                    return_value=mock_grammar_instance
+                )
 
                 engine = LlamaCppEngine(cache_dir=temp_cache_dir)
                 # Reset mocks after initialization (grammar is loaded in __init__)
@@ -256,15 +280,21 @@ class TestLlamaCppEngine:
         """Test that correct adapter is selected for different models."""
         with patch("semantix.inference.local.llama_cpp.Path.exists", return_value=True):
             # Test Phi-3 model
-            engine_phi = LlamaCppEngine(model_name="phi-3-mini", cache_dir=temp_cache_dir)
+            engine_phi = LlamaCppEngine(
+                model_name="phi-3-mini", cache_dir=temp_cache_dir
+            )
             assert isinstance(engine_phi.adapter, Phi3Adapter)
 
             # Test Qwen model
-            engine_qwen = LlamaCppEngine(model_name="qwen3-4b", cache_dir=temp_cache_dir)
+            engine_qwen = LlamaCppEngine(
+                model_name="qwen3-4b", cache_dir=temp_cache_dir
+            )
             assert isinstance(engine_qwen.adapter, QwenAdapter)
 
             # Test Gemma model (should use LlamaAdapter)
-            engine_gemma = LlamaCppEngine(model_name="gemma-3-4b", cache_dir=temp_cache_dir)
+            engine_gemma = LlamaCppEngine(
+                model_name="gemma-3-4b", cache_dir=temp_cache_dir
+            )
             assert isinstance(engine_gemma.adapter, LlamaAdapter)
 
     def test_clean_batch_uses_adapter(
@@ -351,7 +381,9 @@ class TestLlamaCppEngine:
         """Test clean_batch successfully processes items through inference."""
         mock_llama = mock_llama_class
         mock_llama.create_completion.return_value = {
-            "choices": [{"text": '{"reasoning": "Extracted", "value": 5.5, "unit": "kg"}'}]
+            "choices": [
+                {"text": '{"reasoning": "Extracted", "value": 5.5, "unit": "kg"}'}
+            ]
         }
 
         engine = LlamaCppEngine(cache_dir=temp_cache_dir)
@@ -375,7 +407,9 @@ class TestLlamaCppEngine:
     ):
         """Test clean_batch handles JSON decode errors gracefully."""
         mock_llama = mock_llama_class
-        mock_llama.create_completion.return_value = {"choices": [{"text": "invalid json"}]}
+        mock_llama.create_completion.return_value = {
+            "choices": [{"text": "invalid json"}]
+        }
 
         engine = LlamaCppEngine(cache_dir=temp_cache_dir)
         result = engine.clean_batch(["5.5kg"], "Extract value and unit")
@@ -439,7 +473,9 @@ class TestLlamaCppEngine:
         ]
 
         engine = LlamaCppEngine(cache_dir=temp_cache_dir)
-        result = engine.clean_batch(["5.5kg", "invalid", "10m"], "Extract value and unit")
+        result = engine.clean_batch(
+            ["5.5kg", "invalid", "10m"], "Extract value and unit"
+        )
 
         assert result["5.5kg"] == {"reasoning": "ok", "value": 5.5, "unit": "kg"}
         assert result["invalid"] is None

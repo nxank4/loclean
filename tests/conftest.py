@@ -1,6 +1,6 @@
-import pytest
 import polars as pl
-from pathlib import Path
+import pytest
+
 
 @pytest.fixture
 def temp_cache_db(tmp_path):
@@ -10,12 +10,10 @@ def temp_cache_db(tmp_path):
     """
     return tmp_path / "test_semantix_cache.db"
 
+
 @pytest.fixture
 def messy_df():
     """
     Returns a Polars DataFrame with messy data for integration tests.
     """
-    return pl.DataFrame({
-        "weight": ["10kg", "500g"],
-        "price": ["$10", "20 EUR"]
-    })
+    return pl.DataFrame({"weight": ["10kg", "500g"], "price": ["$10", "20 EUR"]})

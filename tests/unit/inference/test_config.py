@@ -153,7 +153,9 @@ class TestLoadFromEnv:
     def test_load_no_env_variables(self):
         """Test loading when no environment variables are set."""
         # Remove all SEMANTIX_* env vars
-        env_to_remove = [key for key in os.environ.keys() if key.startswith("SEMANTIX_")]
+        env_to_remove = [
+            key for key in os.environ.keys() if key.startswith("SEMANTIX_")
+        ]
         with patch.dict(os.environ, {}, clear=False):
             for key in env_to_remove:
                 os.environ.pop(key, None)
@@ -200,7 +202,8 @@ n_ctx = 2048
             assert config == {}
 
     def test_load_from_pyproject_toml_without_semantix_section(self, tmp_path):
-        """Test loading when pyproject.toml exists but has no [tool.semantix] section."""
+        """Test loading when pyproject.toml exists but has no
+        [tool.semantix] section."""
         pyproject_content = """
 [project]
 name = "test"
@@ -220,12 +223,16 @@ class TestLoadConfig:
     def test_load_with_defaults(self):
         """Test loading config with only defaults."""
         # Clear environment variables
-        env_to_remove = [key for key in os.environ.keys() if key.startswith("SEMANTIX_")]
+        env_to_remove = [
+            key for key in os.environ.keys() if key.startswith("SEMANTIX_")
+        ]
         with patch.dict(os.environ, {}, clear=False):
             for key in env_to_remove:
                 os.environ.pop(key, None)
 
-            with patch("semantix.inference.config._load_from_pyproject_toml", return_value={}):
+            with patch(
+                "semantix.inference.config._load_from_pyproject_toml", return_value={}
+            ):
                 config = load_config()
                 assert config.engine == "llama-cpp"
                 assert config.model == "phi-3-mini-4k-instruct"
@@ -271,7 +278,9 @@ class TestLoadConfig:
 
     def test_load_with_file_config(self):
         """Test that file config is used when env vars are not set."""
-        env_to_remove = [key for key in os.environ.keys() if key.startswith("SEMANTIX_")]
+        env_to_remove = [
+            key for key in os.environ.keys() if key.startswith("SEMANTIX_")
+        ]
         with patch.dict(os.environ, {}, clear=False):
             for key in env_to_remove:
                 os.environ.pop(key, None)
