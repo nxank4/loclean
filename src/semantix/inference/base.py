@@ -1,7 +1,8 @@
 """Base abstract class for inference engines.
 
-This module defines the InferenceEngine abstract base class that all inference
-backends must implement, ensuring a consistent interface across local and cloud providers.
+This module defines the InferenceEngine abstract base class that all
+inference backends must implement, ensuring a consistent interface across
+local and cloud providers.
 """
 
 from abc import ABC, abstractmethod

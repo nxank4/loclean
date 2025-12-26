@@ -25,7 +25,8 @@ class NarwhalsEngine:
         batch_size: int = 50,
     ) -> IntoFrameT:
         """
-        Clean a specific column using the inference engine with batching and progress tracking.
+        Clean a specific column using the inference engine with batching
+        and progress tracking.
         """
         # Wrap native DataFrame into Narwhals DataFrame
         df = nw.from_native(df_native)
@@ -36,7 +37,9 @@ class NarwhalsEngine:
 
         # 1. Extract unique values using fluent API
         # We explicitly cast to String to ensure consistency with the AI's input
-        unique_df_native = df.select(nw.col(col_name).cast(nw.String)).unique().to_native()
+        unique_df_native = (
+            df.select(nw.col(col_name).cast(nw.String)).unique().to_native()
+        )
 
         # Extract column values - handle different backends
         # Polars: unique_df_native[col_name].to_list()
@@ -53,16 +56,21 @@ class NarwhalsEngine:
             # Polars or other backends
             col_values = unique_df_native[col_name].to_list()
 
-        uniques: List[str] = [str(x) for x in col_values if x is not None and str(x).strip() != ""]
+        uniques: List[str] = [
+            str(x) for x in col_values if x is not None and str(x).strip() != ""
+        ]
 
         logger.info(f"Found {len(uniques)} unique patterns to clean in '{col_name}'.")
 
         if not uniques:
-            logger.warning("No valid unique values found. Returning original DataFrame.")
+            logger.warning(
+                "No valid unique values found. Returning original DataFrame."
+            )
             return df_native
 
         # 2. Batch Processing with Progress Bar
-        # Type the results dictionary: Key is original string, Value is the JSON dict from AI
+        # Type the results dictionary: Key is original string,
+        # Value is the JSON dict from AI
         mapping_results: Dict[str, Optional[Dict[str, Any]]] = {}
 
         # Type the chunks explicitly
@@ -75,8 +83,8 @@ class NarwhalsEngine:
 
         for chunk in tqdm(chunks, desc="Inference Batches", unit="batch"):
             # clean_batch returns Dict[str, Dict[str, Any]]
-            batch_result: Dict[str, Optional[Dict[str, Any]]] = inference_engine.clean_batch(
-                chunk, instruction=instruction
+            batch_result: Dict[str, Optional[Dict[str, Any]]] = (
+                inference_engine.clean_batch(chunk, instruction=instruction)
             )
             mapping_results.update(batch_result)
 
@@ -96,7 +104,9 @@ class NarwhalsEngine:
                 clean_units.append(None)
 
         if not keys:
-            logger.warning("No concepts were successfully extracted. Returning original DataFrame.")
+            logger.warning(
+                "No concepts were successfully extracted. Returning original DataFrame."
+            )
             return df_native
 
         # 4. Create Mapping DataFrame using the same native backend as the input
@@ -110,7 +120,8 @@ class NarwhalsEngine:
                 }
             )
         except TypeError:
-            # Fallback: if constructor signature is different, try pandas-style DataFrame
+            # Fallback: if constructor signature is different,
+            # try pandas-style DataFrame
             import pandas as pd
 
             logger.warning("Fallback to pandas-style DataFrame")
@@ -124,8 +135,15 @@ class NarwhalsEngine:
         try:
             # Create a temporary join key to handle type mismatches (e.g. Int vs String)
             result_df = (
-                df.with_columns(nw.col(col_name).cast(nw.String).alias(f"{col_name}_join_key"))
-                .join(map_df, left_on=f"{col_name}_join_key", right_on=col_name, how="left")
+                df.with_columns(
+                    nw.col(col_name).cast(nw.String).alias(f"{col_name}_join_key")
+                )
+                .join(
+                    map_df,
+                    left_on=f"{col_name}_join_key",
+                    right_on=col_name,
+                    how="left",
+                )
                 .drop(f"{col_name}_join_key")
                 .to_native()
             )

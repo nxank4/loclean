@@ -3,10 +3,10 @@
 import pytest
 
 from semantix.utils.resources import (
-    load_grammar,
-    load_template,
     list_grammars,
     list_templates,
+    load_grammar,
+    load_template,
 )
 
 
@@ -77,4 +77,3 @@ class TestListResources:
         assert isinstance(templates, list)
         # Currently no templates, but function should work
         assert all(t.endswith(".j2") for t in templates) if templates else True
-

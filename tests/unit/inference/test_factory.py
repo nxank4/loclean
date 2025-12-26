@@ -52,7 +52,8 @@ def mock_model_path(temp_cache_dir):
 @pytest.fixture
 def mock_hf_download(mock_model_path):
     with patch(
-        "semantix.inference.local.llama_cpp.hf_hub_download", return_value=str(mock_model_path)
+        "semantix.inference.local.llama_cpp.hf_hub_download",
+        return_value=str(mock_model_path),
     ):
         yield
 
@@ -179,7 +180,9 @@ class TestCreateEngine:
             n_gpu_layers=5,
         )
 
-        with patch("semantix.inference.local.llama_cpp.LlamaCppEngine") as mock_engine_class:
+        with patch(
+            "semantix.inference.local.llama_cpp.LlamaCppEngine"
+        ) as mock_engine_class:
             mock_engine_instance = Mock()
             mock_engine_class.return_value = mock_engine_instance
 
@@ -299,4 +302,6 @@ class TestCreateEngine:
 
                 assert "Failed to load model" in str(exc_info.value)
                 mock_logger.error.assert_called_once()
-                assert "Failed to create LlamaCppEngine" in str(mock_logger.error.call_args)
+                assert "Failed to create LlamaCppEngine" in str(
+                    mock_logger.error.call_args
+                )

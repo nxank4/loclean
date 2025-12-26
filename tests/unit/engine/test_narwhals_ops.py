@@ -35,7 +35,10 @@ def mock_inference_engine():
 def sample_polars_df():
     """Sample Polars DataFrame cho testing."""
     return pl.DataFrame(
-        {"weight": ["10kg", "500g", "10kg", "2kg", "500g"], "other_col": [1, 2, 3, 4, 5]}
+        {
+            "weight": ["10kg", "500g", "10kg", "2kg", "500g"],
+            "other_col": [1, 2, 3, 4, 5],
+        }
     )
 
 
@@ -45,7 +48,10 @@ def sample_pandas_df():
     if not HAS_PANDAS:
         pytest.skip("pandas not installed")
     return pd.DataFrame(
-        {"weight": ["10kg", "500g", "10kg", "2kg", "500g"], "other_col": [1, 2, 3, 4, 5]}
+        {
+            "weight": ["10kg", "500g", "10kg", "2kg", "500g"],
+            "other_col": [1, 2, 3, 4, 5],
+        }
     )
 
 
@@ -104,7 +110,9 @@ def test_process_column_empty_unique_values(mock_inference_engine):
     # DataFrame với chỉ None và empty strings
     df = pl.DataFrame({"weight": [None, "", "   ", None]})
 
-    result = NarwhalsEngine.process_column(df, "weight", mock_inference_engine, "Extract weight")
+    result = NarwhalsEngine.process_column(
+        df, "weight", mock_inference_engine, "Extract weight"
+    )
 
     # Nên trả về DataFrame gốc
     assert isinstance(result, pl.DataFrame)
@@ -183,7 +191,9 @@ def test_process_column_with_none_results(mock_inference_engine):
 
     mock_inference_engine.clean_batch = Mock(side_effect=mock_clean_batch_with_none)
 
-    result = NarwhalsEngine.process_column(df, "weight", mock_inference_engine, "Extract weight")
+    result = NarwhalsEngine.process_column(
+        df, "weight", mock_inference_engine, "Extract weight"
+    )
 
     # Kiểm tra result vẫn có columns
     assert "clean_value" in result.columns
@@ -204,7 +214,9 @@ def test_process_column_no_keys_extracted(mock_inference_engine):
 
     mock_inference_engine.clean_batch = Mock(side_effect=mock_clean_batch_all_none)
 
-    result = NarwhalsEngine.process_column(df, "weight", mock_inference_engine, "Extract weight")
+    result = NarwhalsEngine.process_column(
+        df, "weight", mock_inference_engine, "Extract weight"
+    )
 
     # Nên trả về DataFrame gốc khi không có keys hợp lệ
     assert isinstance(result, pl.DataFrame)
