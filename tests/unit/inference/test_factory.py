@@ -7,7 +7,7 @@ import pytest
 from semantix.inference.base import InferenceEngine
 from semantix.inference.config import EngineConfig
 from semantix.inference.factory import create_engine
-from semantix.inference.manager import LlamaCppEngine
+from semantix.inference.local.llama_cpp import LlamaCppEngine
 
 
 @pytest.fixture
@@ -24,14 +24,14 @@ def mock_llama():
 
 @pytest.fixture
 def mock_llama_class(mock_llama):
-    with patch("semantix.inference.manager.Llama", return_value=mock_llama):
+    with patch("semantix.inference.local.llama_cpp.Llama", return_value=mock_llama):
         yield mock_llama
 
 
 @pytest.fixture
 def mock_grammar_class():
-    with patch("semantix.inference.manager.LlamaGrammar"):
-        with patch("semantix.inference.manager.LlamaGrammar.from_string"):
+    with patch("semantix.inference.local.llama_cpp.LlamaGrammar"):
+        with patch("semantix.inference.local.llama_cpp.LlamaGrammar.from_string"):
             yield
 
 
@@ -51,7 +51,9 @@ def mock_model_path(temp_cache_dir):
 
 @pytest.fixture
 def mock_hf_download(mock_model_path):
-    with patch("semantix.inference.manager.hf_hub_download", return_value=str(mock_model_path)):
+    with patch(
+        "semantix.inference.local.llama_cpp.hf_hub_download", return_value=str(mock_model_path)
+    ):
         yield
 
 
@@ -115,7 +117,7 @@ class TestCreateEngine:
             n_gpu_layers=10,
         )
 
-        with patch("semantix.inference.manager.Llama") as mock_llama:
+        with patch("semantix.inference.local.llama_cpp.Llama") as mock_llama:
             mock_llama_instance = Mock()
             mock_llama.return_value = mock_llama_instance
 
@@ -177,7 +179,7 @@ class TestCreateEngine:
             n_gpu_layers=5,
         )
 
-        with patch("semantix.inference.manager.LlamaCppEngine") as mock_engine_class:
+        with patch("semantix.inference.local.llama_cpp.LlamaCppEngine") as mock_engine_class:
             mock_engine_instance = Mock()
             mock_engine_class.return_value = mock_engine_instance
 
@@ -208,7 +210,7 @@ class TestCreateEngine:
         assert "LlamaCppEngine" not in dir(factory_module)
 
         # But should be importable when create_engine is called
-        with patch("semantix.inference.manager.Llama"):
+        with patch("semantix.inference.local.llama_cpp.Llama"):
             engine = create_engine(config)
             assert isinstance(engine, LlamaCppEngine)
 
@@ -276,3 +278,25 @@ class TestCreateEngine:
         assert isinstance(engine, InferenceEngine)
         assert hasattr(engine, "clean_batch")
         assert callable(engine.clean_batch)
+
+    def test_create_engine_handles_engine_initialization_error(
+        self,
+        temp_cache_dir,
+        mock_model_path,
+        mock_grammar_class,
+        mock_cache_class,
+        mock_hf_download,
+    ):
+        """Test that create_engine handles engine initialization errors."""
+        config = EngineConfig(engine="llama-cpp", cache_dir=temp_cache_dir)
+
+        with patch("semantix.inference.local.llama_cpp.Llama") as mock_llama:
+            mock_llama.side_effect = RuntimeError("Failed to load model")
+
+            with patch("semantix.inference.factory.logger") as mock_logger:
+                with pytest.raises(RuntimeError) as exc_info:
+                    create_engine(config)
+
+                assert "Failed to load model" in str(exc_info.value)
+                mock_logger.error.assert_called_once()
+                assert "Failed to create LlamaCppEngine" in str(mock_logger.error.call_args)
