@@ -11,8 +11,67 @@ _in progress..._
 
 ## 🚀 Installation
 
+### Requirements
+
+- Python 3.10 or higher
+- No GPU required (runs on CPU by default)
+
+### Basic Installation
+
+**Using pip:**
+
 ```bash
 pip install semantix
+```
+
+**Using uv (recommended for faster installs):**
+
+```bash
+uv pip install semantix
+```
+
+**Using conda/mamba:**
+
+```bash
+conda install -c conda-forge semantix
+# or
+mamba install -c conda-forge semantix
+```
+
+### Optional Dependencies
+
+**For DataFrame operations (Pandas, Polars, PyArrow):**
+
+```bash
+pip install semantix[data]
+```
+
+**For Cloud API support (OpenAI, Anthropic, Gemini):**
+
+```bash
+pip install semantix[cloud]
+```
+
+**Install everything:**
+
+```bash
+pip install semantix[all]
+```
+
+### Development Installation
+
+To contribute or run tests locally:
+
+```bash
+# Clone the repository
+git clone https://github.com/nxank4/semantix.git
+cd semantix
+
+# Install with development dependencies (using uv)
+uv sync --dev
+
+# Or using pip
+pip install -e ".[dev]"
 ```
 
 ## ⚡ Quick Start
@@ -31,7 +90,7 @@ The development of Semantix is focused on three key areas: **Reliability**, **Pr
 
 **Goal: Build a deterministic and smart cleaning engine.**
 
-- [ ] **Strict Schema Mode**: Guarantee valid outputs by forcing the LLM to adhere to **Pydantic** models using GBNF grammar (eliminates JSON parsing errors).
+- [x] **Strict Schema Mode**: Guarantee valid outputs by forcing the LLM to adhere to **Pydantic** models using GBNF grammar (eliminates JSON parsing errors).
 - [ ] **Contextual Imputation**: Fill `null` values intelligently by reasoning over surrounding column context (e.g., inferring `State` from `Zip Code`).
 - [ ] **Entity Canonicalization**: Map messy variations (e.g., "Apple Inc.", "apple comp", "AAPL") to a single "Golden Record" standard.
 
@@ -41,7 +100,7 @@ The development of Semantix is focused on three key areas: **Reliability**, **Pr
 
 - [ ] **Unstructured Extraction**: Parse free-text fields (Logs, Bios, Reviews) into structured tabular data.
 - [ ] **Semantic PII Redaction**: Automatically detect and mask sensitive entities (Names, SSNs, Emails) locally to ensure data privacy.
-- [ ] **Semantic Outlier Detection**: Flag values that are *statistically* normal but *contextually* impossible (e.g., "Age: 200").
+- [ ] **Semantic Outlier Detection**: Flag values that are _statistically_ normal but _contextually_ impossible (e.g., "Age: 200").
 
 ### 📍 Phase 3: Ecosystem & DX
 
