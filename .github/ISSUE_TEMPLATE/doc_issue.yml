@@ -1,0 +1,22 @@
+name: 📚 Documentation Issue
+description: Report a typo, missing info, or confusing section in docs
+title: "[Docs]: "
+labels: ["documentation", "triage"]
+body:
+  - type: textarea
+    id: location
+    attributes:
+      label: Where is the issue?
+      description: Link to the page or section title.
+      placeholder: https://semantix.ai/docs/advanced/
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggestion
+      description: How should we fix it?
+      placeholder: Change "pandas" to "narwhals" in line 40...
+    validations:
+      required: true
