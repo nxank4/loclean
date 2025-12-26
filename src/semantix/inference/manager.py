@@ -137,16 +137,15 @@ class LlamaCppEngine(InferenceEngine):
         """
         Returns a GBNF grammar enforcing {"reasoning": <string>, "value": <number>, "unit": <string>}.
 
+        Loads grammar from resources/grammars/json.gbnf using importlib.resources
+        for zip-safe compatibility.
+
         Returns:
             LlamaGrammar instance for JSON extraction.
         """
-        grammar_str = r"""
-            root   ::= object
-            object ::= "{" ws "\"reasoning\"" ws ":" ws string "," ws "\"value\"" ws ":" ws number "," ws "\"unit\"" ws ":" ws string ws "}"
-            number ::= ("-"? ([0-9]+ ("." [0-9]+)?))
-            string ::= "\"" ([^"]*) "\""
-            ws     ::= [ \t\n]*
-        """
+        from semantix.utils.resources import load_grammar
+
+        grammar_str = load_grammar("json.gbnf")
         return LlamaGrammar.from_string(grammar_str)
 
     def clean_batch(
