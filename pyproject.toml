@@ -3,13 +3,16 @@ name = "semantix"
 version = "0.1.0"
 description = "High-performance semantic data cleaning library"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "polars>=0.20.0",
     "llama-cpp-python>=0.2.23",
     "huggingface_hub>=0.20.0",
     "tqdm>=4.66.0",
-    "pytest>=7.0.0"
+    "pytest>=7.0.0",
+    "narwhals>=2.14.0",
+    "pyarrow>=22.0.0",
+    "pandas>=2.3.3",
 ]
 
 [tool.pytest.ini_options]
