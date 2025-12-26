@@ -1,6 +1,7 @@
 from typing import Optional
-import polars as pl
-from semantix.engine.polars_ops import PolarsEngine
+import narwhals as nw
+from narwhals.typing import IntoFrameT
+from semantix.engine.narwhals_ops import NarwhalsEngine
 from semantix.inference.manager import LocalInferenceEngine
 
 # Global singleton instance
@@ -20,23 +21,26 @@ def get_engine() -> LocalInferenceEngine:
     return _ENGINE_INSTANCE
 
 def clean(
-    df: pl.DataFrame, 
+    df: IntoFrameT, 
     target_col: str, 
     instruction: str = "Extract the numeric value and unit as-is."
-) -> pl.DataFrame:
+) -> IntoFrameT:
     """
-    Clean a column in a Polars DataFrame using semantic extraction.
+    Clean a column in a DataFrame using semantic extraction.
+    Supports pandas, Polars, Modin, cuDF, PyArrow, and other backends via Narwhals.
 
     Args:
-        df: Input Polars DataFrame.
+        df: Input DataFrame (pandas, Polars, Modin, cuDF, PyArrow, etc.).
         target_col: Name of the column to clean.
         instruction: Instruction to guide the LLM (e.g. 'Extract the numeric value and unit as-is.').
 
     Returns:
         DataFrame with added 'clean_value' and 'clean_unit' columns.
+        Return type matches input type (pandas -> pandas, Polars -> Polars, etc.)
     """
-    if target_col not in df.columns:
+    df_nw = nw.from_native(df)
+    if target_col not in df_nw.columns:
         raise ValueError(f"Column '{target_col}' not found in DataFrame")
     
     engine = get_engine()
-    return PolarsEngine.process_column(df, target_col, engine, instruction)
+    return NarwhalsEngine.process_column(df, target_col, engine, instruction)
