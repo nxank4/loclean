@@ -13,6 +13,7 @@ dependencies = [
     "narwhals>=2.14.0",
     "pyarrow>=22.0.0",
     "pandas>=2.3.3",
+    "pydantic>=2.12.5",
 ]
 
 [tool.pytest.ini_options]
