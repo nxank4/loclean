@@ -14,7 +14,7 @@ def naive_llm_call(text: str) -> None:
     time.sleep(0.1)
 
 
-def run_benchmark():
+def run_benchmark() -> None:
     # Reduced slightly for quicker iterative testing, but large enough
     ROWS = 10_000
     UNIQUE_PATTERNS = 100
