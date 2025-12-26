@@ -1,0 +1,6 @@
+root   ::= object
+object ::= "{" ws "\"reasoning\"" ws ":" ws string "," ws "\"value\"" ws ":" ws number "," ws "\"unit\"" ws ":" ws string ws "}"
+number ::= ("-"? ([0-9]+ ("." [0-9]+)?))
+string ::= "\"" ([^"]*) "\""
+ws     ::= [ \t\n]*
+
