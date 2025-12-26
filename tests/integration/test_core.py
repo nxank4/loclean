@@ -15,13 +15,12 @@ def test_clean_pipeline_weight(messy_df):
     # but that breaks the rule "Test Suite ... ensures tests don't mess up the user's
     # real ~/.cache/semantix".
 
-    # We can patch the cache_dir in the engine if we want, or we can instantiate
-    # a new engine and pass it to clean if clean allowed it.
+    # We can patch the cache_dir in the engine if we want, or we can instantiate a new engine
+    # and pass it to clean if clean allowed it.
     # Looking at `semantix.__init__.py`, `clean` calls `get_engine()`.
 
-    # A simple way to isolate is to patch
-    # `semantix.inference.manager.LocalInferenceEngine` or the singleton
-    # `semantix._ENGINE_INSTANCE` at the start of the test.
+    # A simple way to isolate is to patch `semantix.inference.manager.LocalInferenceEngine` or
+    # the singleton `semantix._ENGINE_INSTANCE` at the start of the test.
 
     # For now, let's proceed with the test logic assuming the environment handles it
     # or we accept it.

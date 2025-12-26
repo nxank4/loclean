@@ -74,16 +74,10 @@ def run_benchmark():
 
     # 5. Reporting
     vector_speedup = projected_naive_time / actual_semantix_time
-    cache_speedup = actual_semantix_time / (
-        actual_cache_time if actual_cache_time > 0 else 0.001
-    )
+    cache_speedup = actual_semantix_time / (actual_cache_time if actual_cache_time > 0 else 0.001)
 
-    print("\n" + "=" * 80)
-    metric_header = (
-        f"{'METRIC':<25} | {'NAIVE (Est.)':<15} | "
-        f"{'SEMANTIX (Run 1)':<20} | {'CACHE (Run 2)':<15}"
-    )
-    print(metric_header)
+    print("\n" + "="*80)
+    print(f"{'METRIC':<25} | {'NAIVE (Est.)':<15} | {'SEMANTIX (Run 1)':<20} | {'CACHE (Run 2)':<15}")
     print("-" * 80)
     time_row = (
         f"{'Time':<25} | {projected_naive_time:<15.2f}s | "

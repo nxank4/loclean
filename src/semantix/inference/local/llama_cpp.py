@@ -140,8 +140,7 @@ class LlamaCppEngine(InferenceEngine):
 
     def _get_json_grammar(self) -> LlamaGrammar:
         """
-        Returns a GBNF grammar enforcing {"reasoning": <string>, "value": <number>,
-        "unit": <string>}.
+        Returns a GBNF grammar enforcing {"reasoning": <string>, "value": <number>, "unit": <string>}.
 
         Loads grammar from resources/grammars/json.gbnf using importlib.resources
         for zip-safe compatibility.
@@ -169,8 +168,7 @@ class LlamaCppEngine(InferenceEngine):
             instruction: User-defined instruction for the task.
 
         Returns:
-            Dictionary mapping original_string -> {"reasoning": str, "value": float,
-            "unit": str} or None.
+            Dictionary mapping original_string -> {"reasoning": str, "value": float, "unit": str} or None.
         """
         # 1. Check Cache
         cached_results = self.cache.get_batch(items, instruction)

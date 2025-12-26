@@ -161,8 +161,7 @@ class TestLlamaCppEngine:
         mock_cache_class,
         mock_hf_download,
     ):
-        """Test LlamaCppEngine falls back to default model when unknown model
-        is provided."""
+        """Test LlamaCppEngine falls back to default model when unknown model is provided."""
         with patch("semantix.inference.local.llama_cpp.logger") as mock_logger:
             engine = LlamaCppEngine(
                 model_name="unknown-model", cache_dir=temp_cache_dir

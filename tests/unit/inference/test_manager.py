@@ -543,8 +543,7 @@ class TestLlamaCppEngine:
         assert result["invalid_item"] is None
 
 
-# ==================== LocalInferenceEngine Tests (Backward Compatibility)
-# ====================
+# ==================== LocalInferenceEngine Tests (Backward Compatibility) ====================
 
 
 class TestLocalInferenceEngine:
@@ -578,8 +577,7 @@ class TestLocalInferenceEngine:
         mock_cache_class,
         mock_hf_download,
     ):
-        """Test that LocalInferenceEngine maintains backward compatibility
-        attributes."""
+        """Test that LocalInferenceEngine maintains backward compatibility attributes."""
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             engine = LocalInferenceEngine(cache_dir=temp_cache_dir)

@@ -19,8 +19,7 @@ class TestInferenceEngine:
         assert "abstract" in error_msg.lower() or "clean_batch" in error_msg.lower()
 
     def test_subclass_without_implementation_raises_error(self):
-        """Test that subclass without clean_batch implementation cannot be
-        instantiated."""
+        """Test that subclass without clean_batch implementation cannot be instantiated."""
 
         class IncompleteEngine(InferenceEngine):
             """Subclass that doesn't implement clean_batch."""
