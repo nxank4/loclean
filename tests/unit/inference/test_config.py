@@ -154,9 +154,7 @@ class TestLoadFromEnv:
     def test_load_no_env_variables(self) -> None:
         """Test loading when no environment variables are set."""
         # Remove all LOCLEAN_* env vars
-        env_to_remove = [
-            key for key in os.environ.keys() if key.startswith("LOCLEAN_")
-        ]
+        env_to_remove = [key for key in os.environ.keys() if key.startswith("LOCLEAN_")]
         with patch.dict(os.environ, {}, clear=False):
             for key in env_to_remove:
                 os.environ.pop(key, None)
@@ -226,9 +224,7 @@ class TestLoadConfig:
     def test_load_with_defaults(self) -> None:
         """Test loading config with only defaults."""
         # Clear environment variables
-        env_to_remove = [
-            key for key in os.environ.keys() if key.startswith("LOCLEAN_")
-        ]
+        env_to_remove = [key for key in os.environ.keys() if key.startswith("LOCLEAN_")]
         with patch.dict(os.environ, {}, clear=False):
             for key in env_to_remove:
                 os.environ.pop(key, None)
@@ -281,9 +277,7 @@ class TestLoadConfig:
 
     def test_load_with_file_config(self) -> None:
         """Test that file config is used when env vars are not set."""
-        env_to_remove = [
-            key for key in os.environ.keys() if key.startswith("LOCLEAN_")
-        ]
+        env_to_remove = [key for key in os.environ.keys() if key.startswith("LOCLEAN_")]
         with patch.dict(os.environ, {}, clear=False):
             for key in env_to_remove:
                 os.environ.pop(key, None)

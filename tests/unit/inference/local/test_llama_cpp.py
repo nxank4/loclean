@@ -131,9 +131,7 @@ class TestLlamaCppEngine:
                 ):
                     engine = LlamaCppEngine()
 
-                    assert (
-                        engine.cache_dir == Path("/home/test") / ".cache" / "loclean"
-                    )
+                    assert engine.cache_dir == Path("/home/test") / ".cache" / "loclean"
                     assert engine.model_path == mock_model_path
 
     def test_init_with_model_name(
@@ -182,9 +180,7 @@ class TestLlamaCppEngine:
         mock_hf_download: Any,
     ) -> None:
         """Test LlamaCppEngine initialization with custom n_ctx and n_gpu_layers."""
-        with patch(
-            "loclean.inference.local.llama_cpp.Llama"
-        ) as mock_llama_constructor:
+        with patch("loclean.inference.local.llama_cpp.Llama") as mock_llama_constructor:
             mock_llama_instance = Mock()
             mock_llama_constructor.return_value = mock_llama_instance
 
@@ -220,9 +216,7 @@ class TestLlamaCppEngine:
 
     def test_get_model_path_downloads_when_missing(self, temp_cache_dir: Any) -> None:
         """Test _get_model_path downloads model when missing."""
-        with patch(
-            "loclean.inference.local.llama_cpp.Path.exists", return_value=False
-        ):
+        with patch("loclean.inference.local.llama_cpp.Path.exists", return_value=False):
             with patch("loclean.inference.local.llama_cpp.Llama"):
                 with patch("loclean.inference.local.llama_cpp.LlamaGrammar"):
                     with patch("loclean.cache.LocleanCache"):

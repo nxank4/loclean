@@ -208,9 +208,7 @@ class TestLlamaCppEngine:
 
     def test_get_model_path_downloads_when_missing(self, temp_cache_dir: Any) -> None:
         """Test _get_model_path downloads model when missing."""
-        with patch(
-            "loclean.inference.local.llama_cpp.Path.exists", return_value=False
-        ):
+        with patch("loclean.inference.local.llama_cpp.Path.exists", return_value=False):
             with patch("loclean.inference.local.llama_cpp.Llama"):
                 with patch("loclean.inference.local.llama_cpp.LlamaGrammar"):
                     with patch("loclean.cache.LocleanCache"):
