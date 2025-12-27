@@ -1,5 +1,9 @@
 name: 👮 Commit Linter
 
+permissions:
+  pull-requests: read
+  statuses: write
+
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
