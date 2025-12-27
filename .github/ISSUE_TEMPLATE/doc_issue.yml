@@ -8,7 +8,7 @@ body:
     attributes:
       label: Where is the issue?
       description: Link to the page or section title.
-      placeholder: https://semantix.ai/docs/advanced/
+      placeholder: https://github.com/nxank4/loclean/blob/main/README.md
     validations:
       required: true
 

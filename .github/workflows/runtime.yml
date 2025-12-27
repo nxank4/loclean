@@ -42,7 +42,7 @@ jobs:
       - name: Verify version consistency
         run: |
           VERSION="${{ steps.tag_version.outputs.version }}"
-          PACKAGE_VERSION=$(grep -E '^__version__ = ' src/semantix/_version.py | sed "s/__version__ = ['\"]\(.*\)['\"]/\1/")
+          PACKAGE_VERSION=$(grep -E '^__version__ = ' src/loclean/_version.py | sed "s/__version__ = ['\"]\(.*\)['\"]/\1/")
           if [ "$VERSION" != "$PACKAGE_VERSION" ]; then
             echo "Error: Tag version ($VERSION) does not match package version ($PACKAGE_VERSION)"
             exit 1
@@ -78,7 +78,7 @@ jobs:
     timeout-minutes: 15
     environment:
       name: pypi
-      url: https://pypi.org/p/semantix
+      url: https://pypi.org/p/loclean
     permissions:
       id-token: write # IMPORTANT: mandatory for trusted publishing
 

@@ -2,10 +2,10 @@
 * @nxank4
 
 # Core package - critical business logic
-src/semantix/ @nxank4
+src/loclean/ @nxank4
 
 # Inference engine - core AI/LLM integration
-src/semantix/inference/ @nxank4
+src/loclean/inference/ @nxank4
 
 # GitHub Actions workflows - CI/CD configuration
 .github/workflows/ @nxank4
