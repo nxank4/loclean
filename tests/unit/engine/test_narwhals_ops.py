@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import Mock
 
 import polars as pl
@@ -15,7 +16,7 @@ except ImportError:
 
 
 @pytest.fixture
-def mock_inference_engine():
+def mock_inference_engine() -> Any:
     """Mock LocalInferenceEngine để tránh phải chạy LLM thật."""
     mock_engine = Mock()
     # Mock clean_batch để trả về kết quả giả định
@@ -32,7 +33,7 @@ def mock_inference_engine():
 
 
 @pytest.fixture
-def sample_polars_df():
+def sample_polars_df() -> pl.DataFrame:
     """Sample Polars DataFrame cho testing."""
     return pl.DataFrame(
         {
@@ -43,7 +44,7 @@ def sample_polars_df():
 
 
 @pytest.fixture
-def sample_pandas_df():
+def sample_pandas_df() -> Any:
     """Sample pandas DataFrame cho testing."""
     if not HAS_PANDAS:
         pytest.skip("pandas not installed")
@@ -55,7 +56,9 @@ def sample_pandas_df():
     )
 
 
-def test_process_column_polars_basic(sample_polars_df, mock_inference_engine):
+def test_process_column_polars_basic(
+    sample_polars_df: Any, mock_inference_engine: Any
+) -> None:
     """Test process_column với Polars DataFrame - basic case."""
     result = NarwhalsEngine.process_column(
         sample_polars_df, "weight", mock_inference_engine, "Extract weight"
@@ -78,7 +81,9 @@ def test_process_column_polars_basic(sample_polars_df, mock_inference_engine):
 
 
 @pytest.mark.skipif(not HAS_PANDAS, reason="pandas not installed")
-def test_process_column_pandas_basic(sample_pandas_df, mock_inference_engine):
+def test_process_column_pandas_basic(
+    sample_pandas_df: Any, mock_inference_engine: Any
+) -> None:
     """Test process_column với pandas DataFrame để verify multi-backend support."""
     result = NarwhalsEngine.process_column(
         sample_pandas_df, "weight", mock_inference_engine, "Extract weight"
@@ -97,7 +102,9 @@ def test_process_column_pandas_basic(sample_pandas_df, mock_inference_engine):
     assert len(result) == len(sample_pandas_df)
 
 
-def test_process_column_column_not_found(sample_polars_df, mock_inference_engine):
+def test_process_column_column_not_found(
+    sample_polars_df: Any, mock_inference_engine: Any
+) -> None:
     """Test validation khi column không tồn tại."""
     with pytest.raises(ValueError, match="Column 'nonexistent' not found"):
         NarwhalsEngine.process_column(
@@ -105,7 +112,7 @@ def test_process_column_column_not_found(sample_polars_df, mock_inference_engine
         )
 
 
-def test_process_column_empty_unique_values(mock_inference_engine):
+def test_process_column_empty_unique_values(mock_inference_engine: Any) -> None:
     """Test khi không có unique values hợp lệ."""
     # DataFrame với chỉ None và empty strings
     df = pl.DataFrame({"weight": [None, "", "   ", None]})
@@ -121,7 +128,7 @@ def test_process_column_empty_unique_values(mock_inference_engine):
     assert not mock_inference_engine.clean_batch.called
 
 
-def test_process_column_batch_processing(mock_inference_engine):
+def test_process_column_batch_processing(mock_inference_engine: Any) -> None:
     """Test batch processing với nhiều unique values."""
     # Tạo DataFrame với nhiều unique values để test batching
     unique_values = [f"{i}kg" for i in range(60)]  # 60 unique values
@@ -148,11 +155,13 @@ def test_process_column_batch_processing(mock_inference_engine):
     assert "clean_unit" in result.columns
 
 
-def test_process_column_join_logic(sample_polars_df, mock_inference_engine):
+def test_process_column_join_logic(
+    sample_polars_df: Any, mock_inference_engine: Any
+) -> None:
     """Test join logic - verify mapping được join đúng."""
 
     # Custom mock để trả về kết quả cụ thể
-    def custom_clean_batch(items, instruction):
+    def custom_clean_batch(items: Any, instruction: Any) -> Any:
         return {
             "10kg": {"value": 10.0, "unit": "kg"},
             "500g": {"value": 500.0, "unit": "g"},
@@ -178,11 +187,11 @@ def test_process_column_join_logic(sample_polars_df, mock_inference_engine):
     assert all(rows_500g["clean_unit"] == "g")
 
 
-def test_process_column_with_none_results(mock_inference_engine):
+def test_process_column_with_none_results(mock_inference_engine: Any) -> None:
     """Test khi inference engine trả về None cho một số items."""
     df = pl.DataFrame({"weight": ["10kg", "invalid", "500g"]})
 
-    def mock_clean_batch_with_none(items, instruction):
+    def mock_clean_batch_with_none(items: Any, instruction: Any) -> Any:
         return {
             "10kg": {"value": 10.0, "unit": "kg"},
             "invalid": None,  # Trả về None
@@ -205,11 +214,11 @@ def test_process_column_with_none_results(mock_inference_engine):
     assert invalid_row["clean_unit"][0] is None
 
 
-def test_process_column_no_keys_extracted(mock_inference_engine):
+def test_process_column_no_keys_extracted(mock_inference_engine: Any) -> None:
     """Test khi không có keys nào được extract (tất cả đều None)."""
     df = pl.DataFrame({"weight": ["item1", "item2"]})
 
-    def mock_clean_batch_all_none(items, instruction):
+    def mock_clean_batch_all_none(items: Any, instruction: Any) -> Any:
         return {"item1": None, "item2": None}
 
     mock_inference_engine.clean_batch = Mock(side_effect=mock_clean_batch_all_none)

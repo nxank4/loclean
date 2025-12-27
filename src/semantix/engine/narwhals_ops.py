@@ -29,7 +29,7 @@ class NarwhalsEngine:
         and progress tracking.
         """
         # Wrap native DataFrame into Narwhals DataFrame
-        df = nw.from_native(df_native)
+        df = nw.from_native(df_native)  # type: ignore[type-var]
 
         # Input validation for col_name
         if col_name not in df.columns:
@@ -51,10 +51,10 @@ class NarwhalsEngine:
             col_values = unique_df_native[col_name].tolist()
         elif hasattr(unique_df_native, "to_series"):
             # Some backends have to_series()
-            col_values = unique_df_native[col_name].to_series().to_list()
+            col_values = unique_df_native[col_name].to_series().to_list()  # type: ignore[index]
         else:
             # Polars or other backends
-            col_values = unique_df_native[col_name].to_list()
+            col_values = unique_df_native[col_name].to_list()  # type: ignore[index]
 
         uniques: List[str] = [
             str(x) for x in col_values if x is not None and str(x).strip() != ""
@@ -112,7 +112,7 @@ class NarwhalsEngine:
         # 4. Create Mapping DataFrame using the same native backend as the input
         native_df_cls = type(df_native)
         try:
-            map_df_native = native_df_cls(
+            map_df_native = native_df_cls(  # type: ignore[call-arg]
                 {
                     col_name: keys,
                     "clean_value": clean_values,
@@ -139,7 +139,7 @@ class NarwhalsEngine:
                     nw.col(col_name).cast(nw.String).alias(f"{col_name}_join_key")
                 )
                 .join(
-                    map_df,
+                    map_df,  # type: ignore[arg-type]
                     left_on=f"{col_name}_join_key",
                     right_on=col_name,
                     how="left",

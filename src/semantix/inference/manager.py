@@ -8,7 +8,7 @@ This module will be removed in a future version.
 
 import warnings
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 # Import from new location
 from semantix.inference.local.llama_cpp import LlamaCppEngine
@@ -22,16 +22,15 @@ class LocalInferenceEngine(LlamaCppEngine):
     Deprecated alias for LlamaCppEngine.
 
     This class is kept for backward compatibility but will be removed
-    in a future version.
-    Use LlamaCppEngine instead.
+    in a future version. Use LlamaCppEngine instead.
     """
 
     def __init__(
         self,
         cache_dir: Optional[Path] = None,
         model_name: Optional[str] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """
         Initialize LocalInferenceEngine (deprecated).
 
@@ -46,8 +45,7 @@ class LocalInferenceEngine(LlamaCppEngine):
         """
         warnings.warn(
             "LocalInferenceEngine is deprecated and will be removed "
-            "in a future version. "
-            "Use LlamaCppEngine instead.",
+            "in a future version. Use LlamaCppEngine instead.",
             DeprecationWarning,
             stacklevel=2,
         )

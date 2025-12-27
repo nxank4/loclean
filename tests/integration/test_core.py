@@ -1,3 +1,5 @@
+from typing import Any
+
 import polars as pl
 import pytest
 
@@ -5,16 +7,15 @@ import semantix
 
 
 @pytest.mark.slow
-def test_clean_pipeline_weight(messy_df):
+def test_clean_pipeline_weight(messy_df: Any) -> None:
     """
     Test end-to-end cleaning of a 'weight' column.
     """
-    # Force use of a temporary cache for integration tests to not pollute
-    # user cache? Ideally yes, but `semantix.clean` uses the singleton
-    # `LocalInferenceEngine`. We might need to mock or patch the engine's
-    # cache, or just let it use the default but that breaks the rule
-    # "Test Suite ... ensures tests don't mess up the user's real
-    # ~/.cache/semantix".
+    # Force use of a temporary cache for integration tests to not pollute user cache?
+    # Ideally yes, but `semantix.clean` uses the singleton `LocalInferenceEngine`.
+    # We might need to mock or patch the engine's cache, or just let it use the default
+    # but that breaks the rule "Test Suite ... ensures tests don't mess up the user's
+    # real ~/.cache/semantix".
 
     # We can patch the cache_dir in the engine if we want, or we can
     # instantiate a new engine and pass it to clean if clean allowed it.
@@ -24,9 +25,9 @@ def test_clean_pipeline_weight(messy_df):
     # `semantix.inference.manager.LocalInferenceEngine` or the singleton
     # `semantix._ENGINE_INSTANCE` at the start of the test.
 
-    # For now, let's proceed with the test logic assuming the environment
-    # handles it or we accept it. However, to be strict about not touching
-    # user cache:
+    # For now, let's proceed with the test logic assuming the environment handles it
+    # or we accept it.
+    # However, to be strict about not touching user cache:
 
     # We can just check the results.
 
@@ -48,7 +49,7 @@ def test_clean_pipeline_weight(messy_df):
 
 
 @pytest.mark.slow
-def test_clean_pipeline_price(messy_df):
+def test_clean_pipeline_price(messy_df: Any) -> None:
     """
     Test end-to-end cleaning of a 'price' column.
     """
@@ -68,7 +69,7 @@ def test_clean_pipeline_price(messy_df):
 
 
 @pytest.mark.slow
-def test_idempotency(messy_df):
+def test_idempotency(messy_df: Any) -> None:
     """
     Verify that running the same clean command twice produces identical results.
     """

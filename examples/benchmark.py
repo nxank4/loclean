@@ -14,7 +14,7 @@ def naive_llm_call(text: str) -> None:
     time.sleep(0.1)
 
 
-def run_benchmark():
+def run_benchmark() -> None:
     # Reduced slightly for quicker iterative testing, but large enough
     ROWS = 10_000
     UNIQUE_PATTERNS = 100
@@ -79,7 +79,8 @@ def run_benchmark():
 
     print("\n" + "=" * 80)
     metric_header = (
-        f"{'METRIC':<25} | {'NAIVE (Est.)':<15} | {'SEMANTIX (Run 1)':<20} | {'CACHE (Run 2)':<15}"
+        f"{'METRIC':<25} | {'NAIVE (Est.)':<15} | "
+        f"{'SEMANTIX (Run 1)':<20} | {'CACHE (Run 2)':<15}"
     )
     print(metric_header)
     print("-" * 80)

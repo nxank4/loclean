@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from huggingface_hub import hf_hub_download
-from llama_cpp import Llama, LlamaGrammar
+from llama_cpp import Llama, LlamaGrammar  # type: ignore[attr-defined]
 
 from semantix.inference.adapters import PromptAdapter, get_adapter
 from semantix.inference.base import InferenceEngine
@@ -191,8 +191,8 @@ class LlamaCppEngine(InferenceEngine):
             # Use adapter to format prompt
             prompt = self.adapter.format(instruction, item)
 
-            output = None
-            text = None
+            output: Any = None
+            text: Optional[str] = None
             try:
                 output = self.llm.create_completion(
                     prompt=prompt,
@@ -202,7 +202,22 @@ class LlamaCppEngine(InferenceEngine):
                     echo=False,
                 )
 
-                text = output["choices"][0]["text"].strip()
+                # Handle both dict and iterator responses
+                if isinstance(output, dict) and "choices" in output:
+                    text = str(output["choices"][0]["text"]).strip()
+                else:
+                    # If iterator, get first item
+                    if hasattr(output, "__iter__") and not isinstance(
+                        output, (str, bytes)
+                    ):
+                        first_item = next(iter(output), None)
+                        if isinstance(first_item, dict) and "choices" in first_item:
+                            text = str(first_item["choices"][0]["text"]).strip()
+
+                if text is None:
+                    logger.warning(f"No text extracted for item '{item}'")
+                    new_results[item] = None
+                    continue
 
                 data = json.loads(text)
 

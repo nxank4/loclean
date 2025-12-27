@@ -33,7 +33,7 @@ class SemantixCache:
         self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
         self._init_db()
 
-    def _init_db(self):
+    def _init_db(self) -> None:
         """
         Initialize the database schema and enable WAL mode.
         """
@@ -102,7 +102,9 @@ class SemantixCache:
 
         return results
 
-    def set_batch(self, items: List[str], instruction: str, results: Dict[str, Any]):
+    def set_batch(
+        self, items: List[str], instruction: str, results: Dict[str, Any]
+    ) -> None:
         """
         Save results to the cache.
 
@@ -138,6 +140,6 @@ class SemantixCache:
         except Exception as e:
             logger.error(f"Error writing to cache: {e}")
 
-    def close(self):
+    def close(self) -> None:
         """Close the database connection."""
         self.conn.close()

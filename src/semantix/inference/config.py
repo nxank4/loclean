@@ -10,7 +10,7 @@ priority order (highest to lowest):
 
 import os
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -77,7 +77,7 @@ class EngineConfig(BaseModel):
     }
 
 
-def _load_from_pyproject_toml() -> dict:
+def _load_from_pyproject_toml() -> dict[str, Any]:
     """
     Load configuration from [tool.semantix] section in pyproject.toml.
 
@@ -88,7 +88,7 @@ def _load_from_pyproject_toml() -> dict:
         import tomllib  # Python 3.11+
     except ImportError:
         try:
-            import tomli as tomllib  # type: ignore
+            import tomli as tomllib  # noqa: F401
         except ImportError:
             # tomli not available, return empty dict
             return {}
@@ -102,7 +102,8 @@ def _load_from_pyproject_toml() -> dict:
                 with open(pyproject_path, "rb") as f:
                     data = tomllib.load(f)
                     if "tool" in data and "semantix" in data["tool"]:
-                        return data["tool"]["semantix"]
+                        result: dict[str, Any] = dict(data["tool"]["semantix"])
+                        return result
             except Exception:
                 # If reading fails, continue searching
                 continue
@@ -110,14 +111,14 @@ def _load_from_pyproject_toml() -> dict:
     return {}
 
 
-def _load_from_env() -> dict:
+def _load_from_env() -> dict[str, Any]:
     """
     Load configuration from environment variables (prefixed with SEMANTIX_).
 
     Returns:
         Dictionary with config values from environment.
     """
-    config = {}
+    config: dict[str, Any] = {}
 
     # Map environment variables to config keys
     env_mapping = {
@@ -153,7 +154,7 @@ def load_config(
     cache_dir: Optional[Path] = None,
     n_ctx: Optional[int] = None,
     n_gpu_layers: Optional[int] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> EngineConfig:
     """
     Load configuration with hierarchical priority: Param > Env > Config File > Default.
@@ -191,7 +192,7 @@ def load_config(
     env_config = _load_from_env()
 
     # 4. Runtime parameters (highest priority)
-    runtime_config = {}
+    runtime_config: dict[str, Any] = {}
     if engine is not None:
         runtime_config["engine"] = engine
     if model is not None:
