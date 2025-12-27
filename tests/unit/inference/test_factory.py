@@ -62,7 +62,15 @@ def mock_hf_download(mock_model_path: Any) -> Any:
 class TestCreateEngine:
     """Test cases for create_engine factory function."""
 
-    def test_create_llama_cpp_engine_with_defaults(self, temp_cache_dir: Any, mock_model_path: Any, mock_llama_class: Any, mock_grammar_class: Any, mock_cache_class: Any, mock_hf_download: Any, ) -> None:
+    def test_create_llama_cpp_engine_with_defaults(
+        self,
+        temp_cache_dir: Any,
+        mock_model_path: Any,
+        mock_llama_class: Any,
+        mock_grammar_class: Any,
+        mock_cache_class: Any,
+        mock_hf_download: Any,
+    ) -> None:
         """Test creating LlamaCppEngine with default config."""
         config = EngineConfig(cache_dir=temp_cache_dir)
         engine = create_engine(config)
@@ -73,7 +81,15 @@ class TestCreateEngine:
         assert engine.model_name in ["phi-3-mini", config.model]
         assert engine.cache_dir == temp_cache_dir
 
-    def test_create_llama_cpp_engine_with_custom_model(self, temp_cache_dir: Any, mock_model_path: Any, mock_llama_class: Any, mock_grammar_class: Any, mock_cache_class: Any, mock_hf_download: Any, ) -> None:
+    def test_create_llama_cpp_engine_with_custom_model(
+        self,
+        temp_cache_dir: Any,
+        mock_model_path: Any,
+        mock_llama_class: Any,
+        mock_grammar_class: Any,
+        mock_cache_class: Any,
+        mock_hf_download: Any,
+    ) -> None:
         """Test creating LlamaCppEngine with custom model name."""
         config = EngineConfig(
             engine="llama-cpp",
@@ -86,7 +102,15 @@ class TestCreateEngine:
             assert isinstance(engine, LlamaCppEngine)
             assert engine.model_name == "qwen3-4b"
 
-    def test_create_llama_cpp_engine_with_custom_params(self, temp_cache_dir: Any, mock_model_path: Any, mock_llama_class: Any, mock_grammar_class: Any, mock_cache_class: Any, mock_hf_download: Any, ) -> None:
+    def test_create_llama_cpp_engine_with_custom_params(
+        self,
+        temp_cache_dir: Any,
+        mock_model_path: Any,
+        mock_llama_class: Any,
+        mock_grammar_class: Any,
+        mock_cache_class: Any,
+        mock_hf_download: Any,
+    ) -> None:
         """Test creating LlamaCppEngine with custom n_ctx and n_gpu_layers."""
         config = EngineConfig(
             engine="llama-cpp",
@@ -139,7 +163,15 @@ class TestCreateEngine:
         assert "Gemini engine is not yet implemented" in str(exc_info.value)
         assert "llama-cpp" in str(exc_info.value)
 
-    def test_create_engine_passes_all_config_params(self, temp_cache_dir: Any, mock_model_path: Any, mock_llama_class: Any, mock_grammar_class: Any, mock_cache_class: Any, mock_hf_download: Any, ) -> None:
+    def test_create_engine_passes_all_config_params(
+        self,
+        temp_cache_dir: Any,
+        mock_model_path: Any,
+        mock_llama_class: Any,
+        mock_grammar_class: Any,
+        mock_cache_class: Any,
+        mock_hf_download: Any,
+    ) -> None:
         """Test that all config parameters are passed to engine."""
         config = EngineConfig(
             engine="llama-cpp",
@@ -164,7 +196,14 @@ class TestCreateEngine:
                 n_gpu_layers=5,
             )
 
-    def test_create_engine_lazy_loading(self, temp_cache_dir: Any, mock_model_path: Any, mock_grammar_class: Any, mock_cache_class: Any, mock_hf_download: Any, ) -> None:
+    def test_create_engine_lazy_loading(
+        self,
+        temp_cache_dir: Any,
+        mock_model_path: Any,
+        mock_grammar_class: Any,
+        mock_cache_class: Any,
+        mock_hf_download: Any,
+    ) -> None:
         """Test that LlamaCppEngine is lazily imported."""
         config = EngineConfig(cache_dir=temp_cache_dir)
 
@@ -179,7 +218,15 @@ class TestCreateEngine:
             engine = create_engine(config)
             assert isinstance(engine, LlamaCppEngine)
 
-    def test_create_engine_with_different_models(self, temp_cache_dir: Any, mock_model_path: Any, mock_llama_class: Any, mock_grammar_class: Any, mock_cache_class: Any, mock_hf_download: Any, ) -> None:
+    def test_create_engine_with_different_models(
+        self,
+        temp_cache_dir: Any,
+        mock_model_path: Any,
+        mock_llama_class: Any,
+        mock_grammar_class: Any,
+        mock_cache_class: Any,
+        mock_hf_download: Any,
+    ) -> None:
         """Test creating engines with different model names."""
         models = ["phi-3-mini", "qwen3-4b", "gemma-3-4b", "deepseek-r1"]
 
@@ -195,7 +242,15 @@ class TestCreateEngine:
                 assert isinstance(engine, LlamaCppEngine)
                 assert engine.model_name == model_name
 
-    def test_create_engine_logs_info(self, temp_cache_dir: Any, mock_model_path: Any, mock_llama_class: Any, mock_grammar_class: Any, mock_cache_class: Any, mock_hf_download: Any, ) -> None:
+    def test_create_engine_logs_info(
+        self,
+        temp_cache_dir: Any,
+        mock_model_path: Any,
+        mock_llama_class: Any,
+        mock_grammar_class: Any,
+        mock_cache_class: Any,
+        mock_hf_download: Any,
+    ) -> None:
         """Test that create_engine logs info message."""
         config = EngineConfig(
             engine="llama-cpp",
@@ -211,7 +266,15 @@ class TestCreateEngine:
             assert "Creating LlamaCppEngine" in call_args
             assert "phi-3-mini" in call_args
 
-    def test_create_engine_returns_inference_engine_instance(self, temp_cache_dir: Any, mock_model_path: Any, mock_llama_class: Any, mock_grammar_class: Any, mock_cache_class: Any, mock_hf_download: Any, ) -> None:
+    def test_create_engine_returns_inference_engine_instance(
+        self,
+        temp_cache_dir: Any,
+        mock_model_path: Any,
+        mock_llama_class: Any,
+        mock_grammar_class: Any,
+        mock_cache_class: Any,
+        mock_hf_download: Any,
+    ) -> None:
         """Test that create_engine returns InferenceEngine instance."""
         config = EngineConfig(cache_dir=temp_cache_dir)
         engine = create_engine(config)
@@ -220,7 +283,14 @@ class TestCreateEngine:
         assert hasattr(engine, "clean_batch")
         assert callable(engine.clean_batch)
 
-    def test_create_engine_handles_engine_initialization_error(self, temp_cache_dir: Any, mock_model_path: Any, mock_grammar_class: Any, mock_cache_class: Any, mock_hf_download: Any, ) -> None:
+    def test_create_engine_handles_engine_initialization_error(
+        self,
+        temp_cache_dir: Any,
+        mock_model_path: Any,
+        mock_grammar_class: Any,
+        mock_cache_class: Any,
+        mock_hf_download: Any,
+    ) -> None:
         """Test that create_engine handles engine initialization errors."""
         config = EngineConfig(engine="llama-cpp", cache_dir=temp_cache_dir)
 

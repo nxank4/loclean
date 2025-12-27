@@ -202,7 +202,9 @@ n_ctx = 2048
             config = _load_from_pyproject_toml()
             assert config == {}
 
-    def test_load_from_pyproject_toml_without_semantix_section(self, tmp_path: Any) -> None:
+    def test_load_from_pyproject_toml_without_semantix_section(
+        self, tmp_path: Any
+    ) -> None:
         """Test loading when pyproject.toml exists but has no
         [tool.semantix] section."""
         pyproject_content = """
