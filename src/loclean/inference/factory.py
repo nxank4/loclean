@@ -7,10 +7,10 @@ based on EngineConfig, with lazy loading of heavy dependencies.
 import logging
 from typing import TYPE_CHECKING
 
-from semantix.inference.config import EngineConfig
+from loclean.inference.config import EngineConfig
 
 if TYPE_CHECKING:
-    from semantix.inference.base import InferenceEngine
+    from loclean.inference.base import InferenceEngine
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ def create_engine(config: EngineConfig) -> "InferenceEngine":
         ImportError: If required dependencies are not installed
 
     Example:
-        >>> from semantix.inference.config import load_config
+        >>> from loclean.inference.config import load_config
         >>> config = load_config(engine="llama-cpp", model="phi-3-mini")
         >>> engine = create_engine(config)
         >>> isinstance(engine, LlamaCppEngine)
@@ -44,7 +44,7 @@ def create_engine(config: EngineConfig) -> "InferenceEngine":
     if engine_type == "llama-cpp":
         # Lazy import to avoid loading llama-cpp-python unless needed
         try:
-            from semantix.inference.local.llama_cpp import LlamaCppEngine
+            from loclean.inference.local.llama_cpp import LlamaCppEngine
         except ImportError as e:
             raise ImportError(
                 f"Failed to import LlamaCppEngine. "

@@ -1,7 +1,7 @@
 import polars as pl
 import pytest
 
-import semantix
+import loclean
 
 
 @pytest.mark.slow
@@ -15,7 +15,7 @@ def test_smart_no_op() -> None:
     df = pl.DataFrame({"price": ["$50", "100 USD"]})
     instruction = "Convert to USD. Rates: 1 EUR = 1.1 USD."
 
-    clean_df = semantix.clean(df, target_col="price", instruction=instruction)
+    clean_df = loclean.clean(df, target_col="price", instruction=instruction)
 
     # Check $50
     fifty = clean_df.filter(pl.col("price") == "$50")
@@ -41,7 +41,7 @@ def test_complex_reasoning() -> None:
     df = pl.DataFrame({"temp": ["32 F", "100 C"]})
     instruction = "Convert to Celsius."
 
-    clean_df = semantix.clean(df, target_col="temp", instruction=instruction)
+    clean_df = loclean.clean(df, target_col="temp", instruction=instruction)
 
     # 32 F -> 0 C (Conversion)
     f_row = clean_df.filter(pl.col("temp") == "32 F")
@@ -60,7 +60,7 @@ def test_reasoning_column_exists() -> None:
     Verify that the 'clean_reasoning' column is exposed to the user.
     """
     df = pl.DataFrame({"val": ["10 units"]})
-    clean_df = semantix.clean(df, target_col="val", instruction="Extract value.")
+    clean_df = loclean.clean(df, target_col="val", instruction="Extract value.")
 
     assert "clean_reasoning" in clean_df.columns
     reasoning = clean_df.select("clean_reasoning").item()

@@ -1,4 +1,4 @@
-# Contributing to Semantix
+# Contributing to Loclean
 
 Thank you for your interest in contributing! We use modern Python tooling to ensure code quality.
 
@@ -17,8 +17,8 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ## 2. Setup Development Environment
 
 ```bash
-git clone https://github.com/nxank4/semantix.git
-cd semantix
+git clone https://github.com/nxank4/loclean.git
+cd loclean
 
 # This will create a virtualenv and install all dev dependencies
 uv sync --all-extras
@@ -45,3 +45,9 @@ uv run mypy .
 We use Conventional Commits. Please title your PRs like: `feat: add new adapter` or `fix: regex pattern`.
 
 Please ensure your PR updates `schemas.py` if output structure changes.
+
+## 5. Code Style
+
+- Use type hints for all functions
+- Follow PEP 8 style guide
+- Run `ruff check .` and `mypy .` before committing

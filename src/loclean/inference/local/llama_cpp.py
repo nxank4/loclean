@@ -12,8 +12,8 @@ from typing import Any, Dict, List, Optional
 from huggingface_hub import hf_hub_download
 from llama_cpp import Llama, LlamaGrammar  # type: ignore[attr-defined]
 
-from semantix.inference.adapters import PromptAdapter, get_adapter
-from semantix.inference.base import InferenceEngine
+from loclean.inference.adapters import PromptAdapter, get_adapter
+from loclean.inference.base import InferenceEngine
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -70,12 +70,12 @@ class LlamaCppEngine(InferenceEngine):
             model_name: Name of the model to use (e.g., "phi-3-mini", "qwen3-4b").
                        Must be in MODEL_REGISTRY. Defaults to "phi-3-mini".
             cache_dir: Optional custom directory for caching models.
-                       Defaults to ~/.cache/semantix.
+                       Defaults to ~/.cache/loclean.
             n_ctx: Context window size. Defaults to 4096.
             n_gpu_layers: Number of GPU layers to use (0 = CPU only). Defaults to 0.
         """
         if cache_dir is None:
-            self.cache_dir = Path.home() / ".cache" / "semantix"
+            self.cache_dir = Path.home() / ".cache" / "loclean"
         else:
             self.cache_dir = cache_dir
 
@@ -112,9 +112,9 @@ class LlamaCppEngine(InferenceEngine):
         )
         self.grammar = self._get_json_grammar()
 
-        from semantix.cache import SemantixCache
+        from loclean.cache import LocleanCache
 
-        self.cache = SemantixCache(cache_dir=self.cache_dir)
+        self.cache = LocleanCache(cache_dir=self.cache_dir)
 
         logger.info(f"LlamaCppEngine initialized successfully with model: {model_name}")
 
@@ -149,7 +149,7 @@ class LlamaCppEngine(InferenceEngine):
         Returns:
             LlamaGrammar instance for JSON extraction.
         """
-        from semantix.utils.resources import load_grammar
+        from loclean.utils.resources import load_grammar
 
         grammar_str = load_grammar("json.gbnf")
         return LlamaGrammar.from_string(grammar_str)

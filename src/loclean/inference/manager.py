@@ -1,7 +1,7 @@
 """Deprecated module for backward compatibility.
 
 This module is kept for backward compatibility. The actual implementation
-has been moved to semantix.inference.local.llama_cpp.
+has been moved to loclean.inference.local.llama_cpp.
 
 This module will be removed in a future version.
 """
@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 # Import from new location
-from semantix.inference.local.llama_cpp import LlamaCppEngine
+from loclean.inference.local.llama_cpp import LlamaCppEngine
 
 # Re-export for backward compatibility
 __all__ = ["LlamaCppEngine", "LocalInferenceEngine"]
@@ -36,7 +36,7 @@ class LocalInferenceEngine(LlamaCppEngine):
 
         Args:
             cache_dir: Optional custom directory for caching models.
-                       Defaults to ~/.cache/semantix.
+                       Defaults to ~/.cache/loclean.
             model_name: Optional model name. If not provided, defaults to "phi-3-mini".
             **kwargs: Additional arguments passed to LlamaCppEngine.
 

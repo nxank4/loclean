@@ -2,7 +2,7 @@
 
 import pytest
 
-from semantix.utils.resources import (
+from loclean.utils.resources import (
     list_grammars,
     list_templates,
     load_grammar,

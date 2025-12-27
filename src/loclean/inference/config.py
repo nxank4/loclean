@@ -3,8 +3,8 @@
 This module provides hierarchical configuration management with the following
 priority order (highest to lowest):
 1. Runtime Parameters (passed directly to functions)
-2. Environment Variables (prefixed with SEMANTIX_)
-3. Project Config ([tool.semantix] in pyproject.toml)
+2. Environment Variables (prefixed with LOCLEAN_)
+3. Project Config ([tool.loclean] in pyproject.toml)
 4. Defaults (hardcoded fallbacks)
 """
 
@@ -43,7 +43,7 @@ class EngineConfig(BaseModel):
 
     # Cache directory
     cache_dir: Path = Field(
-        default_factory=lambda: Path.home() / ".cache" / "semantix",
+        default_factory=lambda: Path.home() / ".cache" / "loclean",
         description="Directory for caching models and inference results",
     )
 
@@ -79,7 +79,7 @@ class EngineConfig(BaseModel):
 
 def _load_from_pyproject_toml() -> dict[str, Any]:
     """
-    Load configuration from [tool.semantix] section in pyproject.toml.
+    Load configuration from [tool.loclean] section in pyproject.toml.
 
     Returns:
         Dictionary with config values, or empty dict if not found.
@@ -101,8 +101,8 @@ def _load_from_pyproject_toml() -> dict[str, Any]:
             try:
                 with open(pyproject_path, "rb") as f:
                     data = tomllib.load(f)
-                    if "tool" in data and "semantix" in data["tool"]:
-                        result: dict[str, Any] = dict(data["tool"]["semantix"])
+                    if "tool" in data and "loclean" in data["tool"]:
+                        result: dict[str, Any] = dict(data["tool"]["loclean"])
                         return result
             except Exception:
                 # If reading fails, continue searching
@@ -113,7 +113,7 @@ def _load_from_pyproject_toml() -> dict[str, Any]:
 
 def _load_from_env() -> dict[str, Any]:
     """
-    Load configuration from environment variables (prefixed with SEMANTIX_).
+    Load configuration from environment variables (prefixed with LOCLEAN_).
 
     Returns:
         Dictionary with config values from environment.
@@ -122,12 +122,12 @@ def _load_from_env() -> dict[str, Any]:
 
     # Map environment variables to config keys
     env_mapping = {
-        "SEMANTIX_ENGINE": "engine",
-        "SEMANTIX_MODEL": "model",
-        "SEMANTIX_API_KEY": "api_key",
-        "SEMANTIX_CACHE_DIR": "cache_dir",
-        "SEMANTIX_N_CTX": "n_ctx",
-        "SEMANTIX_N_GPU_LAYERS": "n_gpu_layers",
+        "LOCLEAN_ENGINE": "engine",
+        "LOCLEAN_MODEL": "model",
+        "LOCLEAN_API_KEY": "api_key",
+        "LOCLEAN_CACHE_DIR": "cache_dir",
+        "LOCLEAN_N_CTX": "n_ctx",
+        "LOCLEAN_N_GPU_LAYERS": "n_gpu_layers",
     }
 
     for env_var, config_key in env_mapping.items():
@@ -161,8 +161,8 @@ def load_config(
 
     Priority order (highest to lowest):
     1. Runtime Parameters (passed to this function)
-    2. Environment Variables (SEMANTIX_*)
-    3. Project Config ([tool.semantix] in pyproject.toml)
+    2. Environment Variables (LOCLEAN_*)
+    3. Project Config ([tool.loclean] in pyproject.toml)
     4. Defaults (hardcoded in EngineConfig)
 
     Args:

@@ -3,7 +3,7 @@ import time
 
 import polars as pl
 
-import semantix
+import loclean
 
 # Setup logging
 logging.basicConfig(level=logging.ERROR)
@@ -45,8 +45,8 @@ def run_benchmark() -> None:
     hours = projected_naive_time / 3600
     print(f"    Projected Total Time: {projected_naive_time:.2f}s ({hours:.2f} hours)")
 
-    # 3. Semantix (First Run)
-    print("\n2️⃣  Running Semantix (Run 1: Vectorized + Cached Model)...")
+    # 3. Loclean (First Run)
+    print("\n2️⃣  Running Loclean (Run 1: Vectorized + Cached Model)...")
     print("    Processing full dataset...")
 
     # Force a unique instruction to ensure we aren't hitting the disk cache
@@ -56,37 +56,37 @@ def run_benchmark() -> None:
     run_id = int(time.time())
     instruction = f"Convert to kg. Run ID {run_id}"
 
-    start_semantix = time.time()
-    _ = semantix.clean(df, "raw_weight", instruction=instruction)
-    actual_semantix_time = time.time() - start_semantix
+    start_loclean = time.time()
+    _ = loclean.clean(df, "raw_weight", instruction=instruction)
+    actual_loclean_time = time.time() - start_loclean
 
-    print(f"    Actual Time: {actual_semantix_time:.2f}s")
+    print(f"    Actual Time: {actual_loclean_time:.2f}s")
 
-    # 4. Semantix (Second Run - Cache Hit)
-    print("\n3️⃣  Running Semantix (Run 2: Persistent Cache Hit)...")
+    # 4. Loclean (Second Run - Cache Hit)
+    print("\n3️⃣  Running Loclean (Run 2: Persistent Cache Hit)...")
     print("    Re-running same dataset and instruction...")
 
     start_cache = time.time()
-    _ = semantix.clean(df, "raw_weight", instruction=instruction)
+    _ = loclean.clean(df, "raw_weight", instruction=instruction)
     actual_cache_time = time.time() - start_cache
 
     print(f"    Actual Time: {actual_cache_time:.4f}s")
 
     # 5. Reporting
-    vector_speedup = projected_naive_time / actual_semantix_time
+    vector_speedup = projected_naive_time / actual_loclean_time
     cache_time = actual_cache_time if actual_cache_time > 0 else 0.001
-    cache_speedup = actual_semantix_time / cache_time
+    cache_speedup = actual_loclean_time / cache_time
 
     print("\n" + "=" * 80)
     metric_header = (
         f"{'METRIC':<25} | {'NAIVE (Est.)':<15} | "
-        f"{'SEMANTIX (Run 1)':<20} | {'CACHE (Run 2)':<15}"
+        f"{'LOCLEAN (Run 1)':<20} | {'CACHE (Run 2)':<15}"
     )
     print(metric_header)
     print("-" * 80)
     time_row = (
         f"{'Time':<25} | {projected_naive_time:<15.2f}s | "
-        f"{actual_semantix_time:<20.2f}s | {actual_cache_time:<15.4f}s"
+        f"{actual_loclean_time:<20.2f}s | {actual_cache_time:<15.4f}s"
     )
     print(time_row)
     print("-" * 80)

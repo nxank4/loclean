@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "semantix"
+name = "loclean"
 dynamic = ["version"]
 description = "High-performance, local-first semantic data cleaning library"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
 authors = [
-    { name = "Semantix Contributors" },
+    { name = "Loclean Contributors" },
 ]
 keywords = ["data-cleaning", "llm", "semantic", "etl", "data-engineering", "narwhals", "local-ai"]
 classifiers = [
@@ -35,9 +35,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/nxank4/semantix"
-Repository = "https://github.com/nxank4/semantix"
-Issues = "https://github.com/nxank4/semantix/issues"
+Homepage = "https://github.com/nxank4/loclean"
+Repository = "https://github.com/nxank4/loclean"
+Issues = "https://github.com/nxank4/loclean/issues"
 
 [project.optional-dependencies]
 data = [
@@ -52,8 +52,8 @@ cloud = [
     "instructor>=1.0.0",
 ]
 all = [
-    "semantix[data]",
-    "semantix[cloud]",
+    "loclean[data]",
+    "loclean[cloud]",
 ]
 
 [dependency-groups]
@@ -67,20 +67,20 @@ dev = [
 ]
 
 [tool.hatch.version]
-path = "src/semantix/_version.py"
+path = "src/loclean/_version.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/semantix"]
+packages = ["src/loclean"]
 
 [tool.hatch.build]
 include = [
-    "src/semantix/resources",
+    "src/loclean/resources",
     "LICENSE",
 ]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "src/semantix/resources",
+    "src/loclean/resources",
     "tests",
     "LICENSE",
 ]

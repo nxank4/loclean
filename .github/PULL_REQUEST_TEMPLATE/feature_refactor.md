@@ -9,13 +9,13 @@ Resolves #
 - [ ] 📚 **Documentation** (Update to README, docstrings, or guides)
 
 ## 📊 Changes Summary
-- **Core:** `src/semantix/core/...`
-- **Inference:** `src/semantix/inference/...`
+- **Core:** `src/loclean/core/...`
+- **Inference:** `src/loclean/inference/...`
 - **Tests:** `tests/...`
 
 ## 🧪 Testing Status
 - [ ] **Unit Tests:** Added/Updated coverage.
-- [ ] **Manual Verification:** Tested locally with `uv run python -m semantix ...`
+- [ ] **Manual Verification:** Tested locally with `uv run python -m loclean ...`
 - [ ] **Green Build:** ✅ `uv run pytest` passed successfully.
 
 ## ✅ Pre-Merge Checklist

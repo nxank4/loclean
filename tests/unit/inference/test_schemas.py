@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from semantix.inference.schemas import ExtractionResult
+from loclean.inference.schemas import ExtractionResult
 
 
 class TestExtractionResult:

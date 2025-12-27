@@ -1,23 +1,23 @@
 <p align="center">
-  <a href="https://pypi.org/project/semantix"><img src="https://img.shields.io/pypi/v/semantix?color=blue&style=flat-square" alt="PyPI"></a>
-  <a href="https://pypi.org/project/semantix"><img src="https://img.shields.io/pypi/pyversions/semantix?style=flat-square" alt="Python Versions"></a>
-  <a href="https://github.com/nxank4/semantix/actions/workflows/ci.yml"><img src="https://github.com/nxank4/semantix/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
-  <a href="https://github.com/nxank4/semantix/blob/main/LICENSE"><img src="https://img.shields.io/github/license/nxank4/semantix?style=flat-square" alt="License"></a>
+  <a href="https://pypi.org/project/loclean"><img src="https://img.shields.io/pypi/v/loclean?color=blue&style=flat-square" alt="PyPI"></a>
+  <a href="https://pypi.org/project/loclean"><img src="https://img.shields.io/pypi/pyversions/loclean?style=flat-square" alt="Python Versions"></a>
+  <a href="https://github.com/nxank4/loclean/actions/workflows/ci.yml"><img src="https://github.com/nxank4/loclean/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
+  <a href="https://github.com/nxank4/loclean/blob/main/LICENSE"><img src="https://img.shields.io/github/license/nxank4/loclean?style=flat-square" alt="License"></a>
   <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv"></a>
 </p>
 
 ---
 
-# Semantix ⚡🧠
+# Loclean ⚡🧠
 
 **The All-in-One Local AI Data Cleaner.**
 
 Clean messy tabular data using local AI.
 **No API keys required. No GPU required.**
 
-## 🔥 Why Semantix?
+## 🔥 Why Loclean?
 
-Semantix bridges the gap between **Data Engineering** and **Local AI**, designed for production pipelines where privacy and stability are non-negotiable.
+Loclean bridges the gap between **Data Engineering** and **Local AI**, designed for production pipelines where privacy and stability are non-negotiable.
 
 ### 🔒 Privacy-First & Zero Cost
 
@@ -25,11 +25,11 @@ Leverage the power of Small Language Models (SLMs) like **Phi-3** and **Llama-3*
 
 ### 🛡️ Deterministic Outputs
 
-Forget about "hallucinations" or parsing loose text. Semantix uses **GBNF Grammars** and **Pydantic V2** to force the LLM to output valid, type-safe JSON. If it breaks the schema, it doesn't pass.
+Forget about "hallucinations" or parsing loose text. Loclean uses **GBNF Grammars** and **Pydantic V2** to force the LLM to output valid, type-safe JSON. If it breaks the schema, it doesn't pass.
 
 ### ⚡ Backend Agnostic (Zero-Copy)
 
-Built on **Narwhals**, Semantix supports **Pandas**, **Polars**, and **PyArrow** natively.
+Built on **Narwhals**, Loclean supports **Pandas**, **Polars**, and **PyArrow** natively.
 
 * Running Polars? We keep it lazy.
 * Running Pandas? We handle it seamlessly.
@@ -47,21 +47,21 @@ Built on **Narwhals**, Semantix supports **Pandas**, **Polars**, and **PyArrow**
 **Using pip:**
 
 ```bash
-pip install semantix
+pip install loclean
 ```
 
 **Using uv (recommended for faster installs):**
 
 ```bash
-uv pip install semantix
+uv pip install loclean
 ```
 
 **Using conda/mamba:**
 
 ```bash
-conda install -c conda-forge semantix
+conda install -c conda-forge loclean
 # or
-mamba install -c conda-forge semantix
+mamba install -c conda-forge loclean
 ```
 
 ### Optional Dependencies
@@ -69,19 +69,19 @@ mamba install -c conda-forge semantix
 **For DataFrame operations (Pandas, Polars, PyArrow):**
 
 ```bash
-pip install semantix[data]
+pip install loclean[data]
 ```
 
 **For Cloud API support (OpenAI, Anthropic, Gemini):**
 
 ```bash
-pip install semantix[cloud]
+pip install loclean[cloud]
 ```
 
 **Install everything:**
 
 ```bash
-pip install semantix[all]
+pip install loclean[all]
 ```
 
 ### Development Installation
@@ -90,8 +90,8 @@ To contribute or run tests locally:
 
 ```bash
 # Clone the repository
-git clone https://github.com/nxank4/semantix.git
-cd semantix
+git clone https://github.com/nxank4/loclean.git
+cd loclean
 
 # Install with development dependencies (using uv)
 uv sync --dev
@@ -110,7 +110,7 @@ _in progress..._
 
 ## 🗺️ Roadmap
 
-The development of Semantix is focused on three key areas: **Reliability**, **Privacy**, and **Integration**.
+The development of Loclean is focused on three key areas: **Reliability**, **Privacy**, and **Integration**.
 
 ### 📍 Phase 1: Core Intelligence (Current Focus)
 
@@ -130,15 +130,15 @@ The development of Semantix is focused on three key areas: **Reliability**, **Pr
 
 ### 📍 Phase 3: Ecosystem & DX
 
-**Goal: Make Semantix a first-class citizen in the Python data stack.**
+**Goal: Make Loclean a first-class citizen in the Python data stack.**
 
-* [ ] **Native Dataframe Accessors**: Direct integration for **Pandas** and **Polars** (e.g., `df.semantix.clean(...)`) via PyArrow.
+* [ ] **Native Dataframe Accessors**: Direct integration for **Pandas** and **Polars** (e.g., `df.loclean.clean(...)`) via PyArrow.
 * [ ] **Interactive CLI Review**: A "Human-in-the-loop" mode to review and approve low-confidence AI changes via the terminal.
 * [ ] **Custom LoRA Adapters**: Support for loading lightweight, domain-specific fine-tunes (e.g., Medical, Legal) without replacing the base model.
 
 ## 🤝 Contributing
 
-We love contributions! Semantix is strictly open-source under the **Apache 2.0 License**.
+We love contributions! Loclean is strictly open-source under the **Apache 2.0 License**.
 
 1. **Fork** the repo on GitHub.
 2. **Clone** your fork locally.

@@ -1,5 +1,5 @@
 def main() -> None:
-    print("Hello from semantix!")
+    print("Hello from loclean!")
 
 
 if __name__ == "__main__":

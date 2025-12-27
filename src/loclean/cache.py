@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 
-class SemantixCache:
+class LocleanCache:
     """
     Persistent caching layer using SQLite3.
     """
@@ -19,10 +19,10 @@ class SemantixCache:
 
         Args:
             cache_dir: Optional directory for the cache database.
-                       Defaults to ~/.cache/semantix.
+                       Defaults to ~/.cache/loclean.
         """
         if cache_dir is None:
-            self.cache_dir = Path.home() / ".cache" / "semantix"
+            self.cache_dir = Path.home() / ".cache" / "loclean"
         else:
             self.cache_dir = cache_dir
 

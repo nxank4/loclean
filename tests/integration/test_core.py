@@ -3,7 +3,7 @@ from typing import Any
 import polars as pl
 import pytest
 
-import semantix
+import loclean
 
 
 @pytest.mark.slow
@@ -12,18 +12,18 @@ def test_clean_pipeline_weight(messy_df: Any) -> None:
     Test end-to-end cleaning of a 'weight' column.
     """
     # Force use of a temporary cache for integration tests to not pollute user cache?
-    # Ideally yes, but `semantix.clean` uses the singleton `LocalInferenceEngine`.
+    # Ideally yes, but `loclean.clean` uses the singleton `LocalInferenceEngine`.
     # We might need to mock or patch the engine's cache, or just let it use the default
     # but that breaks the rule "Test Suite ... ensures tests don't mess up the user's
-    # real ~/.cache/semantix".
+    # real ~/.cache/loclean".
 
     # We can patch the cache_dir in the engine if we want, or we can
     # instantiate a new engine and pass it to clean if clean allowed it.
-    # Looking at `semantix.__init__.py`, `clean` calls `get_engine()`.
+    # Looking at `loclean.__init__.py`, `clean` calls `get_engine()`.
 
     # A simple way to isolate is to patch
-    # `semantix.inference.manager.LocalInferenceEngine` or the singleton
-    # `semantix._ENGINE_INSTANCE` at the start of the test.
+    # `loclean.inference.manager.LocalInferenceEngine` or the singleton
+    # `loclean._ENGINE_INSTANCE` at the start of the test.
 
     # For now, let's proceed with the test logic assuming the environment handles it
     # or we accept it.
@@ -31,7 +31,7 @@ def test_clean_pipeline_weight(messy_df: Any) -> None:
 
     # We can just check the results.
 
-    df_result = semantix.clean(messy_df, "weight")
+    df_result = loclean.clean(messy_df, "weight")
 
     # Assert 'clean_value' and 'clean_unit' exist
     assert "clean_value" in df_result.columns
@@ -54,7 +54,7 @@ def test_clean_pipeline_price(messy_df: Any) -> None:
     Test end-to-end cleaning of a 'price' column.
     """
     instruction = "Extract value and currency unit"
-    df_result = semantix.clean(messy_df, "price", instruction=instruction)
+    df_result = loclean.clean(messy_df, "price", instruction=instruction)
 
     # Check $10 -> 10
     # Note: unit might be '$' or 'USD' depending on model output
@@ -73,8 +73,8 @@ def test_idempotency(messy_df: Any) -> None:
     """
     Verify that running the same clean command twice produces identical results.
     """
-    df_run1 = semantix.clean(messy_df, "weight")
-    df_run2 = semantix.clean(messy_df, "weight")
+    df_run1 = loclean.clean(messy_df, "weight")
+    df_run2 = loclean.clean(messy_df, "weight")
 
     from polars.testing import assert_frame_equal
 

@@ -3,9 +3,9 @@ from typing import Optional
 import narwhals as nw
 from narwhals.typing import IntoFrameT
 
-from semantix._version import __version__
-from semantix.engine.narwhals_ops import NarwhalsEngine
-from semantix.inference.manager import LocalInferenceEngine
+from loclean._version import __version__
+from loclean.engine.narwhals_ops import NarwhalsEngine
+from loclean.inference.manager import LocalInferenceEngine
 
 __all__ = ["__version__", "clean", "get_engine"]
 

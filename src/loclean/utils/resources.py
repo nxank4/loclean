@@ -28,7 +28,7 @@ def load_grammar(filename: str) -> str:
     """
     try:
         # Use importlib.resources for zip-safe resource loading
-        package = importlib.resources.files("semantix.resources.grammars")
+        package = importlib.resources.files("loclean.resources.grammars")
         grammar_file = package / filename
 
         if not grammar_file.is_file():
@@ -68,7 +68,7 @@ def load_template(filename: str) -> str:
     """
     try:
         # Use importlib.resources for zip-safe resource loading
-        package = importlib.resources.files("semantix.resources.templates")
+        package = importlib.resources.files("loclean.resources.templates")
         template_file = package / filename
 
         if not template_file.is_file():
@@ -96,7 +96,7 @@ def list_grammars() -> list[str]:
         List of grammar filenames
     """
     try:
-        package = importlib.resources.files("semantix.resources.grammars")
+        package = importlib.resources.files("loclean.resources.grammars")
         return [
             f.name
             for f in package.iterdir()
@@ -118,7 +118,7 @@ def list_templates() -> list[str]:
         List of template filenames
     """
     try:
-        package = importlib.resources.files("semantix.resources.templates")
+        package = importlib.resources.files("loclean.resources.templates")
         return [
             f.name for f in package.iterdir() if f.is_file() and f.name.endswith(".j2")
         ]

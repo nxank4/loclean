@@ -6,7 +6,7 @@ from narwhals.typing import IntoFrameT
 from tqdm import tqdm
 
 if TYPE_CHECKING:
-    from semantix.inference.manager import LocalInferenceEngine
+    from loclean.inference.manager import LocalInferenceEngine
 
 logger = logging.getLogger(__name__)
 
