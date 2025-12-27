@@ -10,15 +10,15 @@ from semantix.inference.base import InferenceEngine
 class TestInferenceEngine:
     """Test cases for InferenceEngine abstract base class."""
 
-    def test_cannot_instantiate_abstract_class(self):
+    def test_cannot_instantiate_abstract_class(self) -> None:
         """Test that InferenceEngine cannot be instantiated directly."""
         with pytest.raises(TypeError) as exc_info:
-            InferenceEngine()
+            InferenceEngine()  # type: ignore[abstract]
 
         error_msg = str(exc_info.value)
         assert "abstract" in error_msg.lower() or "clean_batch" in error_msg.lower()
 
-    def test_subclass_without_implementation_raises_error(self):
+    def test_subclass_without_implementation_raises_error(self) -> None:
         """Test that subclass without clean_batch implementation
         cannot be instantiated."""
 
@@ -28,12 +28,12 @@ class TestInferenceEngine:
             pass
 
         with pytest.raises(TypeError) as exc_info:
-            IncompleteEngine()
+            IncompleteEngine()  # type: ignore[abstract]
 
         error_msg = str(exc_info.value)
         assert "abstract" in error_msg.lower() or "clean_batch" in error_msg.lower()
 
-    def test_subclass_with_implementation_can_be_instantiated(self):
+    def test_subclass_with_implementation_can_be_instantiated(self) -> None:
         """Test that subclass with clean_batch implementation can be instantiated."""
 
         class MockEngine(InferenceEngine):
@@ -55,7 +55,7 @@ class TestInferenceEngine:
         assert isinstance(engine, InferenceEngine)
         assert isinstance(engine, MockEngine)
 
-    def test_clean_batch_signature(self):
+    def test_clean_batch_signature(self) -> None:
         """Test that clean_batch has correct signature."""
 
         class MockEngine(InferenceEngine):
@@ -74,7 +74,7 @@ class TestInferenceEngine:
         assert hasattr(engine, "clean_batch")
         assert callable(engine.clean_batch)
 
-    def test_clean_batch_return_type(self):
+    def test_clean_batch_return_type(self) -> None:
         """Test that clean_batch returns correct type."""
 
         class MockEngine(InferenceEngine):
@@ -103,7 +103,7 @@ class TestInferenceEngine:
         }
         assert result["failed"] is None
 
-    def test_clean_batch_with_empty_items(self):
+    def test_clean_batch_with_empty_items(self) -> None:
         """Test that clean_batch handles empty items list."""
 
         class MockEngine(InferenceEngine):
@@ -122,7 +122,7 @@ class TestInferenceEngine:
         assert isinstance(result, dict)
         assert len(result) == 0
 
-    def test_clean_batch_with_multiple_items(self):
+    def test_clean_batch_with_multiple_items(self) -> None:
         """Test that clean_batch processes multiple items correctly."""
 
         class MockEngine(InferenceEngine):
@@ -149,12 +149,14 @@ class TestInferenceEngine:
         assert len(result) == 3
         for item in items:
             assert item in result
-            assert result[item] is not None
-            assert "reasoning" in result[item]
-            assert "value" in result[item]
-            assert "unit" in result[item]
+            item_result = result[item]
+            assert item_result is not None
+            if item_result is not None:
+                assert "reasoning" in item_result
+                assert "value" in item_result
+                assert "unit" in item_result
 
-    def test_clean_batch_with_none_results(self):
+    def test_clean_batch_with_none_results(self) -> None:
         """Test that clean_batch can return None for failed extractions."""
 
         class MockEngine(InferenceEngine):
@@ -166,7 +168,7 @@ class TestInferenceEngine:
                 instruction: str,
             ) -> Dict[str, Optional[Dict[str, Any]]]:
                 """Mock implementation returning None for invalid items."""
-                result = {}
+                result: Dict[str, Optional[Dict[str, Any]]] = {}
                 for item in items:
                     if "invalid" in item.lower():
                         result[item] = None
@@ -181,7 +183,7 @@ class TestInferenceEngine:
         assert result["invalid_input"] is None
         assert result["5.5lb"] is not None
 
-    def test_clean_batch_instruction_parameter(self):
+    def test_clean_batch_instruction_parameter(self) -> None:
         """Test that clean_batch receives and can use instruction parameter."""
 
         class MockEngine(InferenceEngine):
@@ -205,11 +207,12 @@ class TestInferenceEngine:
         engine = MockEngine()
         instruction = "Convert to kilograms"
         result = engine.clean_batch(["10kg"], instruction)
+        assert result["10kg"] is not None
         assert (
             "Following instruction: Convert to kilograms" in result["10kg"]["reasoning"]
         )
 
-    def test_isinstance_check(self):
+    def test_isinstance_check(self) -> None:
         """Test that subclasses pass isinstance check."""
 
         class MockEngine(InferenceEngine):
@@ -227,7 +230,7 @@ class TestInferenceEngine:
         assert isinstance(engine, InferenceEngine)
         assert isinstance(engine, MockEngine)
 
-    def test_multiple_subclasses(self):
+    def test_multiple_subclasses(self) -> None:
         """Test that multiple subclasses can coexist."""
 
         class EngineA(InferenceEngine):
@@ -260,7 +263,7 @@ class TestInferenceEngine:
         assert not isinstance(engine_a, EngineB)
         assert not isinstance(engine_b, EngineA)
 
-    def test_clean_batch_result_structure(self):
+    def test_clean_batch_result_structure(self) -> None:
         """Test that clean_batch returns results with expected structure."""
 
         class MockEngine(InferenceEngine):

@@ -1,9 +1,11 @@
+from typing import Any
+
 import polars as pl
 import pytest
 
 
 @pytest.fixture
-def temp_cache_db(tmp_path):
+def temp_cache_db(tmp_path: Any) -> Any:
     """
     Returns a path to a temporary cache database file.
     This ensures we don't overwrite the user's actual cache.
@@ -12,7 +14,7 @@ def temp_cache_db(tmp_path):
 
 
 @pytest.fixture
-def messy_df():
+def messy_df() -> pl.DataFrame:
     """
     Returns a Polars DataFrame with messy data for integration tests.
     """

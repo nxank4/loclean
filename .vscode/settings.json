@@ -1,0 +1,23 @@
+{
+  // Disable auto format on save
+  "editor.formatOnSave": false,
+  
+  // Optional: Disable format on paste
+  "editor.formatOnPaste": false,
+  
+  // Optional: Disable format on type (if enabled)
+  "editor.formatOnType": false,
+  
+  // Keep other editor settings
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  
+  // Python-specific settings
+  "[python]": {
+    "editor.formatOnSave": false,
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "python.languageServer": "None"
+}
+
