@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import polars as pl
 import pytest
 
-from semantix.engine.narwhals_ops import NarwhalsEngine
+from loclean.engine.narwhals_ops import NarwhalsEngine
 
 # Optional import cho pandas test
 try:

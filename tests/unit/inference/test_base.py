@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 
-from semantix.inference.base import InferenceEngine
+from loclean.inference.base import InferenceEngine
 
 
 class TestInferenceEngine:

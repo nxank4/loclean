@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from semantix.inference.adapters import LlamaAdapter, Phi3Adapter, QwenAdapter
-from semantix.inference.local.llama_cpp import LlamaCppEngine
+from loclean.inference.adapters import LlamaAdapter, Phi3Adapter, QwenAdapter
+from loclean.inference.local.llama_cpp import LlamaCppEngine
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def mock_llama() -> Any:
 @pytest.fixture
 def mock_llama_class(mock_llama: Any) -> Any:
     """Patch Llama class to return mock instance."""
-    with patch("semantix.inference.local.llama_cpp.Llama", return_value=mock_llama):
+    with patch("loclean.inference.local.llama_cpp.Llama", return_value=mock_llama):
         yield mock_llama
 
 
@@ -42,10 +42,10 @@ def mock_grammar() -> Any:
 def mock_grammar_class(mock_grammar: Any) -> Any:
     """Patch LlamaGrammar class to return mock instance."""
     with patch(
-        "semantix.inference.local.llama_cpp.LlamaGrammar", return_value=mock_grammar
+        "loclean.inference.local.llama_cpp.LlamaGrammar", return_value=mock_grammar
     ):
         with patch(
-            "semantix.inference.local.llama_cpp.LlamaGrammar.from_string",
+            "loclean.inference.local.llama_cpp.LlamaGrammar.from_string",
             return_value=mock_grammar,
         ):
             yield mock_grammar
@@ -53,7 +53,7 @@ def mock_grammar_class(mock_grammar: Any) -> Any:
 
 @pytest.fixture
 def mock_cache() -> Any:
-    """Create a mock SemantixCache instance."""
+    """Create a mock LocleanCache instance."""
     mock_cache_instance = Mock()
     mock_cache_instance.get_batch = Mock(return_value={})
     mock_cache_instance.set_batch = Mock()
@@ -65,8 +65,8 @@ def mock_cache() -> Any:
 
 @pytest.fixture
 def mock_cache_class(mock_cache: Any) -> Any:
-    """Patch SemantixCache class to return mock instance."""
-    with patch("semantix.cache.SemantixCache", return_value=mock_cache):
+    """Patch LocleanCache class to return mock instance."""
+    with patch("loclean.cache.LocleanCache", return_value=mock_cache):
         yield mock_cache
 
 
@@ -83,7 +83,7 @@ def mock_model_path(temp_cache_dir: Any) -> Any:
 def mock_hf_download(mock_model_path: Any) -> Any:
     """Patch hf_hub_download to return mock model path."""
     with patch(
-        "semantix.inference.local.llama_cpp.hf_hub_download",
+        "loclean.inference.local.llama_cpp.hf_hub_download",
         return_value=str(mock_model_path),
     ):
         yield
@@ -121,18 +121,18 @@ class TestLlamaCppEngine:
     ) -> None:
         """Test LlamaCppEngine initialization with default cache directory."""
         with patch(
-            "semantix.inference.local.llama_cpp.Path.home",
+            "loclean.inference.local.llama_cpp.Path.home",
             return_value=Path("/home/test"),
         ):
             with patch("pathlib.Path.mkdir"):  # Patch mkdir to avoid permission errors
                 with patch(
-                    "semantix.inference.local.llama_cpp.hf_hub_download",
+                    "loclean.inference.local.llama_cpp.hf_hub_download",
                     return_value=str(mock_model_path),
                 ):
                     engine = LlamaCppEngine()
 
                     assert (
-                        engine.cache_dir == Path("/home/test") / ".cache" / "semantix"
+                        engine.cache_dir == Path("/home/test") / ".cache" / "loclean"
                     )
                     assert engine.model_path == mock_model_path
 
@@ -146,7 +146,7 @@ class TestLlamaCppEngine:
         mock_hf_download: Any,
     ) -> None:
         """Test LlamaCppEngine initialization with specific model name."""
-        with patch("semantix.inference.local.llama_cpp.Path.exists", return_value=True):
+        with patch("loclean.inference.local.llama_cpp.Path.exists", return_value=True):
             engine = LlamaCppEngine(model_name="qwen3-4b", cache_dir=temp_cache_dir)
 
             assert engine.model_name == "qwen3-4b"
@@ -164,7 +164,7 @@ class TestLlamaCppEngine:
     ) -> None:
         """Test LlamaCppEngine falls back to default model when
         unknown model is provided."""
-        with patch("semantix.inference.local.llama_cpp.logger") as mock_logger:
+        with patch("loclean.inference.local.llama_cpp.logger") as mock_logger:
             engine = LlamaCppEngine(
                 model_name="unknown-model", cache_dir=temp_cache_dir
             )
@@ -183,7 +183,7 @@ class TestLlamaCppEngine:
     ) -> None:
         """Test LlamaCppEngine initialization with custom n_ctx and n_gpu_layers."""
         with patch(
-            "semantix.inference.local.llama_cpp.Llama"
+            "loclean.inference.local.llama_cpp.Llama"
         ) as mock_llama_constructor:
             mock_llama_instance = Mock()
             mock_llama_constructor.return_value = mock_llama_instance
@@ -210,9 +210,9 @@ class TestLlamaCppEngine:
         mock_cache_class: Any,
     ) -> None:
         """Test _get_model_path returns existing file."""
-        with patch("semantix.inference.local.llama_cpp.Llama"):
-            with patch("semantix.inference.local.llama_cpp.LlamaGrammar"):
-                with patch("semantix.cache.SemantixCache"):
+        with patch("loclean.inference.local.llama_cpp.Llama"):
+            with patch("loclean.inference.local.llama_cpp.LlamaGrammar"):
+                with patch("loclean.cache.LocleanCache"):
                     engine = LlamaCppEngine(cache_dir=temp_cache_dir)
                     path = engine._get_model_path()
 
@@ -221,13 +221,13 @@ class TestLlamaCppEngine:
     def test_get_model_path_downloads_when_missing(self, temp_cache_dir: Any) -> None:
         """Test _get_model_path downloads model when missing."""
         with patch(
-            "semantix.inference.local.llama_cpp.Path.exists", return_value=False
+            "loclean.inference.local.llama_cpp.Path.exists", return_value=False
         ):
-            with patch("semantix.inference.local.llama_cpp.Llama"):
-                with patch("semantix.inference.local.llama_cpp.LlamaGrammar"):
-                    with patch("semantix.cache.SemantixCache"):
+            with patch("loclean.inference.local.llama_cpp.Llama"):
+                with patch("loclean.inference.local.llama_cpp.LlamaGrammar"):
+                    with patch("loclean.cache.LocleanCache"):
                         with patch(
-                            "semantix.inference.local.llama_cpp.hf_hub_download"
+                            "loclean.inference.local.llama_cpp.hf_hub_download"
                         ) as mock_download:
                             mock_download.return_value = str(
                                 temp_cache_dir / "downloaded.gguf"
@@ -248,10 +248,10 @@ class TestLlamaCppEngine:
         mock_hf_download: Any,
     ) -> None:
         """Test _get_json_grammar loads grammar from resources."""
-        with patch("semantix.utils.resources.load_grammar") as mock_load_grammar:
+        with patch("loclean.utils.resources.load_grammar") as mock_load_grammar:
             mock_load_grammar.return_value = "root ::= object"
             with patch(
-                "semantix.inference.local.llama_cpp.LlamaGrammar"
+                "loclean.inference.local.llama_cpp.LlamaGrammar"
             ) as mock_grammar_class:
                 mock_grammar_instance = Mock()
                 mock_grammar_class.from_string = Mock(
@@ -279,7 +279,7 @@ class TestLlamaCppEngine:
         mock_hf_download: Any,
     ) -> None:
         """Test that correct adapter is selected for different models."""
-        with patch("semantix.inference.local.llama_cpp.Path.exists", return_value=True):
+        with patch("loclean.inference.local.llama_cpp.Path.exists", return_value=True):
             # Test Phi-3 model
             engine_phi = LlamaCppEngine(
                 model_name="phi-3-mini", cache_dir=temp_cache_dir
@@ -542,7 +542,7 @@ class TestLlamaCppEngine:
         mock_hf_download: Any,
     ) -> None:
         """Test that model registry contains all expected models."""
-        from semantix.inference.local.llama_cpp import _MODEL_REGISTRY
+        from loclean.inference.local.llama_cpp import _MODEL_REGISTRY
 
         expected_models = ["phi-3-mini", "qwen3-4b", "gemma-3-4b", "deepseek-r1"]
         for model_name in expected_models:

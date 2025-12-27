@@ -7,8 +7,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from semantix.inference.adapters import LlamaAdapter, Phi3Adapter, QwenAdapter
-from semantix.inference.manager import LlamaCppEngine, LocalInferenceEngine
+from loclean.inference.adapters import LlamaAdapter, Phi3Adapter, QwenAdapter
+from loclean.inference.manager import LlamaCppEngine, LocalInferenceEngine
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def mock_llama() -> Any:
 
 @pytest.fixture
 def mock_llama_class(mock_llama: Any) -> Any:
-    with patch("semantix.inference.local.llama_cpp.Llama", return_value=mock_llama):
+    with patch("loclean.inference.local.llama_cpp.Llama", return_value=mock_llama):
         yield mock_llama
 
 
@@ -38,10 +38,10 @@ def mock_grammar() -> Any:
 @pytest.fixture
 def mock_grammar_class(mock_grammar: Any) -> Any:
     with patch(
-        "semantix.inference.local.llama_cpp.LlamaGrammar", return_value=mock_grammar
+        "loclean.inference.local.llama_cpp.LlamaGrammar", return_value=mock_grammar
     ):
         with patch(
-            "semantix.inference.local.llama_cpp.LlamaGrammar.from_string",
+            "loclean.inference.local.llama_cpp.LlamaGrammar.from_string",
             return_value=mock_grammar,
         ):
             yield mock_grammar
@@ -60,7 +60,7 @@ def mock_cache() -> Any:
 
 @pytest.fixture
 def mock_cache_class(mock_cache: Any) -> Any:
-    with patch("semantix.cache.SemantixCache", return_value=mock_cache):
+    with patch("loclean.cache.LocleanCache", return_value=mock_cache):
         yield mock_cache
 
 
@@ -75,7 +75,7 @@ def mock_model_path(temp_cache_dir: Any) -> Any:
 @pytest.fixture
 def mock_hf_download(mock_model_path: Any) -> Any:
     with patch(
-        "semantix.inference.local.llama_cpp.hf_hub_download",
+        "loclean.inference.local.llama_cpp.hf_hub_download",
         return_value=str(mock_model_path),
     ):
         yield
@@ -116,11 +116,11 @@ class TestLlamaCppEngine:
     ) -> None:
         """Test LlamaCppEngine initialization with default cache directory."""
         with patch(
-            "semantix.inference.local.llama_cpp.Path.home",
+            "loclean.inference.local.llama_cpp.Path.home",
             return_value=Path("/home/test"),
         ):
             with patch("pathlib.Path.mkdir"):
-                expected_cache_dir = Path("/home/test/.cache/semantix")
+                expected_cache_dir = Path("/home/test/.cache/loclean")
                 mock_model_path = expected_cache_dir / "Phi-3-mini-4k-instruct-q4.gguf"
 
                 def mock_exists(*args: Any) -> bool:
@@ -161,7 +161,7 @@ class TestLlamaCppEngine:
     ) -> None:
         """Test that unknown model name falls back to phi-3-mini."""
         with patch("pathlib.Path.exists", return_value=True):
-            with patch("semantix.inference.local.llama_cpp.logger") as mock_logger:
+            with patch("loclean.inference.local.llama_cpp.logger") as mock_logger:
                 engine = LlamaCppEngine(
                     model_name="unknown-model", cache_dir=temp_cache_dir
                 )
@@ -178,7 +178,7 @@ class TestLlamaCppEngine:
         mock_hf_download: Any,
     ) -> None:
         """Test LlamaCppEngine initialization with n_ctx and n_gpu_layers."""
-        with patch("semantix.inference.local.llama_cpp.Llama") as mock_llama_class:
+        with patch("loclean.inference.local.llama_cpp.Llama") as mock_llama_class:
             mock_llama_instance = Mock()
             mock_llama_class.return_value = mock_llama_instance
 
@@ -198,9 +198,9 @@ class TestLlamaCppEngine:
         self, temp_cache_dir: Any, mock_model_path: Any, mock_hf_download: Any
     ) -> None:
         """Test _get_model_path returns existing file."""
-        with patch("semantix.inference.local.llama_cpp.Llama"):
-            with patch("semantix.inference.local.llama_cpp.LlamaGrammar"):
-                with patch("semantix.cache.SemantixCache"):
+        with patch("loclean.inference.local.llama_cpp.Llama"):
+            with patch("loclean.inference.local.llama_cpp.LlamaGrammar"):
+                with patch("loclean.cache.LocleanCache"):
                     engine = LlamaCppEngine(cache_dir=temp_cache_dir)
                     path = engine._get_model_path()
 
@@ -209,13 +209,13 @@ class TestLlamaCppEngine:
     def test_get_model_path_downloads_when_missing(self, temp_cache_dir: Any) -> None:
         """Test _get_model_path downloads model when missing."""
         with patch(
-            "semantix.inference.local.llama_cpp.Path.exists", return_value=False
+            "loclean.inference.local.llama_cpp.Path.exists", return_value=False
         ):
-            with patch("semantix.inference.local.llama_cpp.Llama"):
-                with patch("semantix.inference.local.llama_cpp.LlamaGrammar"):
-                    with patch("semantix.cache.SemantixCache"):
+            with patch("loclean.inference.local.llama_cpp.Llama"):
+                with patch("loclean.inference.local.llama_cpp.LlamaGrammar"):
+                    with patch("loclean.cache.LocleanCache"):
                         with patch(
-                            "semantix.inference.local.llama_cpp.hf_hub_download"
+                            "loclean.inference.local.llama_cpp.hf_hub_download"
                         ) as mock_download:
                             mock_download.return_value = str(
                                 temp_cache_dir / "downloaded_model.gguf"
@@ -243,7 +243,7 @@ class TestLlamaCppEngine:
     ) -> None:
         """Test _get_json_grammar returns correct grammar."""
         with patch(
-            "semantix.inference.local.llama_cpp.LlamaGrammar"
+            "loclean.inference.local.llama_cpp.LlamaGrammar"
         ) as mock_grammar_class:
             mock_grammar_instance = Mock()
             mock_grammar_class.from_string = Mock(return_value=mock_grammar_instance)

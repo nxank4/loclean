@@ -2,7 +2,7 @@
 
 import pytest
 
-from semantix.inference.adapters import (
+from loclean.inference.adapters import (
     LlamaAdapter,
     Phi3Adapter,
     PromptAdapter,

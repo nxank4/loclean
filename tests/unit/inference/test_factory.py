@@ -5,10 +5,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from semantix.inference.base import InferenceEngine
-from semantix.inference.config import EngineConfig
-from semantix.inference.factory import create_engine
-from semantix.inference.local.llama_cpp import LlamaCppEngine
+from loclean.inference.base import InferenceEngine
+from loclean.inference.config import EngineConfig
+from loclean.inference.factory import create_engine
+from loclean.inference.local.llama_cpp import LlamaCppEngine
 
 
 @pytest.fixture
@@ -25,20 +25,20 @@ def mock_llama() -> Any:
 
 @pytest.fixture
 def mock_llama_class(mock_llama: Any) -> Any:
-    with patch("semantix.inference.local.llama_cpp.Llama", return_value=mock_llama):
+        with patch("loclean.inference.local.llama_cpp.Llama", return_value=mock_llama):
         yield mock_llama
 
 
 @pytest.fixture
 def mock_grammar_class() -> Any:
-    with patch("semantix.inference.local.llama_cpp.LlamaGrammar"):
-        with patch("semantix.inference.local.llama_cpp.LlamaGrammar.from_string"):
+        with patch("loclean.inference.local.llama_cpp.LlamaGrammar"):
+            with patch("loclean.inference.local.llama_cpp.LlamaGrammar.from_string"):
             yield
 
 
 @pytest.fixture
 def mock_cache_class() -> Any:
-    with patch("semantix.cache.SemantixCache"):
+        with patch("loclean.cache.LocleanCache"):
         yield
 
 
@@ -52,10 +52,10 @@ def mock_model_path(temp_cache_dir: Any) -> Any:
 
 @pytest.fixture
 def mock_hf_download(mock_model_path: Any) -> Any:
-    with patch(
-        "semantix.inference.local.llama_cpp.hf_hub_download",
-        return_value=str(mock_model_path),
-    ):
+        with patch(
+            "loclean.inference.local.llama_cpp.hf_hub_download",
+            return_value=str(mock_model_path),
+        ):
         yield
 
 
@@ -119,7 +119,7 @@ class TestCreateEngine:
             n_gpu_layers=10,
         )
 
-        with patch("semantix.inference.local.llama_cpp.Llama") as mock_llama:
+        with patch("loclean.inference.local.llama_cpp.Llama") as mock_llama:
             mock_llama_instance = Mock()
             mock_llama.return_value = mock_llama_instance
 
@@ -182,7 +182,7 @@ class TestCreateEngine:
         )
 
         with patch(
-            "semantix.inference.local.llama_cpp.LlamaCppEngine"
+            "loclean.inference.local.llama_cpp.LlamaCppEngine"
         ) as mock_engine_class:
             mock_engine_instance = Mock()
             mock_engine_class.return_value = mock_engine_instance
@@ -208,13 +208,13 @@ class TestCreateEngine:
         config = EngineConfig(cache_dir=temp_cache_dir)
 
         # Verify that LlamaCppEngine is not imported at module level
-        import semantix.inference.factory as factory_module
+        import loclean.inference.factory as factory_module
 
         # LlamaCppEngine should not be in factory module's namespace
         assert "LlamaCppEngine" not in dir(factory_module)
 
         # But should be importable when create_engine is called
-        with patch("semantix.inference.local.llama_cpp.Llama"):
+        with patch("loclean.inference.local.llama_cpp.Llama"):
             engine = create_engine(config)
             assert isinstance(engine, LlamaCppEngine)
 
@@ -258,7 +258,7 @@ class TestCreateEngine:
             cache_dir=temp_cache_dir,
         )
 
-        with patch("semantix.inference.factory.logger") as mock_logger:
+        with patch("loclean.inference.factory.logger") as mock_logger:
             create_engine(config)
 
             mock_logger.info.assert_called()
@@ -294,10 +294,10 @@ class TestCreateEngine:
         """Test that create_engine handles engine initialization errors."""
         config = EngineConfig(engine="llama-cpp", cache_dir=temp_cache_dir)
 
-        with patch("semantix.inference.local.llama_cpp.Llama") as mock_llama:
+        with patch("loclean.inference.local.llama_cpp.Llama") as mock_llama:
             mock_llama.side_effect = RuntimeError("Failed to load model")
 
-            with patch("semantix.inference.factory.logger") as mock_logger:
+            with patch("loclean.inference.factory.logger") as mock_logger:
                 with pytest.raises(RuntimeError) as exc_info:
                     create_engine(config)
 

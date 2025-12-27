@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from semantix.inference.config import (
+from loclean.inference.config import (
     EngineConfig,
     _load_from_env,
     _load_from_pyproject_toml,
@@ -26,7 +26,7 @@ class TestEngineConfig:
         assert config.engine == "llama-cpp"
         assert config.model == "phi-3-mini-4k-instruct"
         assert config.api_key is None
-        assert config.cache_dir == Path.home() / ".cache" / "semantix"
+        assert config.cache_dir == Path.home() / ".cache" / "loclean"
         assert config.n_ctx == 4096
         assert config.n_gpu_layers == 0
 
@@ -121,12 +121,12 @@ class TestLoadFromEnv:
     def test_load_all_env_variables(self) -> None:
         """Test loading all environment variables."""
         env_vars = {
-            "SEMANTIX_ENGINE": "openai",
-            "SEMANTIX_MODEL": "gpt-4o",
-            "SEMANTIX_API_KEY": "sk-test123",
-            "SEMANTIX_CACHE_DIR": "/tmp/test",
-            "SEMANTIX_N_CTX": "8192",
-            "SEMANTIX_N_GPU_LAYERS": "10",
+            "LOCLEAN_ENGINE": "openai",
+            "LOCLEAN_MODEL": "gpt-4o",
+            "LOCLEAN_API_KEY": "sk-test123",
+            "LOCLEAN_CACHE_DIR": "/tmp/test",
+            "LOCLEAN_N_CTX": "8192",
+            "LOCLEAN_N_GPU_LAYERS": "10",
         }
 
         with patch.dict(os.environ, env_vars):
@@ -141,8 +141,8 @@ class TestLoadFromEnv:
     def test_load_partial_env_variables(self) -> None:
         """Test loading only some environment variables."""
         env_vars = {
-            "SEMANTIX_ENGINE": "anthropic",
-            "SEMANTIX_MODEL": "claude-3",
+            "LOCLEAN_ENGINE": "anthropic",
+            "LOCLEAN_MODEL": "claude-3",
         }
 
         with patch.dict(os.environ, env_vars, clear=False):
@@ -153,9 +153,9 @@ class TestLoadFromEnv:
 
     def test_load_no_env_variables(self) -> None:
         """Test loading when no environment variables are set."""
-        # Remove all SEMANTIX_* env vars
+        # Remove all LOCLEAN_* env vars
         env_to_remove = [
-            key for key in os.environ.keys() if key.startswith("SEMANTIX_")
+            key for key in os.environ.keys() if key.startswith("LOCLEAN_")
         ]
         with patch.dict(os.environ, {}, clear=False):
             for key in env_to_remove:
@@ -166,7 +166,7 @@ class TestLoadFromEnv:
     def test_n_ctx_invalid_int(self) -> None:
         """Test that invalid integer for n_ctx is skipped."""
         env_vars = {
-            "SEMANTIX_N_CTX": "not_an_int",
+            "LOCLEAN_N_CTX": "not_an_int",
         }
 
         with patch.dict(os.environ, env_vars):
@@ -180,7 +180,7 @@ class TestLoadFromPyprojectToml:
     def test_load_from_existing_pyproject_toml(self, tmp_path: Any) -> None:
         """Test loading config from pyproject.toml."""
         pyproject_content = """
-[tool.semantix]
+[tool.loclean]
 engine = "gemini"
 model = "gemini-pro"
 api_key = "test-api-key"
@@ -189,7 +189,7 @@ n_ctx = 2048
         pyproject_path = tmp_path / "pyproject.toml"
         pyproject_path.write_text(pyproject_content)
 
-        with patch("semantix.inference.config.Path.cwd", return_value=tmp_path):
+        with patch("loclean.inference.config.Path.cwd", return_value=tmp_path):
             config = _load_from_pyproject_toml()
             assert config["engine"] == "gemini"
             assert config["model"] == "gemini-pro"
@@ -198,15 +198,15 @@ n_ctx = 2048
 
     def test_load_from_nonexistent_pyproject_toml(self, tmp_path: Any) -> None:
         """Test loading when pyproject.toml doesn't exist."""
-        with patch("semantix.inference.config.Path.cwd", return_value=tmp_path):
+        with patch("loclean.inference.config.Path.cwd", return_value=tmp_path):
             config = _load_from_pyproject_toml()
             assert config == {}
 
-    def test_load_from_pyproject_toml_without_semantix_section(
+    def test_load_from_pyproject_toml_without_loclean_section(
         self, tmp_path: Any
     ) -> None:
         """Test loading when pyproject.toml exists but has no
-        [tool.semantix] section."""
+        [tool.loclean] section."""
         pyproject_content = """
 [project]
 name = "test"
@@ -215,7 +215,7 @@ version = "0.1.0"
         pyproject_path = tmp_path / "pyproject.toml"
         pyproject_path.write_text(pyproject_content)
 
-        with patch("semantix.inference.config.Path.cwd", return_value=tmp_path):
+        with patch("loclean.inference.config.Path.cwd", return_value=tmp_path):
             config = _load_from_pyproject_toml()
             assert config == {}
 
@@ -227,14 +227,14 @@ class TestLoadConfig:
         """Test loading config with only defaults."""
         # Clear environment variables
         env_to_remove = [
-            key for key in os.environ.keys() if key.startswith("SEMANTIX_")
+            key for key in os.environ.keys() if key.startswith("LOCLEAN_")
         ]
         with patch.dict(os.environ, {}, clear=False):
             for key in env_to_remove:
                 os.environ.pop(key, None)
 
             with patch(
-                "semantix.inference.config._load_from_pyproject_toml", return_value={}
+                "loclean.inference.config._load_from_pyproject_toml", return_value={}
             ):
                 config = load_config()
                 assert config.engine == "llama-cpp"
@@ -246,13 +246,13 @@ class TestLoadConfig:
     def test_load_with_runtime_params(self) -> None:
         """Test that runtime parameters override everything."""
         env_vars = {
-            "SEMANTIX_ENGINE": "openai",
-            "SEMANTIX_MODEL": "gpt-3.5-turbo",
+            "LOCLEAN_ENGINE": "openai",
+            "LOCLEAN_MODEL": "gpt-3.5-turbo",
         }
 
         with patch.dict(os.environ, env_vars):
             with patch(
-                "semantix.inference.config._load_from_pyproject_toml",
+                "loclean.inference.config._load_from_pyproject_toml",
                 return_value={"engine": "anthropic", "model": "claude-3"},
             ):
                 config = load_config(engine="gemini", model="gemini-pro")
@@ -263,14 +263,14 @@ class TestLoadConfig:
     def test_load_with_env_variables(self) -> None:
         """Test that environment variables override file config."""
         env_vars = {
-            "SEMANTIX_ENGINE": "openai",
-            "SEMANTIX_MODEL": "gpt-4o",
-            "SEMANTIX_API_KEY": "sk-env-key",
+            "LOCLEAN_ENGINE": "openai",
+            "LOCLEAN_MODEL": "gpt-4o",
+            "LOCLEAN_API_KEY": "sk-env-key",
         }
 
         with patch.dict(os.environ, env_vars):
             with patch(
-                "semantix.inference.config._load_from_pyproject_toml",
+                "loclean.inference.config._load_from_pyproject_toml",
                 return_value={"engine": "llama-cpp", "model": "phi-3"},
             ):
                 config = load_config()
@@ -282,7 +282,7 @@ class TestLoadConfig:
     def test_load_with_file_config(self) -> None:
         """Test that file config is used when env vars are not set."""
         env_to_remove = [
-            key for key in os.environ.keys() if key.startswith("SEMANTIX_")
+            key for key in os.environ.keys() if key.startswith("LOCLEAN_")
         ]
         with patch.dict(os.environ, {}, clear=False):
             for key in env_to_remove:
@@ -295,7 +295,7 @@ class TestLoadConfig:
             }
 
             with patch(
-                "semantix.inference.config._load_from_pyproject_toml",
+                "loclean.inference.config._load_from_pyproject_toml",
                 return_value=file_config,
             ):
                 config = load_config()
@@ -309,11 +309,11 @@ class TestLoadConfig:
         file_config = {"engine": "llama-cpp", "model": "phi-3"}
 
         # Env config (should override file)
-        env_vars = {"SEMANTIX_ENGINE": "openai", "SEMANTIX_MODEL": "gpt-3.5"}
+        env_vars = {"LOCLEAN_ENGINE": "openai", "LOCLEAN_MODEL": "gpt-3.5"}
 
         with patch.dict(os.environ, env_vars):
             with patch(
-                "semantix.inference.config._load_from_pyproject_toml",
+                "loclean.inference.config._load_from_pyproject_toml",
                 return_value=file_config,
             ):
                 # Runtime param (should override env and file)
@@ -345,11 +345,11 @@ class TestLoadConfig:
 
     def test_load_merges_partial_configs(self) -> None:
         """Test that partial configs from different sources are merged correctly."""
-        env_vars = {"SEMANTIX_ENGINE": "openai"}
+        env_vars = {"LOCLEAN_ENGINE": "openai"}
 
         with patch.dict(os.environ, env_vars):
             with patch(
-                "semantix.inference.config._load_from_pyproject_toml",
+                "loclean.inference.config._load_from_pyproject_toml",
                 return_value={"model": "gpt-4o", "n_ctx": 8192},
             ):
                 config = load_config(api_key="sk-runtime-key")
