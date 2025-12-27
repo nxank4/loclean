@@ -207,7 +207,9 @@ class LlamaCppEngine(InferenceEngine):
                     text = str(output["choices"][0]["text"]).strip()
                 else:
                     # If iterator, get first item
-                    if hasattr(output, "__iter__") and not isinstance(output, (str, bytes)):
+                    if hasattr(output, "__iter__") and not isinstance(
+                        output, (str, bytes)
+                    ):
                         first_item = next(iter(output), None)
                         if isinstance(first_item, dict) and "choices" in first_item:
                             text = str(first_item["choices"][0]["text"]).strip()
