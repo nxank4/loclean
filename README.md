@@ -1,4 +1,14 @@
 <p align="center">
+  <a href="https://github.com/nxank4/loclean">
+    <picture>
+      <source srcset="src/assets/dark-loclean.svg" media="(prefers-color-scheme: dark)">
+      <source srcset="src/assets/light-loclean.svg" media="(prefers-color-scheme: light)">
+      <img src="src/assets/light-loclean.svg" alt="Loclean logo" width="400">
+    </picture>
+  </a>
+</p>
+<p align="center">The All-in-One Local AI Data Cleaner.</p>
+<p align="center">
   <a href="https://pypi.org/project/loclean"><img src="https://img.shields.io/pypi/v/loclean?color=blue&style=flat-square" alt="PyPI"></a>
   <a href="https://pypi.org/project/loclean"><img src="https://img.shields.io/pypi/pyversions/loclean?style=flat-square" alt="Python Versions"></a>
   <a href="https://github.com/nxank4/loclean/actions/workflows/ci.yml"><img src="https://github.com/nxank4/loclean/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
@@ -7,27 +17,19 @@
 </p>
 
 ---
-
-# Loclean ⚡🧠
-
-**The All-in-One Local AI Data Cleaner.**
-
-Clean messy tabular data using local AI.
-**No API keys required. No GPU required.**
-
-## 🔥 Why Loclean?
+# 🔥 Why Loclean?
 
 Loclean bridges the gap between **Data Engineering** and **Local AI**, designed for production pipelines where privacy and stability are non-negotiable.
 
-### 🔒 Privacy-First & Zero Cost
+## 🔒 Privacy-First & Zero Cost
 
 Leverage the power of Small Language Models (SLMs) like **Phi-3** and **Llama-3** running locally via `llama.cpp`. Clean sensitive PII, medical records, or proprietary data without a single byte leaving your infrastructure.
 
-### 🛡️ Deterministic Outputs
+## 🛡️ Deterministic Outputs
 
 Forget about "hallucinations" or parsing loose text. Loclean uses **GBNF Grammars** and **Pydantic V2** to force the LLM to output valid, type-safe JSON. If it breaks the schema, it doesn't pass.
 
-### ⚡ Backend Agnostic (Zero-Copy)
+## ⚡ Backend Agnostic (Zero-Copy)
 
 Built on **Narwhals**, Loclean supports **Pandas**, **Polars**, and **PyArrow** natively.
 
@@ -35,14 +37,14 @@ Built on **Narwhals**, Loclean supports **Pandas**, **Polars**, and **PyArrow** 
 * Running Pandas? We handle it seamlessly.
 * **No heavy dependency lock-in.**
 
-## 🚀 Installation
+# 🚀 Installation
 
-### Requirements
+## Requirements
 
 * Python 3.10 or higher
 * No GPU required (runs on CPU by default)
 
-### Basic Installation
+## Basic Installation
 
 **Using pip:**
 
@@ -64,7 +66,7 @@ conda install -c conda-forge loclean
 mamba install -c conda-forge loclean
 ```
 
-### Optional Dependencies
+## Optional Dependencies
 
 **For DataFrame operations (Pandas, Polars, PyArrow):**
 
@@ -84,7 +86,7 @@ pip install loclean[cloud]
 pip install loclean[all]
 ```
 
-### Development Installation
+## Development Installation
 
 To contribute or run tests locally:
 
@@ -100,19 +102,19 @@ uv sync --dev
 pip install -e ".[dev]"
 ```
 
-## ⚡ Quick Start
+# ⚡ Quick Start
 
 _in progress..._
 
-## 🏗️ How It Works (The Architecture)
+# 🏗️ How It Works (The Architecture)
 
 _in progress..._
 
-## 🗺️ Roadmap
+# 🗺️ Roadmap
 
 The development of Loclean is focused on three key areas: **Reliability**, **Privacy**, and **Integration**.
 
-### 📍 Phase 1: Core Intelligence (Current Focus)
+## 📍 Phase 1: Core Intelligence (Current Focus)
 
 **Goal: Build a deterministic and smart cleaning engine.**
 
@@ -120,7 +122,7 @@ The development of Loclean is focused on three key areas: **Reliability**, **Pri
 * [ ] **Contextual Imputation**: Fill `null` values intelligently by reasoning over surrounding column context (e.g., inferring `State` from `Zip Code`).
 * [ ] **Entity Canonicalization**: Map messy variations (e.g., "Apple Inc.", "apple comp", "AAPL") to a single "Golden Record" standard.
 
-### 📍 Phase 2: Privacy & Advanced Extraction
+## 📍 Phase 2: Privacy & Advanced Extraction
 
 **Goal: Specialized features for enterprise-grade data handling.**
 
@@ -128,7 +130,7 @@ The development of Loclean is focused on three key areas: **Reliability**, **Pri
 * [ ] **Semantic PII Redaction**: Automatically detect and mask sensitive entities (Names, SSNs, Emails) locally to ensure data privacy.
 * [ ] **Semantic Outlier Detection**: Flag values that are _statistically_ normal but _contextually_ impossible (e.g., "Age: 200").
 
-### 📍 Phase 3: Ecosystem & DX
+## 📍 Phase 3: Ecosystem & DX
 
 **Goal: Make Loclean a first-class citizen in the Python data stack.**
 
@@ -136,7 +138,7 @@ The development of Loclean is focused on three key areas: **Reliability**, **Pri
 * [ ] **Interactive CLI Review**: A "Human-in-the-loop" mode to review and approve low-confidence AI changes via the terminal.
 * [ ] **Custom LoRA Adapters**: Support for loading lightweight, domain-specific fine-tunes (e.g., Medical, Legal) without replacing the base model.
 
-## 🤝 Contributing
+# 🤝 Contributing
 
 We love contributions! Loclean is strictly open-source under the **Apache 2.0 License**.
 
