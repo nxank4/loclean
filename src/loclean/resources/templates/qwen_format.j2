@@ -1,0 +1,10 @@
+{%- set loop_messages = messages -%}
+{%- if messages[0]['role'] != 'system' -%}
+{%- set loop_messages = [{'role': 'system', 'content': system_message}] + messages -%}
+{%- endif -%}
+{%- for message in loop_messages -%}
+<|im_start|>{{ message['role'] }}
+{{ message['content'] | trim }}<|im_end|>
+{%- endfor -%}
+{%- if add_generation_prompt -%}<|im_start|>assistant
+{%- endif -%}
