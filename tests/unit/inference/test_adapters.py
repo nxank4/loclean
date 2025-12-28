@@ -165,8 +165,9 @@ class TestQwenAdapter:
 
         result = adapter.format(instruction, item)
 
-        # Check order: im_start user -> content -> im_end -> im_start assistant
-        assert result.startswith("<|im_start|>user")
+        # Check order: system -> user -> content -> im_end -> assistant
+        assert result.startswith("<|im_start|>system")
+        assert "<|im_start|>user" in result
         assert result.endswith("<|im_start|>assistant\n")
         assert "<|im_end|>" in result
         assert result.find("<|im_end|>") < result.find("<|im_start|>assistant")
@@ -231,9 +232,10 @@ class TestQwenAdapter:
         adapter = QwenAdapter()
         result = adapter.format("test", "test")
 
-        # Should have user and assistant tags
-        assert result.count("<|im_start|>") == 2
-        assert result.count("<|im_end|>") == 1
+        # Should have system, user and assistant tags
+        assert result.count("<|im_start|>") == 3
+        assert result.count("<|im_end|>") == 2
+        assert "<|im_start|>system" in result
         assert "<|im_start|>user" in result
         assert "<|im_start|>assistant" in result
 
