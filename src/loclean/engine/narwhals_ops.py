@@ -112,12 +112,13 @@ class NarwhalsEngine:
         # 4. Create Mapping DataFrame using the same native backend as the input
         # Detect backend and create DataFrame with correct type
         native_df_cls = type(df_native)
-        
+
         # Try to detect backend by module name
         module_name = native_df_cls.__module__
-        
+
         if "polars" in module_name:
             import polars as pl
+
             map_df_native = pl.DataFrame(
                 {
                     col_name: keys,
@@ -132,6 +133,7 @@ class NarwhalsEngine:
             )
         elif "pandas" in module_name:
             import pandas as pd
+
             map_df_native = pd.DataFrame(  # type: ignore[assignment]
                 {
                     col_name: keys,
@@ -152,6 +154,7 @@ class NarwhalsEngine:
             except (TypeError, ValueError):
                 # Last resort: use pandas and let Narwhals handle conversion
                 import pandas as pd
+
                 logger.warning(
                     f"Could not create {native_df_cls.__name__} DataFrame, "
                     "falling back to pandas. Narwhals will handle conversion."
