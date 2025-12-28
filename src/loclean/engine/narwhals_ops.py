@@ -110,24 +110,59 @@ class NarwhalsEngine:
             return df_native
 
         # 4. Create Mapping DataFrame using the same native backend as the input
+        # Detect backend and create DataFrame with correct type
         native_df_cls = type(df_native)
-        try:
-            map_df_native = native_df_cls(  # type: ignore[call-arg]
+        
+        # Try to detect backend by module name
+        module_name = native_df_cls.__module__
+        
+        if "polars" in module_name:
+            import polars as pl
+            map_df_native = pl.DataFrame(
+                {
+                    col_name: keys,
+                    "clean_value": clean_values,
+                    "clean_unit": clean_units,
+                },
+                schema={
+                    col_name: pl.String,
+                    "clean_value": pl.Float64,
+                    "clean_unit": pl.String,
+                },
+            )
+        elif "pandas" in module_name:
+            import pandas as pd
+            map_df_native = pd.DataFrame(  # type: ignore[assignment]
                 {
                     col_name: keys,
                     "clean_value": clean_values,
                     "clean_unit": clean_units,
                 }
             )
-        except TypeError:
-            # Fallback: if constructor signature is different,
-            # try pandas-style DataFrame
-            import pandas as pd
-
-            logger.warning("Fallback to pandas-style DataFrame")
-            map_df_native = pd.DataFrame(
-                {col_name: keys, "clean_value": clean_values, "clean_unit": clean_units}
-            )
+        else:
+            # Fallback: try native constructor first
+            try:
+                map_df_native = native_df_cls(  # type: ignore[call-arg,assignment]
+                    {
+                        col_name: keys,
+                        "clean_value": clean_values,
+                        "clean_unit": clean_units,
+                    }
+                )
+            except (TypeError, ValueError):
+                # Last resort: use pandas and let Narwhals handle conversion
+                import pandas as pd
+                logger.warning(
+                    f"Could not create {native_df_cls.__name__} DataFrame, "
+                    "falling back to pandas. Narwhals will handle conversion."
+                )
+                map_df_native = pd.DataFrame(  # type: ignore[assignment]
+                    {
+                        col_name: keys,
+                        "clean_value": clean_values,
+                        "clean_unit": clean_units,
+                    }
+                )
 
         map_df = nw.from_native(map_df_native)
 
