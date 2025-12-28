@@ -1,4 +1,4 @@
-name: 👮 Commit Linter
+name: 📝 Commit Linter
 
 permissions:
   pull-requests: read
@@ -10,6 +10,7 @@ on:
 
 jobs:
   lint-commits:
+    name: 📝 Commit Linter
     runs-on: ubuntu-latest
     steps:
       - name: Check Pull Request Title

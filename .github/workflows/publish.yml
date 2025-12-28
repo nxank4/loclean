@@ -1,4 +1,4 @@
-name: Publish to PyPI 📦
+name: 📦 Publish to PyPI
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build distribution 📦
+    name: 📦 Build distribution
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -70,7 +70,7 @@ jobs:
           path: dist/
 
   publish-to-pypi:
-    name: Publish to PyPI 📦
+    name: 📦 Publish to PyPI
     if: startsWith(github.ref, 'refs/tags/') # only publish to PyPI on tag pushes
     needs:
       - build
@@ -81,6 +81,7 @@ jobs:
       url: https://pypi.org/p/loclean
     permissions:
       id-token: write # IMPORTANT: mandatory for trusted publishing
+      contents: write # Required for creating GitHub releases
 
     steps:
       - name: Download all the dists
@@ -93,3 +94,12 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           print-hash: true
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/*
+          generate_release_notes: true
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
