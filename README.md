@@ -3,7 +3,7 @@
     <picture>
       <source srcset="src/assets/dark-loclean.svg" media="(prefers-color-scheme: dark)">
       <source srcset="src/assets/light-loclean.svg" media="(prefers-color-scheme: light)">
-      <img src="src/assets/light-loclean.svg" alt="Loclean logo" width="400">
+      <img src="src/assets/light-loclean.svg" alt="Loclean logo" width="200" height="200">
     </picture>
   </a>
 </p>
@@ -16,7 +16,6 @@
   <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv"></a>
 </p>
 
----
 # 🔥 Why Loclean?
 
 Loclean bridges the gap between **Data Engineering** and **Local AI**, designed for production pipelines where privacy and stability are non-negotiable.
