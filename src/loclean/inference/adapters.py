@@ -54,9 +54,14 @@ class Phi3Adapter(PromptAdapter):
     """
 
     def __init__(self) -> None:
-        """Initialize Phi3Adapter and load template."""
-        template_str = load_template("phi3.j2")
-        self.template = Template(template_str)
+        """Initialize Phi3Adapter and load templates."""
+        content_template_str = load_template("cleaning_instruction.j2")
+        format_template_str = load_template("phi3_format.j2")
+        self.content_template = Template(content_template_str)
+        self.format_template = Template(format_template_str)
+        self.system_message = (
+            "You are a helpful assistant that extracts structured data from text."
+        )
 
     def format(self, instruction: str, item: str) -> str:
         """
@@ -69,7 +74,18 @@ class Phi3Adapter(PromptAdapter):
         Returns:
             Formatted prompt string in Phi-3 format.
         """
-        return self.template.render(instruction=instruction, item=item)
+        # Build business content (Template A)
+        user_content = self.content_template.render(instruction=instruction, item=item)
+
+        # Build messages
+        messages = [{"role": "user", "content": user_content}]
+
+        # Render with format template (Template B)
+        return self.format_template.render(
+            messages=messages,
+            system_message=self.system_message,
+            add_generation_prompt=True,
+        )
 
     def get_stop_tokens(self) -> list[str]:
         """Get stop tokens for Phi-3 format."""
@@ -84,9 +100,11 @@ class QwenAdapter(PromptAdapter):
     """
 
     def __init__(self) -> None:
-        """Initialize QwenAdapter and load template."""
-        template_str = load_template("qwen.j2")
-        self.template = Template(template_str)
+        """Initialize QwenAdapter and load templates."""
+        content_template_str = load_template("cleaning_instruction.j2")
+        format_template_str = load_template("qwen_format.j2")
+        self.content_template = Template(content_template_str)
+        self.format_template = Template(format_template_str)
         self.system_message = (
             "You are a helpful assistant that extracts structured data from text."
         )
@@ -102,8 +120,17 @@ class QwenAdapter(PromptAdapter):
         Returns:
             Formatted prompt string in Qwen ChatML format.
         """
-        result = self.template.render(
-            instruction=instruction, item=item, system_message=self.system_message
+        # Build business content (Template A)
+        user_content = self.content_template.render(instruction=instruction, item=item)
+
+        # Build messages
+        messages = [{"role": "user", "content": user_content}]
+
+        # Render with format template (Template B)
+        result = self.format_template.render(
+            messages=messages,
+            system_message=self.system_message,
+            add_generation_prompt=True,
         )
         if not result.endswith("\n"):
             result += "\n"
@@ -118,13 +145,15 @@ class LlamaAdapter(PromptAdapter):
     """
     Prompt adapter for Llama models.
 
-    Uses the Llama-3 instruction format with [INST] and [/INST] tags.
+    Uses the Llama-3 instruction format with <|start_header_id|> tags.
     """
 
     def __init__(self) -> None:
-        """Initialize LlamaAdapter and load template."""
-        template_str = load_template("llama.j2")
-        self.template = Template(template_str)
+        """Initialize LlamaAdapter and load templates."""
+        content_template_str = load_template("cleaning_instruction.j2")
+        format_template_str = load_template("llama_format.j2")
+        self.content_template = Template(content_template_str)
+        self.format_template = Template(format_template_str)
         self.system_message = (
             "You are a helpful assistant that extracts structured data from text."
         )
@@ -140,8 +169,17 @@ class LlamaAdapter(PromptAdapter):
         Returns:
             Formatted prompt string in Llama-3 format.
         """
-        result = self.template.render(
-            instruction=instruction, item=item, system_message=self.system_message
+        # Build business content (Template A)
+        user_content = self.content_template.render(instruction=instruction, item=item)
+
+        # Build messages
+        messages = [{"role": "user", "content": user_content}]
+
+        # Render with format template (Template B)
+        result = self.format_template.render(
+            messages=messages,
+            system_message=self.system_message,
+            add_generation_prompt=True,
         )
         # Ensure exactly 2 newlines at the end
         result = result.rstrip() + "\n\n"
