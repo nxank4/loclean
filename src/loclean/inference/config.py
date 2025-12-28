@@ -23,31 +23,26 @@ class EngineConfig(BaseModel):
     configuration support.
     """
 
-    # Engine selection
     engine: Literal["llama-cpp", "openai", "anthropic", "gemini"] = Field(
         default="llama-cpp",
         description="Inference engine backend to use",
     )
 
-    # Model configuration
     model: str = Field(
         default="phi-3-mini-4k-instruct",
         description="Model identifier (GGUF path or cloud model ID)",
     )
 
-    # API keys (for cloud providers)
     api_key: Optional[str] = Field(
         default=None,
         description="API key for cloud inference providers",
     )
 
-    # Cache directory
     cache_dir: Path = Field(
         default_factory=lambda: Path.home() / ".cache" / "loclean",
         description="Directory for caching models and inference results",
     )
 
-    # Llama.cpp specific settings
     n_ctx: int = Field(
         default=4096,
         description="Context window size for Llama.cpp models",
@@ -182,16 +177,10 @@ def load_config(
         >>> config.model
         'gpt-4o'
     """
-    # 1. Start with defaults
     default_config = EngineConfig()
-
-    # 2. Load from pyproject.toml (lowest priority after defaults)
     file_config = _load_from_pyproject_toml()
-
-    # 3. Load from environment variables (higher priority than file)
     env_config = _load_from_env()
 
-    # 4. Runtime parameters (highest priority)
     runtime_config: dict[str, Any] = {}
     if engine is not None:
         runtime_config["engine"] = engine
@@ -207,7 +196,6 @@ def load_config(
         runtime_config["n_gpu_layers"] = n_gpu_layers
     runtime_config.update(kwargs)
 
-    # Merge in priority order: defaults < file < env < runtime
     merged_config = default_config.model_dump()
     merged_config.update(file_config)
     merged_config.update(env_config)

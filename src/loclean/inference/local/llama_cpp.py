@@ -15,7 +15,6 @@ from llama_cpp import Llama, LlamaGrammar  # type: ignore[attr-defined]
 from loclean.inference.adapters import PromptAdapter, get_adapter
 from loclean.inference.base import InferenceEngine
 
-# Configure logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 if not logger.handlers:
@@ -27,7 +26,6 @@ if not logger.handlers:
     logger.addHandler(handler)
 
 
-# Model registry mapping model names to their HuggingFace repo and filename
 _MODEL_REGISTRY: Dict[str, Dict[str, str]] = {
     "phi-3-mini": {
         "repo": "microsoft/Phi-3-mini-4k-instruct-gguf",
@@ -82,7 +80,6 @@ class LlamaCppEngine(InferenceEngine):
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.model_name = model_name
 
-        # Get model info from registry
         if model_name not in _MODEL_REGISTRY:
             logger.warning(
                 f"Model '{model_name}' not in registry. Falling back to 'phi-3-mini'."
@@ -94,13 +91,11 @@ class LlamaCppEngine(InferenceEngine):
         self.model_repo = model_info["repo"]
         self.model_filename = model_info["filename"]
 
-        # Get prompt adapter based on model name
         self.adapter: PromptAdapter = get_adapter(model_name)
         logger.info(
             f"Using adapter: {type(self.adapter).__name__} for model: {model_name}"
         )
 
-        # Get model path (download if needed)
         self.model_path = self._get_model_path()
 
         logger.info(f"Loading model from {self.model_path}...")
@@ -172,10 +167,7 @@ class LlamaCppEngine(InferenceEngine):
             Dictionary mapping original_string ->
             {"reasoning": str, "value": float, "unit": str} or None.
         """
-        # 1. Check Cache
         cached_results = self.cache.get_batch(items, instruction)
-
-        # 2. Identify Misses
         misses = [item for item in items if item not in cached_results]
 
         if not misses:
@@ -184,11 +176,9 @@ class LlamaCppEngine(InferenceEngine):
         logger.info(f"Cache miss for {len(misses)} items. Running inference...")
         new_results: Dict[str, Optional[Dict[str, Any]]] = {}
 
-        # Get stop tokens from adapter
         stop_tokens = self.adapter.get_stop_tokens()
 
         for item in misses:
-            # Use adapter to format prompt
             prompt = self.adapter.format(instruction, item)
 
             output: Any = None
@@ -202,11 +192,11 @@ class LlamaCppEngine(InferenceEngine):
                     echo=False,
                 )
 
-                # Handle both dict and iterator responses
+                # llama-cpp-python can return either dict or iterator depending on
+                # version/config. Handle both cases to maintain compatibility.
                 if isinstance(output, dict) and "choices" in output:
                     text = str(output["choices"][0]["text"]).strip()
                 else:
-                    # If iterator, get first item
                     if hasattr(output, "__iter__") and not isinstance(
                         output, (str, bytes)
                     ):
@@ -238,12 +228,12 @@ class LlamaCppEngine(InferenceEngine):
                 logger.error(f"Inference error for item '{item}': {e}")
                 new_results[item] = None
 
-        # 4. Update Cache (only with valid results)
+        # Only cache valid results to avoid polluting cache with None values.
+        # Invalid results will be recomputed on next request, allowing for retry logic.
         valid_new_results = {k: v for k, v in new_results.items() if v is not None}
         if valid_new_results:
             self.cache.set_batch(
                 list(valid_new_results.keys()), instruction, valid_new_results
             )
 
-        # 5. Merge
         return {**cached_results, **new_results}

@@ -29,13 +29,16 @@ class LocleanCache:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.db_path = self.cache_dir / "cache.db"
 
-        # Connect to SQLite, identifying it as thread-safe enough for our use
         self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
         self._init_db()
 
     def _init_db(self) -> None:
         """
         Initialize the database schema and enable WAL mode.
+
+        WAL (Write-Ahead Logging) mode allows concurrent reads and writes,
+        improving performance for cache operations that may be called from
+        multiple threads or processes.
         """
         cursor = self.conn.cursor()
         cursor.execute("PRAGMA journal_mode=WAL;")
@@ -51,7 +54,9 @@ class LocleanCache:
     def _hash(self, text: str, instruction: str) -> str:
         """
         Generate a SHA256 hash specific to the input text and instruction.
-        V2: Logic updated to Reason-First Generation.
+
+        The "v3::" prefix allows cache invalidation when the extraction logic
+        changes, ensuring users get updated results after schema changes.
         """
         uniq_str = f"v3::{instruction}::{text}"
         return hashlib.sha256(uniq_str.encode("utf-8")).hexdigest()
@@ -93,8 +98,9 @@ class LocleanCache:
                     try:
                         results[original_text] = json.loads(json_str)
                     except json.JSONDecodeError:
+                        # Corrupt cache entry: skip it and treat as cache miss.
+                        # This allows the system to recover by recomputing the result.
                         logger.warning(f"Corrupt JSON in cache for hash {hash_key}")
-                        # If corrupt, treat as miss
                         continue
         except Exception as e:
             logger.error(f"Error reading from cache: {e}")
@@ -120,7 +126,8 @@ class LocleanCache:
         for item in items:
             if item in results:
                 result_data = results[item]
-                # Only cache valid results (not None)
+                # Only cache valid results to avoid storing None values that would
+                # prevent retry attempts on failed extractions.
                 if result_data is not None:
                     hash_key = self._hash(item, instruction)
                     json_str = json.dumps(result_data)
