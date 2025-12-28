@@ -27,7 +27,6 @@ def load_grammar(filename: str) -> str:
         True
     """
     try:
-        # Use importlib.resources for zip-safe resource loading
         package = importlib.resources.files("loclean.resources.grammars")
         grammar_file = package / filename
 
@@ -38,8 +37,6 @@ def load_grammar(filename: str) -> str:
 
         return grammar_file.read_text(encoding="utf-8")
     except ModuleNotFoundError:
-        # Fallback for development when package is not installed
-        # Try to load from source directory
         source_path = (
             Path(__file__).parent.parent.parent / "resources" / "grammars" / filename
         )
@@ -67,7 +64,6 @@ def load_template(filename: str) -> str:
         True
     """
     try:
-        # Use importlib.resources for zip-safe resource loading
         package = importlib.resources.files("loclean.resources.templates")
         template_file = package / filename
 
@@ -78,8 +74,6 @@ def load_template(filename: str) -> str:
 
         return template_file.read_text(encoding="utf-8")
     except ModuleNotFoundError:
-        # Fallback for development when package is not installed
-        # Try to load from source directory
         source_path = (
             Path(__file__).parent.parent.parent / "resources" / "templates" / filename
         )
@@ -103,7 +97,6 @@ def list_grammars() -> list[str]:
             if f.is_file() and f.name.endswith(".gbnf")
         ]
     except ModuleNotFoundError:
-        # Fallback for development
         source_path = Path(__file__).parent.parent.parent / "resources" / "grammars"
         if source_path.exists():
             return [f.name for f in source_path.iterdir() if f.suffix == ".gbnf"]
@@ -123,7 +116,6 @@ def list_templates() -> list[str]:
             f.name for f in package.iterdir() if f.is_file() and f.name.endswith(".j2")
         ]
     except ModuleNotFoundError:
-        # Fallback for development
         source_path = Path(__file__).parent.parent.parent / "resources" / "templates"
         if source_path.exists():
             return [f.name for f in source_path.iterdir() if f.suffix == ".j2"]

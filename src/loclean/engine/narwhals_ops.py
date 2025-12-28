@@ -27,33 +27,38 @@ class NarwhalsEngine:
         """
         Clean a specific column using the inference engine with batching
         and progress tracking.
+
+        Args:
+            df_native: Input DataFrame (pandas, Polars, PyArrow, etc.).
+            col_name: Name of the column to clean.
+            inference_engine: Inference engine instance for semantic extraction.
+            instruction: Instruction to guide the LLM extraction.
+            batch_size: Number of unique values to process per batch. Defaults to 50.
+
+        Returns:
+            DataFrame with added 'clean_value' and 'clean_unit' columns.
+            Return type matches input type (pandas -> pandas, Polars -> Polars, etc.)
+
+        Raises:
+            ValueError: If the specified column is not found in the DataFrame.
         """
-        # Wrap native DataFrame into Narwhals DataFrame
         df = nw.from_native(df_native)  # type: ignore[type-var]
 
-        # Input validation for col_name
         if col_name not in df.columns:
             raise ValueError(f"Column '{col_name}' not found in DataFrame")
 
-        # 1. Extract unique values using fluent API
-        # We explicitly cast to String to ensure consistency with the AI's input
+        # Cast to String before unique() to ensure consistent types for join later.
+        # This prevents type mismatches (e.g., Int64 vs String) when joining results.
         unique_df_native = (
             df.select(nw.col(col_name).cast(nw.String)).unique().to_native()
         )
 
-        # Extract column values - handle different backends
-        # Polars: unique_df_native[col_name].to_list()
-        # pandas: unique_df_native[col_name].tolist()
-        # PyArrow: convert to pandas first
         if hasattr(unique_df_native, "to_pandas"):
-            # PyArrow Table
             unique_df_native = unique_df_native.to_pandas()
             col_values = unique_df_native[col_name].tolist()
         elif hasattr(unique_df_native, "to_series"):
-            # Some backends have to_series()
             col_values = unique_df_native[col_name].to_series().to_list()  # type: ignore[index]
         else:
-            # Polars or other backends
             col_values = unique_df_native[col_name].to_list()  # type: ignore[index]
 
         uniques: List[str] = [
@@ -68,27 +73,20 @@ class NarwhalsEngine:
             )
             return df_native
 
-        # 2. Batch Processing with Progress Bar
-        # Type the results dictionary: Key is original string,
-        # Value is the JSON dict from AI
         mapping_results: Dict[str, Optional[Dict[str, Any]]] = {}
 
-        # Type the chunks explicitly
         chunks: List[List[str]] = [
             uniques[i : i + batch_size] for i in range(0, len(uniques), batch_size)
         ]
 
-        # Use instruction in log message if helpful, or just generic
         print(f"🧠 Semantic Cleaning: Processing {len(uniques)} unique patterns...")
 
         for chunk in tqdm(chunks, desc="Inference Batches", unit="batch"):
-            # clean_batch returns Dict[str, Dict[str, Any]]
             batch_result: Dict[str, Optional[Dict[str, Any]]] = (
                 inference_engine.clean_batch(chunk, instruction=instruction)
             )
             mapping_results.update(batch_result)
 
-        # 3. Construct Result Columns
         keys: List[str] = []
         clean_values: List[Optional[float]] = []
         clean_units: List[Optional[str]] = []
@@ -96,7 +94,6 @@ class NarwhalsEngine:
         for original_val, clean_data in mapping_results.items():
             keys.append(original_val)
             if clean_data:
-                # Safely get values using .get() which returns Optional types
                 clean_values.append(clean_data.get("value"))
                 clean_units.append(clean_data.get("unit"))
             else:
@@ -109,11 +106,9 @@ class NarwhalsEngine:
             )
             return df_native
 
-        # 4. Create Mapping DataFrame using the same native backend as the input
-        # Detect backend and create DataFrame with correct type
+        # Detect backend type to create mapping DataFrame with matching native type.
+        # This ensures type consistency and avoids unnecessary conversions.
         native_df_cls = type(df_native)
-
-        # Try to detect backend by module name
         module_name = native_df_cls.__module__
 
         if "polars" in module_name:
@@ -152,7 +147,6 @@ class NarwhalsEngine:
                     }
                 )
             except (TypeError, ValueError):
-                # Last resort: use pandas and let Narwhals handle conversion
                 import pandas as pd
 
                 logger.warning(
@@ -169,9 +163,9 @@ class NarwhalsEngine:
 
         map_df = nw.from_native(map_df_native)
 
-        # 5. Perform Left Join using fluent API
         try:
-            # Create a temporary join key to handle type mismatches (e.g. Int vs String)
+            # Create temporary join key by casting to String to handle type mismatches.
+            # Original column might be Int/Float while mapping keys are String.
             result_df = (
                 df.with_columns(
                     nw.col(col_name).cast(nw.String).alias(f"{col_name}_join_key")

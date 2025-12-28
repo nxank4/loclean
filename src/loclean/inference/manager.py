@@ -10,10 +10,8 @@ import warnings
 from pathlib import Path
 from typing import Any, Optional
 
-# Import from new location
 from loclean.inference.local.llama_cpp import LlamaCppEngine
 
-# Re-export for backward compatibility
 __all__ = ["LlamaCppEngine", "LocalInferenceEngine"]
 
 
@@ -50,12 +48,10 @@ class LocalInferenceEngine(LlamaCppEngine):
             stacklevel=2,
         )
 
-        # For backward compatibility: if model_name not provided, use default
         if model_name is None:
             model_name = "phi-3-mini"
 
         super().__init__(model_name=model_name, cache_dir=cache_dir, **kwargs)
 
-        # Keep old class attributes for backward compatibility
         self.MODEL_REPO = self.model_repo
         self.MODEL_FILENAME = self.model_filename
