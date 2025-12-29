@@ -147,8 +147,8 @@ class LlamaCppEngine(InferenceEngine):
         )
 
         # Check cache directory permissions before attempting download
-        # Only check if directory already exists (mkdir succeeded, so we have write access)
-        # If directory was just created, mkdir() already verified we have write access
+        # Only check if directory already exists (mkdir succeeded = write access)
+        # If directory was just created, mkdir() already verified write access
         if self.cache_dir.exists():
             try:
                 if not os.access(self.cache_dir, os.W_OK):
@@ -165,7 +165,7 @@ class LlamaCppEngine(InferenceEngine):
                 raise
             except Exception as e:
                 # If permission check fails for other reasons, log warning but continue
-                # The actual download will fail with a clearer error if permissions are wrong
+                # Actual download will fail with clearer error if permissions are wrong
                 logger.warning(
                     f"Could not verify cache directory permissions: {e}. "
                     "Proceeding with download..."
