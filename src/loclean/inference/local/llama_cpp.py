@@ -147,26 +147,29 @@ class LlamaCppEngine(InferenceEngine):
         )
 
         # Check cache directory permissions before attempting download
-        try:
-            if not os.access(self.cache_dir, os.W_OK):
-                raise CachePermissionError(
-                    f"Cannot write to cache directory: {self.cache_dir}. "
-                    "Please check directory permissions or specify a different "
-                    "cache_dir.",
-                    model_name=self.model_name,
-                    repo_id=self.model_repo,
-                    filename=self.model_filename,
+        # Only check if directory already exists (mkdir succeeded, so we have write access)
+        # If directory was just created, mkdir() already verified we have write access
+        if self.cache_dir.exists():
+            try:
+                if not os.access(self.cache_dir, os.W_OK):
+                    raise CachePermissionError(
+                        f"Cannot write to cache directory: {self.cache_dir}. "
+                        "Please check directory permissions or specify a different "
+                        "cache_dir.",
+                        model_name=self.model_name,
+                        repo_id=self.model_repo,
+                        filename=self.model_filename,
+                    )
+            except CachePermissionError:
+                # Re-raise our custom CachePermissionError
+                raise
+            except Exception as e:
+                # If permission check fails for other reasons, log warning but continue
+                # The actual download will fail with a clearer error if permissions are wrong
+                logger.warning(
+                    f"Could not verify cache directory permissions: {e}. "
+                    "Proceeding with download..."
                 )
-        except CachePermissionError:
-            # Re-raise our custom CachePermissionError
-            raise
-        except Exception as e:
-            raise CachePermissionError(
-                f"Failed to verify cache directory permissions: {e}",
-                model_name=self.model_name,
-                repo_id=self.model_repo,
-                filename=self.model_filename,
-            ) from e
 
         # Check available disk space (rough estimate - model files are typically 2-8GB)
         try:
