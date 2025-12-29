@@ -79,7 +79,11 @@ class NarwhalsEngine:
             uniques[i : i + batch_size] for i in range(0, len(uniques), batch_size)
         ]
 
-        print(f"🧠 Semantic Cleaning: Processing {len(uniques)} unique patterns...")
+        logger.info(
+            "🧠 Semantic Cleaning: Processing %d unique patterns in column '%s'.",
+            len(uniques),
+            col_name,
+        )
 
         for chunk in tqdm(chunks, desc="Inference Batches", unit="batch"):
             batch_result: Dict[str, Optional[Dict[str, Any]]] = (
