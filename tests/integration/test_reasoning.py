@@ -1,7 +1,11 @@
+import logging
+
 import polars as pl
 import pytest
 
 import loclean
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.mark.slow
@@ -21,7 +25,10 @@ def test_smart_no_op() -> None:
     fifty = clean_df.filter(pl.col("price") == "$50")
     val_fifty = fifty.select("clean_value").item()
 
-    print(f"\nReasoning for '$50': {fifty.select('clean_reasoning').item()}")
+    logger.info(
+        "Reasoning for '$50': %s",
+        fifty.select("clean_reasoning").item(),
+    )
 
     assert val_fifty == 50.0, (
         f"Expected 50.0 blocked op, but got {val_fifty}. (Blind math detector)"
