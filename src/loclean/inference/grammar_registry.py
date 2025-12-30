@@ -43,27 +43,49 @@ class GrammarRegistry:
     # These are hand-written GBNF strings for cases where JSON Schema
     # conversion might be insufficient or overly complex
     PRESETS: dict[str, str] = {
-        "json": (
-            "root   ::= object\n"
-            'object ::= "{" ws "\\"reasoning\\"" ws ":" ws string "," ws '
-            '"\\"value\\"" ws ":" ws number "," ws "\\"unit\\"" ws ":" ws '
-            'string ws "}"\n'
-            'number ::= ("-"? ([0-9]+ ("." [0-9]+)?))\n'
-            'string ::= "\\"" ([^"]*) "\\""\n'
-            "ws     ::= [ \\t\\n]*\n"
-        ),
-        "list_str": (
-            "root   ::= array\n"
-            'array  ::= "[" ws ( string ( "," ws string )* )? "]" ws\n'
-            'string ::= "\\"" ([^"]*) "\\""\n'
-            "ws     ::= [ \\t\\n]*\n"
-        ),
-        "email": (
-            "root   ::= string\n"
-            'string ::= "\\"" email_pattern "\\""\n'
-            'email_pattern ::= [a-zA-Z0-9._%+-]+ "@" [a-zA-Z0-9.-]+ "." [a-zA-Z]{2,}\n'
-            "ws     ::= [ \\t\\n]*\n"
-        ),
+        # Schema cụ thể cho bài toán Extraction (Reasoning + Value + Unit)
+        # Đổi tên từ "json" -> "extraction_result" cho đỡ nhầm lẫn
+        "extraction_result": r"""
+        root   ::= object
+        object ::= "{" ws "\"reasoning\"" ":" ws string "," ws "\"value\"" ":" ws number "," ws "\"unit\"" ":" ws string "}"
+        
+        # Định nghĩa number hỗ trợ cả số âm và số thập phân
+        number ::= ("-"? ([0-9]+ ("." [0-9]+)?))
+        
+        # Định nghĩa string CHUẨN (Hỗ trợ escape characters như \", \n, \t)
+        string ::= "\"" ( [^"\\\x7F\x00-\x1F] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F]{4}) )* "\""  # noqa: E501
+        
+        ws     ::= [ \t\n]*
+    """,
+        # List of Strings (Ví dụ: Trích xuất danh sách tên người)
+        "list_str": r"""
+        root   ::= array
+        array  ::= "[" ws ( string ( "," ws string )* )? "]" ws
+        
+        # Dùng lại định nghĩa string chuẩn ở trên
+        string ::= "\"" ( [^"\\\x7F\x00-\x1F] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F]{4}) )* "\""  # noqa: E501
+        ws     ::= [ \t\n]*
+    """,
+        # Email Extraction (Giữ nguyên regex nhưng dùng string format chuẩn)
+        "email": r"""
+        root   ::= string
+        # Bắt buộc output phải nằm trong dấu ngoặc kép
+        string ::= "\"" email_pattern "\""
+        
+        # Regex Email cơ bản
+        email_pattern ::= [a-zA-Z0-9._%+-]+ "@" [a-zA-Z0-9.-]+ "." [a-zA-Z]{2,}
+        ws     ::= [ \t\n]*
+    """,
+        # Generic JSON (JSON bất kỳ - Dùng cho các task khác)
+        "json_generic": r"""
+        root   ::= object | array
+        object ::= "{" ws ( string ":" ws value ("," ws string ":" ws value)* )? "}" ws
+        array  ::= "[" ws ( value ("," ws value)* )? "]" ws
+        value  ::= object | array | string | number | "true" | "false" | "null"
+        string ::= "\"" ( [^"\\\x7F\x00-\x1F] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F]{4}) )* "\""  # noqa: E501
+        number ::= ("-"? ([0-9]+ ("." [0-9]+)? ([eE] [-+]? [0-9]+)? ))
+        ws     ::= [ \t\n]*
+    """,
     }
 
     @classmethod
@@ -91,7 +113,7 @@ class GrammarRegistry:
 
         Examples:
             >>> # Use preset
-            >>> grammar = GrammarRegistry.get("json")
+            >>> grammar = GrammarRegistry.get("extraction_result")
 
             >>> # Use Pydantic model
             >>> from loclean.inference.schemas import ExtractionResult
