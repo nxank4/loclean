@@ -111,31 +111,31 @@ _in progress..._
 
 # 🗺️ Roadmap
 
-The development of Loclean is focused on three key areas: **Reliability**, **Privacy**, and **Integration**.
+The development of Loclean is organized into three phases, prioritizing MVP delivery while maintaining a long-term vision.
 
-## 📍 Phase 1: Core Intelligence (Current Focus)
+## 📍 Phase 1: The "Smart" Engine (Phần Lõi Hybrid)
 
-**Goal: Build a deterministic and smart cleaning engine.**
+**Goal: Get `loclean.clean()` running fast and accurately.**
 
-* [x] **Strict Schema Mode**: Guarantee valid outputs by forcing the LLM to adhere to **Pydantic** models using GBNF grammar (eliminates JSON parsing errors).
-* [ ] **Contextual Imputation**: Fill `null` values intelligently by reasoning over surrounding column context (e.g., inferring `State` from `Zip Code`).
-* [ ] **Entity Canonicalization**: Map messy variations (e.g., "Apple Inc.", "apple comp", "AAPL") to a single "Golden Record" standard.
+* [ ] **Hybrid Router Architecture**: Build `clean(strategy='auto')` function. Automatically run Regex first, LLM second.
+* [ ] **Strict Output (Pydantic + GBNF)**: Ensure 100% LLM outputs valid JSON Schema. (Using llama-cpp-python grammar).
+* [ ] **Simple Extraction**: Extract basic information from raw text (Unstructured to Structured).
 
-## 📍 Phase 2: Privacy & Advanced Extraction
+## 📍 Phase 2: The "Safe" Layer (Bảo mật & Tối ưu)
 
-**Goal: Specialized features for enterprise-grade data handling.**
+**Goal: Convince enterprises to trust and adopt the library.**
 
-* [ ] **Unstructured Extraction**: Parse free-text fields (Logs, Bios, Reviews) into structured tabular data.
-* [ ] **Semantic PII Redaction**: Automatically detect and mask sensitive entities (Names, SSNs, Emails) locally to ensure data privacy.
-* [ ] **Semantic Outlier Detection**: Flag values that are _statistically_ normal but _contextually_ impossible (e.g., "Age: 200").
+* [ ] **Semantic PII Redaction**: Masking sensitive names, phone numbers, emails, and addresses.
+* [ ] **SQLite Caching System**: Cache LLM results to avoid redundant costs/time. (As discussed above).
+* [ ] **Batch Processing**: Parallel processing (Parallelism) to handle millions of rows without freezing.
 
-## 📍 Phase 3: Ecosystem & DX
+## 📍 Phase 3: The "Magic" (Tính năng nâng cao)
 
-**Goal: Make Loclean a first-class citizen in the Python data stack.**
+**Goal: Do things that Regex can never do.**
 
-* [ ] **Native Dataframe Accessors**: Direct integration for **Pandas** and **Polars** (e.g., `df.loclean.clean(...)`) via PyArrow.
-* [ ] **Interactive CLI Review**: A "Human-in-the-loop" mode to review and approve low-confidence AI changes via the terminal.
-* [ ] **Custom LoRA Adapters**: Support for loading lightweight, domain-specific fine-tunes (e.g., Medical, Legal) without replacing the base model.
+* [ ] **Contextual Imputation**: Fill missing values based on context (e.g., seeing Zipcode 70000 -> Auto-fill City: TP.HCM).
+* [ ] **Entity Canonicalization**: Group entities (Fuzzy matching + Semantic matching).
+* [ ] **Interactive CLI**: Terminal interface to review AI changes with low confidence.
 
 # 🤝 Contributing
 
