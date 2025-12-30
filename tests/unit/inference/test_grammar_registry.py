@@ -1,6 +1,5 @@
 """Tests for grammar registry module."""
 
-
 import pytest
 from pydantic import BaseModel
 
