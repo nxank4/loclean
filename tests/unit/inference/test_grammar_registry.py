@@ -12,7 +12,7 @@ class TestGrammarRegistry:
 
     def test_get_preset_string(self) -> None:
         """Test getting grammar from preset string."""
-        grammar = GrammarRegistry.get("json")
+        grammar = GrammarRegistry.get("extraction_result")
         assert grammar is not None
 
     def test_get_pydantic_model(self) -> None:
@@ -28,6 +28,7 @@ class TestGrammarRegistry:
     def test_get_invalid_type(self) -> None:
         """Test getting grammar with invalid type raises TypeError."""
         with pytest.raises(TypeError, match="Schema must be"):
+            # Intentionally pass invalid type to test error handling
             GrammarRegistry.get(123)  # type: ignore[arg-type]
 
     def test_lru_cache_works(self) -> None:
@@ -41,13 +42,13 @@ class TestGrammarRegistry:
         assert cache_info_before.misses == 0
 
         # First call - should be a miss
-        grammar1 = GrammarRegistry.get("json")
+        grammar1 = GrammarRegistry.get("extraction_result")
         cache_info_after_first = GrammarRegistry.get.cache_info()
         assert cache_info_after_first.misses == 1
         assert cache_info_after_first.hits == 0
 
         # Second call with same schema - should be a hit
-        grammar2 = GrammarRegistry.get("json")
+        grammar2 = GrammarRegistry.get("extraction_result")
         cache_info_after_second = GrammarRegistry.get.cache_info()
         assert cache_info_after_second.hits == 1
         assert cache_info_after_second.misses == 1
@@ -60,13 +61,13 @@ class TestGrammarRegistry:
         GrammarRegistry.clear_cache()
 
         # Get different schemas
-        grammar_json = GrammarRegistry.get("json")
+        grammar_extraction_result = GrammarRegistry.get("extraction_result")
         grammar_email = GrammarRegistry.get("email")
         grammar_extraction = GrammarRegistry.get(ExtractionResult)
 
         # Verify they are different objects
-        assert grammar_json is not grammar_email
-        assert grammar_json is not grammar_extraction
+        assert grammar_extraction_result is not grammar_email
+        assert grammar_extraction_result is not grammar_extraction
         assert grammar_email is not grammar_extraction
 
         # Verify cache has 3 entries
@@ -75,11 +76,11 @@ class TestGrammarRegistry:
         assert cache_info.hits == 0
 
         # Call again - should hit cache
-        grammar_json2 = GrammarRegistry.get("json")
+        grammar_extraction_result2 = GrammarRegistry.get("extraction_result")
         grammar_email2 = GrammarRegistry.get("email")
         grammar_extraction2 = GrammarRegistry.get(ExtractionResult)
 
-        assert grammar_json is grammar_json2
+        assert grammar_extraction_result is grammar_extraction_result2
         assert grammar_email is grammar_email2
         assert grammar_extraction is grammar_extraction2
 
@@ -110,7 +111,7 @@ class TestGrammarRegistry:
     def test_clear_cache(self) -> None:
         """Test that clear_cache clears the LRU cache."""
         # Get a grammar to populate cache
-        GrammarRegistry.get("json")
+        GrammarRegistry.get("extraction_result")
         cache_info_before = GrammarRegistry.get.cache_info()
         assert cache_info_before.currsize > 0
 
@@ -125,7 +126,12 @@ class TestGrammarRegistry:
 
     def test_all_presets_available(self) -> None:
         """Test that all preset grammars can be retrieved."""
-        expected_presets = ["json", "list_str", "email"]
+        expected_presets = [
+            "extraction_result",
+            "list_str",
+            "email",
+            "json_generic",
+        ]
         for preset in expected_presets:
             grammar = GrammarRegistry.get(preset)
             assert grammar is not None
@@ -136,5 +142,5 @@ class TestGrammarRegistry:
         assert grammar is not None
 
         # Verify it's different from preset grammars
-        preset_grammar = GrammarRegistry.get("json")
+        preset_grammar = GrammarRegistry.get("extraction_result")
         assert grammar is not preset_grammar
