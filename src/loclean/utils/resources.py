@@ -7,6 +7,12 @@ for compatibility with zip-apps and PyInstaller binaries.
 import importlib.resources
 from pathlib import Path
 
+_GRAMMAR_REGISTRY: dict[str, str] = {
+    "json": "json_generic.gbnf",
+    "list[str]": "list_str.gbnf",
+    "email": "email.gbnf",
+}
+
 
 _GRAMMAR_REGISTRY: dict[str, str] = {
     "json": "json_generic.gbnf",

@@ -3,6 +3,8 @@
 import pytest
 
 from loclean.utils.resources import (
+    get_grammar_preset,
+    list_grammar_presets,
     list_grammars,
     list_templates,
     load_grammar,
@@ -77,3 +79,57 @@ class TestListResources:
         assert isinstance(templates, list)
         # Currently no templates, but function should work
         assert all(t.endswith(".j2") for t in templates) if templates else True
+
+
+class TestGrammarPresets:
+    """Test cases for Grammar Registry presets."""
+
+    def test_list_grammar_presets(self) -> None:
+        """Test listing available grammar presets."""
+        presets = list_grammar_presets()
+
+        assert isinstance(presets, list)
+        assert len(presets) >= 3
+        assert "json" in presets
+        assert "list[str]" in presets
+        assert "email" in presets
+
+    def test_get_grammar_preset_json(self) -> None:
+        """Test getting json preset grammar."""
+        grammar = get_grammar_preset("json")
+
+        assert isinstance(grammar, str)
+        assert len(grammar) > 0
+        assert "root" in grammar
+        assert "value" in grammar
+        assert "object" in grammar
+        assert "array" in grammar
+
+    def test_get_grammar_preset_list_str(self) -> None:
+        """Test getting list[str] preset grammar."""
+        grammar = get_grammar_preset("list[str]")
+
+        assert isinstance(grammar, str)
+        assert len(grammar) > 0
+        assert "root" in grammar
+        assert "array" in grammar
+        assert "string" in grammar
+
+    def test_get_grammar_preset_email(self) -> None:
+        """Test getting email preset grammar."""
+        grammar = get_grammar_preset("email")
+
+        assert isinstance(grammar, str)
+        assert len(grammar) > 0
+        assert "root" in grammar
+        assert "email" in grammar
+        assert "local" in grammar
+        assert "domain" in grammar
+
+    def test_get_grammar_preset_nonexistent_raises_keyerror(self) -> None:
+        """Test that getting nonexistent preset raises KeyError."""
+        with pytest.raises(KeyError) as exc_info:
+            get_grammar_preset("nonexistent")
+
+        assert "nonexistent" in str(exc_info.value)
+        assert "Grammar Registry" in str(exc_info.value)
