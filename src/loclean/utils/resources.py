@@ -8,6 +8,13 @@ import importlib.resources
 from pathlib import Path
 
 
+_GRAMMAR_REGISTRY: dict[str, str] = {
+    "json": "json_generic.gbnf",
+    "list[str]": "list_str.gbnf",
+    "email": "email.gbnf",
+}
+
+
 def load_grammar(filename: str) -> str:
     """
     Load a GBNF grammar file from the resources/grammars directory.
@@ -120,3 +127,46 @@ def list_templates() -> list[str]:
         if source_path.exists():
             return [f.name for f in source_path.iterdir() if f.suffix == ".j2"]
         return []
+
+
+def get_grammar_preset(preset: str) -> str:
+    """
+    Get grammar content by preset name from the Grammar Registry.
+
+    Args:
+        preset: Preset name (e.g., "json", "list[str]", "email")
+
+    Returns:
+        Grammar content as string
+
+    Raises:
+        KeyError: If preset is not in the registry
+        FileNotFoundError: If the grammar file doesn't exist
+
+    Example:
+        >>> grammar_str = get_grammar_preset("json")
+        >>> "root" in grammar_str
+        True
+        >>> grammar_str = get_grammar_preset("email")
+        >>> "email" in grammar_str
+        True
+    """
+    if preset not in _GRAMMAR_REGISTRY:
+        available = ", ".join(_GRAMMAR_REGISTRY.keys())
+        raise KeyError(
+            f"Preset '{preset}' not found in Grammar Registry. "
+            f"Available presets: {available}"
+        )
+
+    filename = _GRAMMAR_REGISTRY[preset]
+    return load_grammar(filename)
+
+
+def list_grammar_presets() -> list[str]:
+    """
+    List all available grammar presets in the registry.
+
+    Returns:
+        List of preset names
+    """
+    return list(_GRAMMAR_REGISTRY.keys())
