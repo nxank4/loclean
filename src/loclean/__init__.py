@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from typing import Any, Optional
 
@@ -24,7 +25,9 @@ def get_engine() -> LocalInferenceEngine:
     """
     global _ENGINE_INSTANCE
     if _ENGINE_INSTANCE is None:
-        _ENGINE_INSTANCE = LocalInferenceEngine()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            _ENGINE_INSTANCE = LocalInferenceEngine()
     return _ENGINE_INSTANCE
 
 
