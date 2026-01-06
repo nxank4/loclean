@@ -14,13 +14,6 @@ _GRAMMAR_REGISTRY: dict[str, str] = {
 }
 
 
-_GRAMMAR_REGISTRY: dict[str, str] = {
-    "json": "json_generic.gbnf",
-    "list[str]": "list_str.gbnf",
-    "email": "email.gbnf",
-}
-
-
 def load_grammar(filename: str) -> str:
     """
     Load a GBNF grammar file from the resources/grammars directory.
