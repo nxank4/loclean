@@ -1,0 +1,7 @@
+root      ::= email
+email     ::= local "@" domain
+local     ::= local_part
+local_part ::= ([a-zA-Z0-9!#$%&'*+\-/=?^_`{|}~]+ ("." [a-zA-Z0-9!#$%&'*+\-/=?^_`{|}~]+)*) | "\"" ([^"\\] | "\\" .)* "\""
+domain    ::= domain_label ("." domain_label)*
+domain_label ::= [a-zA-Z0-9] ([a-zA-Z0-9\-]* [a-zA-Z0-9])?
+
