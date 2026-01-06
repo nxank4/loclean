@@ -16,19 +16,19 @@
   <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv"></a>
 </p>
 
-# 🔥 Why Loclean?
+# Why Loclean?
 
 Loclean bridges the gap between **Data Engineering** and **Local AI**, designed for production pipelines where privacy and stability are non-negotiable.
 
-## 🔒 Privacy-First & Zero Cost
+## Privacy-First & Zero Cost
 
 Leverage the power of Small Language Models (SLMs) like **Phi-3** and **Llama-3** running locally via `llama.cpp`. Clean sensitive PII, medical records, or proprietary data without a single byte leaving your infrastructure.
 
-## 🛡️ Deterministic Outputs
+## Deterministic Outputs
 
 Forget about "hallucinations" or parsing loose text. Loclean uses **GBNF Grammars** and **Pydantic V2** to force the LLM to output valid, type-safe JSON. If it breaks the schema, it doesn't pass.
 
-## ⚡ Backend Agnostic (Zero-Copy)
+## Backend Agnostic (Zero-Copy)
 
 Built on **Narwhals**, Loclean supports **Pandas**, **Polars**, and **PyArrow** natively.
 
@@ -36,11 +36,11 @@ Built on **Narwhals**, Loclean supports **Pandas**, **Polars**, and **PyArrow** 
 * Running Pandas? We handle it seamlessly.
 * **No heavy dependency lock-in.**
 
-# 🚀 Installation
+# Installation
 
 ## Requirements
 
-* Python 3.10 or higher
+* Python 3.10, 3.11, 3.12, or 3.13
 * No GPU required (runs on CPU by default)
 
 ## Basic Installation
@@ -101,19 +101,19 @@ uv sync --dev
 pip install -e ".[dev]"
 ```
 
-# ⚡ Quick Start
+# Quick Start
 
 _in progress..._
 
-# 🏗️ How It Works (The Architecture)
+# How It Works (The Architecture)
 
 _in progress..._
 
-# 🗺️ Roadmap
+# Roadmap
 
 The development of Loclean is organized into three phases, prioritizing MVP delivery while maintaining a long-term vision.
 
-## 📍 Phase 1: The "Smart" Engine (Phần Lõi Hybrid)
+## Phase 1: The "Smart" Engine (Phần Lõi Hybrid)
 
 **Goal: Get `loclean.clean()` running fast and accurately.**
 
@@ -121,7 +121,7 @@ The development of Loclean is organized into three phases, prioritizing MVP deli
 * [ ] **Strict Output (Pydantic + GBNF)**: Ensure 100% LLM outputs valid JSON Schema. (Using llama-cpp-python grammar).
 * [ ] **Simple Extraction**: Extract basic information from raw text (Unstructured to Structured).
 
-## 📍 Phase 2: The "Safe" Layer (Bảo mật & Tối ưu)
+## Phase 2: The "Safe" Layer (Bảo mật & Tối ưu)
 
 **Goal: Convince enterprises to trust and adopt the library.**
 
@@ -129,7 +129,7 @@ The development of Loclean is organized into three phases, prioritizing MVP deli
 * [ ] **SQLite Caching System**: Cache LLM results to avoid redundant costs/time. (As discussed above).
 * [ ] **Batch Processing**: Parallel processing (Parallelism) to handle millions of rows without freezing.
 
-## 📍 Phase 3: The "Magic" (Tính năng nâng cao)
+## Phase 3: The "Magic" (Tính năng nâng cao)
 
 **Goal: Do things that Regex can never do.**
 
@@ -137,7 +137,7 @@ The development of Loclean is organized into three phases, prioritizing MVP deli
 * [ ] **Entity Canonicalization**: Group entities (Fuzzy matching + Semantic matching).
 * [ ] **Interactive CLI**: Terminal interface to review AI changes with low confidence.
 
-# 🤝 Contributing
+# Contributing
 
 We love contributions! Loclean is strictly open-source under the **Apache 2.0 License**.
 
@@ -147,4 +147,4 @@ We love contributions! Loclean is strictly open-source under the **Apache 2.0 Li
 4. **Commit** your changes.
 5. **Push** to your fork and submit a **Pull Request**.
 
-_Built with ❤️ for the Data Community._
+_Built for the Data Community._
