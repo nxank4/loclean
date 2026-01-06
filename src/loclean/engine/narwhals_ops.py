@@ -36,8 +36,9 @@ class NarwhalsEngine:
             batch_size: Number of unique values to process per batch. Defaults to 50.
 
         Returns:
-            DataFrame with added 'clean_value' and 'clean_unit' columns.
-            Return type matches input type (pandas -> pandas, Polars -> Polars, etc.)
+            DataFrame with added 'clean_value', 'clean_unit', and 'clean_reasoning'
+            columns. Return type matches input type
+            (pandas -> pandas, Polars -> Polars, etc.)
 
         Raises:
             ValueError: If the specified column is not found in the DataFrame.
@@ -94,15 +95,18 @@ class NarwhalsEngine:
         keys: List[str] = []
         clean_values: List[Optional[float]] = []
         clean_units: List[Optional[str]] = []
+        clean_reasonings: List[Optional[str]] = []
 
         for original_val, clean_data in mapping_results.items():
             keys.append(original_val)
             if clean_data:
                 clean_values.append(clean_data.get("value"))
                 clean_units.append(clean_data.get("unit"))
+                clean_reasonings.append(clean_data.get("reasoning"))
             else:
                 clean_values.append(None)
                 clean_units.append(None)
+                clean_reasonings.append(None)
 
         if not keys:
             logger.warning(
@@ -125,11 +129,13 @@ class NarwhalsEngine:
                     col_name: keys,
                     "clean_value": clean_values,
                     "clean_unit": clean_units,
+                    "clean_reasoning": clean_reasonings,
                 },
                 schema={
                     col_name: pl.String,
                     "clean_value": pl.Float64,
                     "clean_unit": pl.String,
+                    "clean_reasoning": pl.String,
                 },
             )
         elif "pandas" in module_name:
@@ -140,6 +146,7 @@ class NarwhalsEngine:
                     col_name: keys,
                     "clean_value": clean_values,
                     "clean_unit": clean_units,
+                    "clean_reasoning": clean_reasonings,
                 }
             )
         else:
@@ -150,6 +157,7 @@ class NarwhalsEngine:
                         col_name: keys,
                         "clean_value": clean_values,
                         "clean_unit": clean_units,
+                        "clean_reasoning": clean_reasonings,
                     }
                 )
             except (TypeError, ValueError):
@@ -165,6 +173,7 @@ class NarwhalsEngine:
                         col_name: keys,
                         "clean_value": clean_values,
                         "clean_unit": clean_units,
+                        "clean_reasoning": clean_reasonings,
                     }
                 )
 

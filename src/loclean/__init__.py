@@ -62,8 +62,9 @@ def clean(
             underlying LocalInferenceEngine for advanced configuration.
 
     Returns:
-        DataFrame with added 'clean_value' and 'clean_unit' columns.
-        Return type matches input type (pandas -> pandas, Polars -> Polars, etc.)
+        DataFrame with added 'clean_value', 'clean_unit', and 'clean_reasoning'
+        columns. Return type matches input type
+        (pandas -> pandas, Polars -> Polars, etc.)
     """
     df_nw = nw.from_native(df)  # type: ignore[type-var]
     if target_col not in df_nw.columns:
