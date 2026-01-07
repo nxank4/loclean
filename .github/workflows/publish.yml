@@ -105,3 +105,7 @@ jobs:
           generate_release_notes: true
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          make_latest: true
+          fail_on_unmatched_files: false
