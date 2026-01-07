@@ -208,7 +208,7 @@ n_ctx = 2048
         pyproject_content = """
 [project]
 name = "test"
-version = "0.1.0"
+version = "0.1.1"
 """
         pyproject_path = tmp_path / "pyproject.toml"
         pyproject_path.write_text(pyproject_content)
