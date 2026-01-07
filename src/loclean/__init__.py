@@ -40,6 +40,9 @@ def clean(
     cache_dir: Optional[Path] = None,
     n_ctx: Optional[int] = None,
     n_gpu_layers: Optional[int] = None,
+    batch_size: int = 50,
+    parallel: bool = False,
+    max_workers: Optional[int] = None,
     **engine_kwargs: Any,
 ) -> IntoFrameT:
     """
@@ -61,6 +64,13 @@ def clean(
             Defaults to ~/.cache/loclean when not provided.
         n_ctx: Optional context window size override for the underlying model.
         n_gpu_layers: Optional number of GPU layers to use (0 = CPU only).
+        batch_size: Number of unique values to process per batch. Defaults to 50.
+        parallel: Enable parallel processing using ThreadPoolExecutor.
+                 Defaults to False for backward compatibility.
+        max_workers: Maximum number of worker threads for parallel processing.
+                    If None, auto-detected as min(cpu_count, num_batches).
+                    If 1 or parallel=False, uses sequential processing.
+                    Defaults to None.
         **engine_kwargs: Additional keyword arguments forwarded to the
             underlying LocalInferenceEngine for advanced configuration.
 
@@ -93,4 +103,12 @@ def clean(
             **engine_kwargs,
         )
 
-    return NarwhalsEngine.process_column(df, target_col, engine, instruction)
+    return NarwhalsEngine.process_column(
+        df,
+        target_col,
+        engine,
+        instruction,
+        batch_size=batch_size,
+        parallel=parallel,
+        max_workers=max_workers,
+    )
