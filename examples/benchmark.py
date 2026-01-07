@@ -19,7 +19,7 @@ def run_benchmark() -> None:
     ROWS = 10_000
     UNIQUE_PATTERNS = 100
 
-    print(f"🏁 BENCHMARKING: Cleaning {ROWS:,} rows")
+    print(f"BENCHMARKING: Cleaning {ROWS:,} rows")
     print(f"   (Simulating High-Repetition Data: ~{UNIQUE_PATTERNS} unique patterns)")
 
     # 1. Generate Data
@@ -31,7 +31,7 @@ def run_benchmark() -> None:
     print(f"   Dataset: {df.shape} | Columns: {df.columns}")
 
     # 2. Baseline (Naive) - Extrapolated
-    print("\n1️⃣  Estimating 'Naive' Loop (Standard API approach)...")
+    print("\n1. Estimating 'Naive' Loop (Standard API approach)...")
     print("    Running simulation on 5 samples (0.1s latency/req)...")
 
     naive_samples = df["raw_weight"].head(5).to_list()
@@ -46,7 +46,7 @@ def run_benchmark() -> None:
     print(f"    Projected Total Time: {projected_naive_time:.2f}s ({hours:.2f} hours)")
 
     # 3. Loclean (First Run)
-    print("\n2️⃣  Running Loclean (Run 1: Vectorized + Cached Model)...")
+    print("\n2. Running Loclean (Run 1: Vectorized + Cached Model)...")
     print("    Processing full dataset...")
 
     # Force a unique instruction to ensure we aren't hitting the disk cache
@@ -63,7 +63,7 @@ def run_benchmark() -> None:
     print(f"    Actual Time: {actual_loclean_time:.2f}s")
 
     # 4. Loclean (Second Run - Cache Hit)
-    print("\n3️⃣  Running Loclean (Run 2: Persistent Cache Hit)...")
+    print("\n3. Running Loclean (Run 2: Persistent Cache Hit)...")
     print("    Re-running same dataset and instruction...")
 
     start_cache = time.time()
@@ -90,8 +90,8 @@ def run_benchmark() -> None:
     )
     print(time_row)
     print("-" * 80)
-    print(f"🚀 VECTOR SPEEDUP: {int(vector_speedup)}x faster than naive loop")
-    print(f"🚀 CACHE SPEEDUP:  {int(cache_speedup)}x faster than first run")
+    print(f"VECTOR SPEEDUP: {int(vector_speedup)}x faster than naive loop")
+    print(f"CACHE SPEEDUP:  {int(cache_speedup)}x faster than first run")
     print("=" * 80)
 
 
