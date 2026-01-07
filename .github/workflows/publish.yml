@@ -33,23 +33,22 @@ jobs:
           restore-cache: "true"
           save-cache: "true"
 
-      - name: Extract version from tag
+      - name: Extract version from tag and update _version.py
         id: tag_version
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
           VERSION=${TAG_NAME#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Tag: $TAG_NAME -> Version: $VERSION"
-
-      - name: Verify version consistency
-        run: |
-          VERSION="${{ steps.tag_version.outputs.version }}"
-          PACKAGE_VERSION=$(grep -E '^__version__ = ' src/loclean/_version.py | sed "s/__version__ = ['\"]\(.*\)['\"]/\1/")
-          if [ "$VERSION" != "$PACKAGE_VERSION" ]; then
-            echo "Error: Tag version ($VERSION) does not match package version ($PACKAGE_VERSION)"
-            exit 1
-          fi
-          echo "Version verified: $VERSION"
+          
+          # Update _version.py with version from tag
+          cat > src/loclean/_version.py << EOF
+          """Version information for loclean package."""
+          
+          __version__ = "$VERSION"
+          EOF
+          
+          echo "Updated src/loclean/_version.py with version: $VERSION"
 
       - name: Install build dependencies
         run: uv sync --dev --no-install-project
