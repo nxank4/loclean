@@ -230,3 +230,116 @@ def test_process_column_no_keys_extracted(mock_inference_engine: Any) -> None:
     # Nên trả về DataFrame gốc khi không có keys hợp lệ
     assert isinstance(result, pl.DataFrame)
     assert len(result) == len(df)
+
+
+def test_process_column_parallel_processing(mock_inference_engine: Any) -> None:
+    """Test parallel processing với nhiều batches."""
+    # Tạo DataFrame với nhiều unique values để test parallel processing
+    unique_values = [f"{i}kg" for i in range(150)]  # 150 unique values
+    weight_col = unique_values * 2  # 300 rows total
+    df = pl.DataFrame({"weight": weight_col})
+
+    result = NarwhalsEngine.process_column(
+        df,
+        "weight",
+        mock_inference_engine,
+        "Extract weight",
+        batch_size=50,  # 150 values sẽ chia thành 3 batches
+        parallel=True,
+        max_workers=2,
+    )
+
+    # Kiểm tra inference engine được gọi đúng số lần batch
+    assert (
+        mock_inference_engine.clean_batch.call_count == 3
+    )  # 150 values / 50 batch_size = 3 batches
+
+    # Kiểm tra result
+    assert isinstance(result, pl.DataFrame)
+    assert "clean_value" in result.columns
+    assert "clean_unit" in result.columns
+    assert "clean_reasoning" in result.columns
+
+
+def test_process_column_parallel_disabled(mock_inference_engine: Any) -> None:
+    """Test backward compatibility - parallel=False should work as before."""
+    unique_values = [f"{i}kg" for i in range(60)]
+    weight_col = unique_values * 2
+    df = pl.DataFrame({"weight": weight_col})
+
+    result = NarwhalsEngine.process_column(
+        df,
+        "weight",
+        mock_inference_engine,
+        "Extract weight",
+        batch_size=50,
+        parallel=False,  # Explicitly disable parallel
+    )
+
+    # Should work exactly like before
+    assert mock_inference_engine.clean_batch.call_count == 2
+    assert isinstance(result, pl.DataFrame)
+    assert "clean_value" in result.columns
+
+
+def test_process_column_parallel_auto_workers(mock_inference_engine: Any) -> None:
+    """Test parallel processing with auto-detected max_workers."""
+    unique_values = [f"{i}kg" for i in range(100)]
+    weight_col = unique_values * 2
+    df = pl.DataFrame({"weight": weight_col})
+
+    result = NarwhalsEngine.process_column(
+        df,
+        "weight",
+        mock_inference_engine,
+        "Extract weight",
+        batch_size=50,  # 100 values = 2 batches
+        parallel=True,
+        max_workers=None,  # Auto-detect
+    )
+
+    # Should process all batches
+    assert mock_inference_engine.clean_batch.call_count == 2
+    assert isinstance(result, pl.DataFrame)
+
+
+def test_process_column_parallel_single_batch(mock_inference_engine: Any) -> None:
+    """Test that parallel processing falls back to sequential for single batch."""
+    unique_values = [f"{i}kg" for i in range(30)]  # Less than batch_size
+    df = pl.DataFrame({"weight": unique_values})
+
+    result = NarwhalsEngine.process_column(
+        df,
+        "weight",
+        mock_inference_engine,
+        "Extract weight",
+        batch_size=50,
+        parallel=True,  # Even with parallel=True, should use sequential for 1 batch
+    )
+
+    # Should still work correctly
+    assert mock_inference_engine.clean_batch.call_count == 1
+    assert isinstance(result, pl.DataFrame)
+
+
+def test_process_column_parallel_max_workers_one(
+    mock_inference_engine: Any,
+) -> None:
+    """Test that max_workers=1 falls back to sequential processing."""
+    unique_values = [f"{i}kg" for i in range(100)]
+    weight_col = unique_values * 2
+    df = pl.DataFrame({"weight": weight_col})
+
+    result = NarwhalsEngine.process_column(
+        df,
+        "weight",
+        mock_inference_engine,
+        "Extract weight",
+        batch_size=50,
+        parallel=True,
+        max_workers=1,  # Should fallback to sequential
+    )
+
+    # Should process sequentially
+    assert mock_inference_engine.clean_batch.call_count == 2
+    assert isinstance(result, pl.DataFrame)
