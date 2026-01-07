@@ -19,6 +19,61 @@ class NarwhalsEngine:
     """
 
     @staticmethod
+    def _process_chunks_parallel(
+        chunks: List[List[str]],
+        inference_engine: "LocalInferenceEngine",
+        instruction: str,
+        max_workers: int,
+    ) -> Dict[str, Optional[Dict[str, Any]]]:
+        """
+        Process chunks in parallel using ThreadPoolExecutor.
+
+        Args:
+            chunks: List of chunks (each chunk is a list of strings).
+            inference_engine: Inference engine instance.
+            instruction: Instruction to guide the LLM extraction.
+            max_workers: Maximum number of worker threads.
+
+        Returns:
+            Dictionary mapping original_string -> result_dict or None.
+        """
+        mapping_results: Dict[str, Optional[Dict[str, Any]]] = {}
+        completed = 0
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all tasks
+            future_to_chunk = {
+                executor.submit(inference_engine.clean_batch, chunk, instruction): chunk
+                for chunk in chunks
+            }
+
+            # Collect results as they complete
+            with tqdm(
+                total=len(chunks), desc="Inference Batches", unit="batch"
+            ) as pbar:
+                for future in as_completed(future_to_chunk):
+                    chunk = future_to_chunk[future]
+                    try:
+                        batch_result: Dict[str, Optional[Dict[str, Any]]] = (
+                            future.result()
+                        )
+                        mapping_results.update(batch_result)
+                        completed += 1
+                        pbar.update(1)
+                    except Exception as e:
+                        logger.error(
+                            f"Error processing chunk {chunk[:3]}...: {e}",
+                            exc_info=True,
+                        )
+                        # Mark failed items as None
+                        for item in chunk:
+                            mapping_results[item] = None
+                        completed += 1
+                        pbar.update(1)
+
+        return mapping_results
+
+    @staticmethod
     def process_column(
         df_native: IntoFrameT,
         col_name: str,
@@ -237,59 +292,3 @@ class NarwhalsEngine:
         except Exception as e:
             logger.error(f"Join failed: {e}")
             raise
-
-    @staticmethod
-    def _process_chunks_parallel(
-        chunks: List[List[str]],
-        inference_engine: "LocalInferenceEngine",
-        instruction: str,
-        max_workers: int,
-    ) -> Dict[str, Optional[Dict[str, Any]]]:
-        """
-        Process chunks in parallel using ThreadPoolExecutor.
-
-        Args:
-            chunks: List of chunks, each containing a list of strings to process.
-            inference_engine: Inference engine instance (shared across threads).
-            instruction: Instruction to guide the LLM extraction.
-            max_workers: Maximum number of worker threads.
-
-        Returns:
-            Dictionary mapping original_string -> result_dict or None.
-        """
-        mapping_results: Dict[str, Optional[Dict[str, Any]]] = {}
-        completed = 0
-
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Submit all tasks
-            future_to_chunk = {
-                executor.submit(inference_engine.clean_batch, chunk, instruction): chunk
-                for chunk in chunks
-            }
-
-            # Collect results as they complete
-            with tqdm(
-                total=len(chunks), desc="Inference Batches", unit="batch"
-            ) as pbar:
-                for future in as_completed(future_to_chunk):
-                    chunk = future_to_chunk[future]
-                    try:
-                        batch_result: Dict[str, Optional[Dict[str, Any]]] = (
-                            future.result()
-                        )
-                        mapping_results.update(batch_result)
-                        completed += 1
-                        pbar.update(1)
-                    except Exception as e:
-                        logger.error(
-                            f"Error processing chunk with {len(chunk)} items: {e}"
-                        )
-                        # Mark chunk items as failed
-                        for item in chunk:
-                            if item not in mapping_results:
-                                mapping_results[item] = None
-                        completed += 1
-                        pbar.update(1)
-
-        logger.info(f"Completed {completed}/{len(chunks)} batches in parallel")
-        return mapping_results
