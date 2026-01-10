@@ -41,23 +41,23 @@ class FakeDataGenerator:
             Fake data string matching the entity type
         """
         if entity.type == "phone":
-            return self.faker.phone_number()
+            return str(self.faker.phone_number())
         elif entity.type == "email":
-            return self.faker.email()
+            return str(self.faker.email())
         elif entity.type == "person":
-            return self.faker.name()
+            return str(self.faker.name())
         elif entity.type == "credit_card":
-            return self.faker.credit_card_number()
+            return str(self.faker.credit_card_number())
         elif entity.type == "address":
-            return self.faker.address()
+            return str(self.faker.address())
         elif entity.type == "ip_address":
             # Randomly choose IPv4 or IPv6
             import random
 
             if random.random() < 0.5:
-                return self.faker.ipv4()
+                return str(self.faker.ipv4())
             else:
-                return self.faker.ipv6()
+                return str(self.faker.ipv6())
         else:
             # Fallback to mask format
             return f"[{entity.type.upper()}]"
