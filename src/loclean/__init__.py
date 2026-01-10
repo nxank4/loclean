@@ -9,7 +9,7 @@ from loclean._version import __version__
 from loclean.engine.narwhals_ops import NarwhalsEngine
 from loclean.inference.manager import LocalInferenceEngine
 
-__all__ = ["__version__", "clean", "get_engine"]
+__all__ = ["__version__", "clean", "get_engine", "scrub"]
 
 # Global singleton instance
 # Note: This singleton pattern is not thread-safe. Do not call get_engine()
@@ -112,3 +112,104 @@ def clean(
         parallel=parallel,
         max_workers=max_workers,
     )
+
+
+def scrub(
+    input_data: str | IntoFrameT,
+    strategies: list[str] | None = None,
+    mode: str = "mask",
+    locale: str = "vi_VN",
+    *,
+    target_col: str | None = None,
+    model_name: Optional[str] = None,
+    cache_dir: Optional[Path] = None,
+    n_ctx: Optional[int] = None,
+    n_gpu_layers: Optional[int] = None,
+    **engine_kwargs: Any,
+) -> str | IntoFrameT:
+    """
+    Scrub PII from text or DataFrame column.
+
+    This function detects and masks or replaces Personally Identifiable Information
+    (PII) such as names, phone numbers, emails, credit cards, and addresses.
+
+    Uses a hybrid approach:
+    - Fast regex detection for structured PII (email, phone, credit_card, ip_address)
+    - LLM-based detection for semantic PII (person names, addresses)
+
+    Args:
+        input_data: String or DataFrame to scrub
+        strategies: List of PII types to detect.
+                   Default: ["person", "phone", "email"]
+                   Options: "person", "phone", "email", "credit_card",
+                            "address", "ip_address"
+        mode: "mask" (replace with [TYPE]) or "fake" (replace with fake data).
+              Default: "mask"
+        locale: Faker locale for fake data generation (default: "vi_VN").
+                Only used when mode="fake"
+        target_col: Column name for DataFrame input (required for DataFrame)
+        model_name: Optional model identifier for LLM detection.
+                   If None, uses default model from get_engine()
+        cache_dir: Optional custom directory for caching models and results
+        n_ctx: Optional context window size override
+        n_gpu_layers: Optional number of GPU layers to use (0 = CPU only)
+        **engine_kwargs: Additional arguments forwarded to inference engine
+
+    Returns:
+        Scrubbed string or DataFrame (same type as input)
+
+    Examples:
+        >>> import loclean
+        >>> text = "Liên hệ anh Nam số 0909123456"
+        >>> loclean.scrub(text, strategies=["person", "phone"])
+        'Liên hệ [PERSON] số [PHONE]'
+
+        >>> loclean.scrub(
+        ...     text, strategies=["person", "phone"], mode="fake", locale="vi_VN"
+        ... )
+        'Liên hệ Nguyễn Văn A số 0912345678'
+    """
+    from loclean.privacy.scrub import scrub_dataframe, scrub_string
+
+    # Get inference engine if needed (for LLM strategies)
+    strategies_list = strategies or ["person", "phone", "email"]
+    needs_llm = any(s in ["person", "address"] for s in strategies_list)
+
+    inference_engine = None
+    if needs_llm:
+        if (
+            model_name is None
+            and cache_dir is None
+            and n_ctx is None
+            and n_gpu_layers is None
+            and not engine_kwargs
+        ):
+            inference_engine = get_engine()
+        else:
+            inference_engine = LocalInferenceEngine(
+                cache_dir=cache_dir,
+                model_name=model_name,
+                n_ctx=n_ctx,
+                n_gpu_layers=n_gpu_layers,
+                **engine_kwargs,
+            )
+
+    if isinstance(input_data, str):
+        return scrub_string(
+            input_data,
+            strategies_list,
+            mode,
+            locale,
+            inference_engine=inference_engine,
+        )
+    else:
+        if target_col is None:
+            raise ValueError("target_col required for DataFrame input")
+        return scrub_dataframe(
+            input_data,
+            target_col,
+            strategies_list,
+            mode,
+            locale,
+            inference_engine=inference_engine,
+        )

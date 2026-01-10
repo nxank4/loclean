@@ -51,9 +51,13 @@ cloud = [
     "anthropic>=0.18.0",
     "instructor>=1.0.0",
 ]
+privacy = [
+    "faker>=20.0.0",
+]
 all = [
     "loclean[data]",
     "loclean[cloud]",
+    "loclean[privacy]",
 ]
 
 [dependency-groups]

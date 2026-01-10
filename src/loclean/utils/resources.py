@@ -11,6 +11,7 @@ _GRAMMAR_REGISTRY: dict[str, str] = {
     "json": "json_generic.gbnf",
     "list[str]": "list_str.gbnf",
     "email": "email.gbnf",
+    "pii_detection": "pii_detection.gbnf",
 }
 
 
