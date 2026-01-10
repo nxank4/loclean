@@ -209,10 +209,13 @@ _MODEL_ADAPTER_MAP: Dict[str, type[PromptAdapter]] = {
     "llama-2": LlamaAdapter,
     "llama3": LlamaAdapter,
     "llama2": LlamaAdapter,
+    "tinyllama": LlamaAdapter,
     # Gemma models (use Llama format)
     "gemma": LlamaAdapter,
     "gemma-3": LlamaAdapter,
+    "gemma-3-4b": LlamaAdapter,
     "gemma-2": LlamaAdapter,
+    "gemma-2b": LlamaAdapter,
     # DeepSeek models (use Qwen format)
     "deepseek": QwenAdapter,
     "deepseek-r1": QwenAdapter,
