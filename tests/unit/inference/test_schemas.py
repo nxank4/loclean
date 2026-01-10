@@ -162,7 +162,7 @@ class TestExtractionResult:
     def test_unicode_in_reasoning(self) -> None:
         """Test that unicode characters in reasoning are handled correctly."""
         result = ExtractionResult(
-            reasoning="Test với unicode: 测试", value=5.5, unit="kg"
+            reasoning="Test with unicode: 测试", value=5.5, unit="kg"
         )
         assert "测试" in result.reasoning
 
