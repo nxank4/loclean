@@ -269,12 +269,12 @@ def extract(
         ...     price: int
         ...     color: str
         >>> # Extract from text
-        >>> item = loclean.extract("Bán cái áo thun đỏ giá 50k", schema=Product)
+        >>> item = loclean.extract("Selling red t-shirt for 50k", schema=Product)
         >>> print(item.name, item.price, item.color)
-        'áo thun' 50000 'đỏ'
+        't-shirt' 50000 'red'
         >>> # Extract from DataFrame (default: structured dict for performance)
         >>> import polars as pl
-        >>> df = pl.DataFrame({"description": ["Bán áo thun đỏ giá 50k"]})
+        >>> df = pl.DataFrame({"description": ["Selling red t-shirt for 50k"]})
         >>> result = loclean.extract(df, schema=Product, target_col="description")
         >>> # Query with Polars Struct
         >>> result.filter(pl.col("description_extracted").struct.field("price") > 50000)
