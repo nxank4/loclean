@@ -5,7 +5,7 @@ for Personally Identifiable Information (PII) such as names, phone numbers,
 emails, credit cards, and addresses.
 """
 
-from loclean.privacy.scrub import scrub, scrub_dataframe, scrub_string
+from loclean.privacy.scrub import scrub_dataframe, scrub_string
 
-__all__ = ["scrub", "scrub_dataframe", "scrub_string"]
+__all__ = ["scrub_dataframe", "scrub_string"]
 
