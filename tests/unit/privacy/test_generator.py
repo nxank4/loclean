@@ -42,9 +42,7 @@ class TestFakeDataGenerator:
             from faker import Faker  # noqa: F401
 
             generator = FakeDataGenerator(locale="vi_VN")
-            entity = PIIEntity(
-                type="email", value="test@example.com", start=0, end=16
-            )
+            entity = PIIEntity(type="email", value="test@example.com", start=0, end=16)
             fake = generator.generate_fake(entity)
 
             assert fake is not None
@@ -81,4 +79,3 @@ class TestFakeDataGenerator:
             assert fake is not None
         except ImportError:
             pytest.skip("faker not installed")
-

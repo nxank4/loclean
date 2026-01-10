@@ -83,4 +83,3 @@ class TestScrubString:
         result = scrub_string(text, strategies=["phone", "email"])
 
         assert result == text
-

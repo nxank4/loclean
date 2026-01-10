@@ -1,6 +1,5 @@
 """Tests for regex-based PII detection."""
 
-
 from loclean.privacy.regex_detector import RegexDetector
 
 
@@ -65,4 +64,3 @@ class TestRegexDetector:
 
         assert len(email_entities) == 0
         assert len(phone_entities) == 0
-

@@ -1,7 +1,5 @@
 """Tests for hybrid PII detector with overlap resolution."""
 
-
-
 from loclean.privacy.detector import PIIDetector, resolve_overlaps
 from loclean.privacy.schemas import PIIEntity
 
@@ -85,4 +83,3 @@ class TestPIIDetector:
         # Should detect phone (regex) but not person (needs LLM)
         phone_entities = [e for e in entities if e.type == "phone"]
         assert len(phone_entities) >= 1
-
