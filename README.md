@@ -28,6 +28,38 @@ Leverage the power of Small Language Models (SLMs) like **Phi-3** and **Llama-3*
 
 Forget about "hallucinations" or parsing loose text. Loclean uses **GBNF Grammars** and **Pydantic V2** to force the LLM to output valid, type-safe JSON. If it breaks the schema, it doesn't pass.
 
+## Structured Extraction with Pydantic
+
+Extract structured data from unstructured text with guaranteed schema compliance:
+
+```python
+from pydantic import BaseModel
+import loclean
+
+class Product(BaseModel):
+    name: str
+    price: int
+    color: str
+
+# Extract from text
+item = loclean.extract("Selling red t-shirt for 50k", schema=Product)
+print(item.name)  # "t-shirt"
+print(item.price)  # 50000
+
+# Extract from DataFrame (default: structured dict for performance)
+import polars as pl
+df = pl.DataFrame({"description": ["Selling red t-shirt for 50k"]})
+result = loclean.extract(df, schema=Product, target_col="description")
+
+# Query with Polars Struct (vectorized operations)
+result.filter(pl.col("description_extracted").struct.field("price") > 50000)
+```
+
+The `extract()` function ensures 100% compliance with your Pydantic schema through:
+- **Dynamic GBNF Grammar Generation**: Automatically converts Pydantic schemas to GBNF grammars
+- **JSON Repair**: Automatically fixes malformed JSON output from LLMs
+- **Retry Logic**: Retries with adjusted prompts when validation fails
+
 ## Backend Agnostic (Zero-Copy)
 
 Built on **Narwhals**, Loclean supports **Pandas**, **Polars**, and **PyArrow** natively.
@@ -145,7 +177,7 @@ The development of Loclean is organized into three phases, prioritizing MVP deli
 
 **Goal: Do things that Regex can never do.**
 
-* [ ] **Contextual Imputation**: Fill missing values based on context (e.g., seeing Zipcode 70000 -> Auto-fill City: TP.HCM).
+* [ ] **Contextual Imputation**: Fill missing values based on context (e.g., seeing Zipcode 10001 -> Auto-fill City: New York).
 * [ ] **Entity Canonicalization**: Group entities (Fuzzy matching + Semantic matching).
 * [ ] **Interactive CLI**: Terminal interface to review AI changes with low confidence.
 

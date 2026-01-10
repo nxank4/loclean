@@ -57,7 +57,7 @@ class TestFakeDataGenerator:
             from faker import Faker  # noqa: F401
 
             generator = FakeDataGenerator(locale="vi_VN")
-            entity = PIIEntity(type="person", value="Nguyễn Văn A", start=0, end=12)
+            entity = PIIEntity(type="person", value="John Doe", start=0, end=12)
             fake = generator.generate_fake(entity)
 
             assert fake is not None
