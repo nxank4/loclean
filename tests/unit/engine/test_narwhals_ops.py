@@ -6,7 +6,7 @@ import pytest
 
 from loclean.engine.narwhals_ops import NarwhalsEngine
 
-# Optional import cho pandas test
+# Optional import for pandas test
 try:
     import pandas as pd
 
@@ -17,9 +17,9 @@ except ImportError:
 
 @pytest.fixture
 def mock_inference_engine() -> Any:
-    """Mock LocalInferenceEngine để tránh phải chạy LLM thật."""
+    """Mock LocalInferenceEngine to avoid running real LLM."""
     mock_engine = Mock()
-    # Mock clean_batch để trả về kết quả giả định
+    # Mock clean_batch to return predefined results
     mock_engine.clean_batch = Mock(
         side_effect=lambda items, instruction: {
             item: {
@@ -34,7 +34,7 @@ def mock_inference_engine() -> Any:
 
 @pytest.fixture
 def sample_polars_df() -> pl.DataFrame:
-    """Sample Polars DataFrame cho testing."""
+    """Sample Polars DataFrame for testing."""
     return pl.DataFrame(
         {
             "weight": ["10kg", "500g", "10kg", "2kg", "500g"],
@@ -45,7 +45,7 @@ def sample_polars_df() -> pl.DataFrame:
 
 @pytest.fixture
 def sample_pandas_df() -> Any:
-    """Sample pandas DataFrame cho testing."""
+    """Sample pandas DataFrame for testing."""
     if not HAS_PANDAS:
         pytest.skip("pandas not installed")
     return pd.DataFrame(
@@ -59,24 +59,24 @@ def sample_pandas_df() -> Any:
 def test_process_column_polars_basic(
     sample_polars_df: Any, mock_inference_engine: Any
 ) -> None:
-    """Test process_column với Polars DataFrame - basic case."""
+    """Test process_column with Polars DataFrame - basic case."""
     result = NarwhalsEngine.process_column(
         sample_polars_df, "weight", mock_inference_engine, "Extract weight"
     )
 
-    # Kiểm tra result là Polars DataFrame
+    # Verify result is Polars DataFrame
     assert isinstance(result, pl.DataFrame)
 
-    # Kiểm tra columns được thêm vào
+    # Verify columns are added
     assert "clean_value" in result.columns
     assert "clean_unit" in result.columns
     assert "weight" in result.columns
     assert "other_col" in result.columns
 
-    # Kiểm tra số rows không đổi
+    # Verify row count unchanged
     assert len(result) == len(sample_polars_df)
 
-    # Kiểm tra inference engine được gọi
+    # Verify inference engine was called
     assert mock_inference_engine.clean_batch.called
 
 
@@ -84,28 +84,28 @@ def test_process_column_polars_basic(
 def test_process_column_pandas_basic(
     sample_pandas_df: Any, mock_inference_engine: Any
 ) -> None:
-    """Test process_column với pandas DataFrame để verify multi-backend support."""
+    """Test process_column with pandas DataFrame to verify multi-backend support."""
     result = NarwhalsEngine.process_column(
         sample_pandas_df, "weight", mock_inference_engine, "Extract weight"
     )
 
-    # Kiểm tra result là pandas DataFrame (return về native type)
+    # Verify result is pandas DataFrame (returns native type)
     assert isinstance(result, pd.DataFrame)
 
-    # Kiểm tra columns được thêm vào
+    # Verify columns are added
     assert "clean_value" in result.columns
     assert "clean_unit" in result.columns
     assert "weight" in result.columns
     assert "other_col" in result.columns
 
-    # Kiểm tra số rows không đổi
+    # Verify row count unchanged
     assert len(result) == len(sample_pandas_df)
 
 
 def test_process_column_column_not_found(
     sample_polars_df: Any, mock_inference_engine: Any
 ) -> None:
-    """Test validation khi column không tồn tại."""
+    """Test validation when column does not exist."""
     with pytest.raises(ValueError, match="Column 'nonexistent' not found"):
         NarwhalsEngine.process_column(
             sample_polars_df, "nonexistent", mock_inference_engine, "Extract weight"
@@ -113,26 +113,26 @@ def test_process_column_column_not_found(
 
 
 def test_process_column_empty_unique_values(mock_inference_engine: Any) -> None:
-    """Test khi không có unique values hợp lệ."""
-    # DataFrame với chỉ None và empty strings
+    """Test when there are no valid unique values."""
+    # DataFrame with only None and empty strings
     df = pl.DataFrame({"weight": [None, "", "   ", None]})
 
     result = NarwhalsEngine.process_column(
         df, "weight", mock_inference_engine, "Extract weight"
     )
 
-    # Nên trả về DataFrame gốc
+    # Should return original DataFrame
     assert isinstance(result, pl.DataFrame)
     assert len(result) == len(df)
-    # Inference engine không nên được gọi vì không có unique values
+    # Inference engine should not be called because there are no unique values
     assert not mock_inference_engine.clean_batch.called
 
 
 def test_process_column_batch_processing(mock_inference_engine: Any) -> None:
-    """Test batch processing với nhiều unique values."""
-    # Tạo DataFrame với nhiều unique values để test batching
+    """Test batch processing with many unique values."""
+    # Create DataFrame with many unique values to test batching
     unique_values = [f"{i}kg" for i in range(60)]  # 60 unique values
-    # Repeat để có nhiều rows
+    # Repeat to have many rows
     weight_col = unique_values * 2  # 120 rows total
     df = pl.DataFrame({"weight": weight_col})
 
@@ -141,15 +141,15 @@ def test_process_column_batch_processing(mock_inference_engine: Any) -> None:
         "weight",
         mock_inference_engine,
         "Extract weight",
-        batch_size=50,  # 60 values sẽ chia thành 2 batches
+        batch_size=50,  # 60 values will be split into 2 batches
     )
 
-    # Kiểm tra inference engine được gọi đúng số lần batch
+    # Verify inference engine was called correct number of times
     assert (
         mock_inference_engine.clean_batch.call_count == 2
     )  # 60 values / 50 batch_size = 2 batches
 
-    # Kiểm tra result
+    # Verify result
     assert isinstance(result, pl.DataFrame)
     assert "clean_value" in result.columns
     assert "clean_unit" in result.columns
@@ -158,9 +158,9 @@ def test_process_column_batch_processing(mock_inference_engine: Any) -> None:
 def test_process_column_join_logic(
     sample_polars_df: Any, mock_inference_engine: Any
 ) -> None:
-    """Test join logic - verify mapping được join đúng."""
+    """Test join logic - verify mapping is joined correctly."""
 
-    # Custom mock để trả về kết quả cụ thể
+    # Custom mock to return specific results
     def custom_clean_batch(items: Any, instruction: Any) -> Any:
         return {
             "10kg": {"value": 10.0, "unit": "kg"},
@@ -174,13 +174,13 @@ def test_process_column_join_logic(
         sample_polars_df, "weight", mock_inference_engine, "Extract weight"
     )
 
-    # Kiểm tra join đúng - tất cả rows với "10kg" nên có clean_value = 10.0
+    # Verify join is correct - all rows with "10kg" should have clean_value = 10.0
     rows_10kg = result.filter(pl.col("weight") == "10kg")
-    assert len(rows_10kg) == 2  # Có 2 rows với "10kg"
+    assert len(rows_10kg) == 2  # There are 2 rows with "10kg"
     assert all(rows_10kg["clean_value"] == 10.0)
     assert all(rows_10kg["clean_unit"] == "kg")
 
-    # Kiểm tra rows với "500g"
+    # Verify rows with "500g"
     rows_500g = result.filter(pl.col("weight") == "500g")
     assert len(rows_500g) == 2
     assert all(rows_500g["clean_value"] == 500.0)
@@ -188,13 +188,13 @@ def test_process_column_join_logic(
 
 
 def test_process_column_with_none_results(mock_inference_engine: Any) -> None:
-    """Test khi inference engine trả về None cho một số items."""
+    """Test when inference engine returns None for some items."""
     df = pl.DataFrame({"weight": ["10kg", "invalid", "500g"]})
 
     def mock_clean_batch_with_none(items: Any, instruction: Any) -> Any:
         return {
             "10kg": {"value": 10.0, "unit": "kg"},
-            "invalid": None,  # Trả về None
+            "invalid": None,  # Return None
             "500g": {"value": 500.0, "unit": "g"},
         }
 
@@ -204,18 +204,18 @@ def test_process_column_with_none_results(mock_inference_engine: Any) -> None:
         df, "weight", mock_inference_engine, "Extract weight"
     )
 
-    # Kiểm tra result vẫn có columns
+    # Verify result still has columns
     assert "clean_value" in result.columns
     assert "clean_unit" in result.columns
 
-    # Row với "invalid" nên có clean_value và clean_unit = None
+    # Row with "invalid" should have clean_value and clean_unit = None
     invalid_row = result.filter(pl.col("weight") == "invalid")
     assert invalid_row["clean_value"][0] is None
     assert invalid_row["clean_unit"][0] is None
 
 
 def test_process_column_no_keys_extracted(mock_inference_engine: Any) -> None:
-    """Test khi không có keys nào được extract (tất cả đều None)."""
+    """Test when no keys are extracted (all are None)."""
     df = pl.DataFrame({"weight": ["item1", "item2"]})
 
     def mock_clean_batch_all_none(items: Any, instruction: Any) -> Any:
@@ -227,14 +227,14 @@ def test_process_column_no_keys_extracted(mock_inference_engine: Any) -> None:
         df, "weight", mock_inference_engine, "Extract weight"
     )
 
-    # Nên trả về DataFrame gốc khi không có keys hợp lệ
+    # Should return original DataFrame when there are no valid keys
     assert isinstance(result, pl.DataFrame)
     assert len(result) == len(df)
 
 
 def test_process_column_parallel_processing(mock_inference_engine: Any) -> None:
-    """Test parallel processing với nhiều batches."""
-    # Tạo DataFrame với nhiều unique values để test parallel processing
+    """Test parallel processing with multiple batches."""
+    # Create DataFrame with many unique values to test parallel processing
     unique_values = [f"{i}kg" for i in range(150)]  # 150 unique values
     weight_col = unique_values * 2  # 300 rows total
     df = pl.DataFrame({"weight": weight_col})
@@ -244,17 +244,17 @@ def test_process_column_parallel_processing(mock_inference_engine: Any) -> None:
         "weight",
         mock_inference_engine,
         "Extract weight",
-        batch_size=50,  # 150 values sẽ chia thành 3 batches
+        batch_size=50,  # 150 values will be split into 3 batches
         parallel=True,
         max_workers=2,
     )
 
-    # Kiểm tra inference engine được gọi đúng số lần batch
+    # Verify inference engine was called correct number of times
     assert (
         mock_inference_engine.clean_batch.call_count == 3
     )  # 150 values / 50 batch_size = 3 batches
 
-    # Kiểm tra result
+    # Verify result
     assert isinstance(result, pl.DataFrame)
     assert "clean_value" in result.columns
     assert "clean_unit" in result.columns
