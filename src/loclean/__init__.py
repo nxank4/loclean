@@ -258,7 +258,8 @@ def extract(
         For DataFrame input: DataFrame with added column `{target_col}_extracted`
 
     Raises:
-        ValueError: If target_col is not provided for DataFrame input or schema is invalid
+        ValueError: If target_col is not provided for DataFrame input or
+            schema is invalid
         ValidationError: If extraction fails after max_retries attempts
 
     Examples:
@@ -282,7 +283,9 @@ def extract(
     from pydantic import BaseModel
 
     if not issubclass(schema, BaseModel):
-        raise ValueError(f"Schema must be a Pydantic BaseModel subclass, got {type(schema)}")
+        raise ValueError(
+            f"Schema must be a Pydantic BaseModel subclass, got {type(schema)}"
+        )
 
     from loclean.cache import LocleanCache
     from loclean.extraction.extract_dataframe import extract_dataframe

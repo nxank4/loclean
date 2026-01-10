@@ -6,23 +6,14 @@ Llama.cpp with GBNF grammar constraints and prompt adapters.
 
 import json
 import logging
-import os
-import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from huggingface_hub import hf_hub_download
 from llama_cpp import Llama, LlamaGrammar  # type: ignore[attr-defined]
 
 from loclean.inference.adapters import PromptAdapter, get_adapter
 from loclean.inference.base import InferenceEngine
-from loclean.inference.local.exceptions import (
-    CachePermissionError,
-    InsufficientSpaceError,
-    ModelDownloadError,
-    ModelNotFoundError,
-    NetworkError,
-)
+from loclean.inference.local.downloader import download_model
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -35,22 +26,52 @@ if not logger.handlers:
     logger.addHandler(handler)
 
 
-_MODEL_REGISTRY: Dict[str, Dict[str, str]] = {
+def get_model_registry() -> Dict[str, Dict[str, Any]]:
+    """
+    Get the model registry.
+
+    Returns:
+        Dictionary mapping model names to their metadata.
+    """
+    return _MODEL_REGISTRY.copy()
+
+
+_MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
     "phi-3-mini": {
         "repo": "microsoft/Phi-3-mini-4k-instruct-gguf",
         "filename": "Phi-3-mini-4k-instruct-q4.gguf",
+        "size_mb": 2400,
+        "description": "Microsoft Phi-3 Mini (3.8B parameters, 4K context)",
+    },
+    "tinyllama": {
+        "repo": "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF",
+        "filename": "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
+        "size_mb": 800,
+        "description": "TinyLlama 1.1B (smallest, fastest model)",
+    },
+    "gemma-2b": {
+        "repo": "google/gemma-2b-it-GGUF",
+        "filename": "gemma-2b-it-q4_k_m.gguf",
+        "size_mb": 1500,
+        "description": "Google Gemma 2B Instruct (balanced performance)",
     },
     "qwen3-4b": {
         "repo": "unsloth/Qwen3-4B-Instruct-2507-GGUF",
         "filename": "Qwen3-4B-Instruct-2507-GGUF.q4_k_m.gguf",
+        "size_mb": 2500,
+        "description": "Qwen3 4B Instruct (higher quality)",
     },
     "gemma-3-4b": {
         "repo": "unsloth/gemma-3-4b-it-GGUF",
         "filename": "gemma-3-4b-it-GGUF.q4_k_m.gguf",
+        "size_mb": 2800,
+        "description": "Gemma 3 4B Instruct (larger context)",
     },
     "deepseek-r1": {
         "repo": "unsloth/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
         "filename": "DeepSeek-R1-Distill-Qwen-1.5B-GGUF.q4_k_m.gguf",
+        "size_mb": 1200,
+        "description": "DeepSeek R1 (reasoning model)",
     },
 }
 
@@ -122,7 +143,7 @@ class LlamaCppEngine(InferenceEngine):
 
         logger.info(f"LlamaCppEngine initialized successfully with model: {model_name}")
 
-    def _get_model_path(self) -> Path:
+    def _get_model_path(self) -> "Path":
         """
         Ensure the model exists locally. Download if necessary.
 
@@ -136,161 +157,14 @@ class LlamaCppEngine(InferenceEngine):
             InsufficientSpaceError: If insufficient disk space prevents download.
             ModelDownloadError: For other download-related errors.
         """
-        local_path = self.cache_dir / self.model_filename
-        if local_path.exists():
-            logger.info(f"Model found at {local_path}")
-            return local_path
-
-        logger.info(
-            f"Model not found locally. Downloading {self.model_filename} "
-            f"from {self.model_repo}..."
+        return download_model(
+            model_name=self.model_name,
+            repo_id=self.model_repo,
+            filename=self.model_filename,
+            cache_dir=self.cache_dir,
+            force=False,
+            show_progress=True,
         )
-
-        # Check cache directory permissions before attempting download
-        # Only check if directory already exists (mkdir succeeded = write access)
-        # If directory was just created, mkdir() already verified write access
-        if self.cache_dir.exists():
-            try:
-                if not os.access(self.cache_dir, os.W_OK):
-                    raise CachePermissionError(
-                        f"Cannot write to cache directory: {self.cache_dir}. "
-                        "Please check directory permissions or specify a different "
-                        "cache_dir.",
-                        model_name=self.model_name,
-                        repo_id=self.model_repo,
-                        filename=self.model_filename,
-                    )
-            except CachePermissionError:
-                # Re-raise our custom CachePermissionError
-                raise
-            except Exception as e:
-                # If permission check fails for other reasons, log warning but continue
-                # Actual download will fail with clearer error if permissions are wrong
-                logger.warning(
-                    f"Could not verify cache directory permissions: {e}. "
-                    "Proceeding with download..."
-                )
-
-        # Check available disk space (rough estimate - model files are typically 2-8GB)
-        try:
-            stat = shutil.disk_usage(self.cache_dir)
-            free_gb = stat.free / (1024**3)
-            if free_gb < 1.0:  # Require at least 1GB free space
-                raise InsufficientSpaceError(
-                    f"Insufficient disk space. Available: {free_gb:.2f}GB, "
-                    f"required: ~1GB minimum. Please free up space in "
-                    f"{self.cache_dir}.",
-                    model_name=self.model_name,
-                    repo_id=self.model_repo,
-                    filename=self.model_filename,
-                )
-        except InsufficientSpaceError:
-            raise
-        except Exception as e:
-            logger.warning(
-                f"Could not check disk space: {e}. Proceeding with download..."
-            )
-
-        # Attempt to download the model
-        try:
-            path = hf_hub_download(
-                repo_id=self.model_repo,
-                filename=self.model_filename,
-                local_dir=self.cache_dir,
-            )
-            logger.info(f"Successfully downloaded model to {path}")
-            return Path(path)
-        except FileNotFoundError as e:
-            raise ModelNotFoundError(
-                f"Model file '{self.model_filename}' not found in repository "
-                f"'{self.model_repo}'. Please verify the model name is correct.",
-                model_name=self.model_name,
-                repo_id=self.model_repo,
-                filename=self.model_filename,
-            ) from e
-        except (ConnectionError, TimeoutError, OSError) as e:
-            # Check if it's a network-related OSError
-            # errno 28=ENOSPC (no space), 13=EACCES (permission denied)
-            if isinstance(e, OSError) and e.errno not in (28, 13):
-                # Not a disk space or permission error, treat as network error
-                raise NetworkError(
-                    f"Network error while downloading model: {e}. "
-                    f"Please check your internet connection and try again.",
-                    model_name=self.model_name,
-                    repo_id=self.model_repo,
-                    filename=self.model_filename,
-                ) from e
-            elif isinstance(e, OSError) and e.errno == 13:  # EACCES - Permission denied
-                raise CachePermissionError(
-                    f"Permission denied while downloading model: {e}. "
-                    f"Please check write permissions for {self.cache_dir}.",
-                    model_name=self.model_name,
-                    repo_id=self.model_repo,
-                    filename=self.model_filename,
-                ) from e
-            elif isinstance(e, OSError) and e.errno == 28:  # ENOSPC - No space left
-                raise InsufficientSpaceError(
-                    f"Insufficient disk space while downloading model: {e}. "
-                    f"Please free up space in {self.cache_dir}.",
-                    model_name=self.model_name,
-                    repo_id=self.model_repo,
-                    filename=self.model_filename,
-                ) from e
-            else:
-                raise NetworkError(
-                    f"Network error while downloading model: {e}. "
-                    f"Please check your internet connection and try again.",
-                    model_name=self.model_name,
-                    repo_id=self.model_repo,
-                    filename=self.model_filename,
-                ) from e
-        except Exception as e:
-            # Catch Hugging Face Hub specific exceptions
-            error_msg = str(e).lower()
-            if "not found" in error_msg or "repository" in error_msg:
-                raise ModelNotFoundError(
-                    f"Model repository or file not found: {e}. "
-                    f"Repository: {self.model_repo}, File: {self.model_filename}",
-                    model_name=self.model_name,
-                    repo_id=self.model_repo,
-                    filename=self.model_filename,
-                ) from e
-            elif (
-                "network" in error_msg
-                or "connection" in error_msg
-                or "timeout" in error_msg
-            ):
-                raise NetworkError(
-                    f"Network error while downloading model: {e}. "
-                    f"Please check your internet connection and try again.",
-                    model_name=self.model_name,
-                    repo_id=self.model_repo,
-                    filename=self.model_filename,
-                ) from e
-            elif "permission" in error_msg or "access" in error_msg:
-                raise CachePermissionError(
-                    f"Permission error while downloading model: {e}. "
-                    f"Please check write permissions for {self.cache_dir}.",
-                    model_name=self.model_name,
-                    repo_id=self.model_repo,
-                    filename=self.model_filename,
-                ) from e
-            elif "space" in error_msg or "disk" in error_msg or "full" in error_msg:
-                raise InsufficientSpaceError(
-                    f"Insufficient disk space while downloading model: {e}. "
-                    f"Please free up space in {self.cache_dir}.",
-                    model_name=self.model_name,
-                    repo_id=self.model_repo,
-                    filename=self.model_filename,
-                ) from e
-            else:
-                raise ModelDownloadError(
-                    f"Failed to download model '{self.model_name}': {e}. "
-                    f"Repository: {self.model_repo}, File: {self.model_filename}",
-                    model_name=self.model_name,
-                    repo_id=self.model_repo,
-                    filename=self.model_filename,
-                ) from e
 
     def _get_json_grammar(self) -> LlamaGrammar:
         """

@@ -145,6 +145,32 @@ uv sync --dev
 pip install -e ".[dev]"
 ```
 
+# Model Management
+
+Loclean automatically downloads models on first use, but you can pre-download them using the CLI:
+
+```bash
+# Download a specific model
+loclean model download --name phi-3-mini
+
+# List available models
+loclean model list
+
+# Check download status
+loclean model status
+```
+
+## Available Models
+
+- **phi-3-mini**: Microsoft Phi-3 Mini (3.8B, 4K context) - Default, balanced
+- **tinyllama**: TinyLlama 1.1B - Smallest, fastest
+- **gemma-2b**: Google Gemma 2B Instruct - Balanced performance
+- **qwen3-4b**: Qwen3 4B - Higher quality
+- **gemma-3-4b**: Gemma 3 4B - Larger context
+- **deepseek-r1**: DeepSeek R1 - Reasoning model
+
+Models are cached in `~/.cache/loclean` by default. You can specify a custom cache directory using the `--cache-dir` option.
+
 # Quick Start
 
 _in progress..._

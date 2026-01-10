@@ -53,8 +53,8 @@ def mock_model_path(temp_cache_dir: Any) -> Any:
 @pytest.fixture
 def mock_hf_download(mock_model_path: Any) -> Any:
     with patch(
-        "loclean.inference.local.llama_cpp.hf_hub_download",
-        return_value=str(mock_model_path),
+        "loclean.inference.local.llama_cpp.download_model",
+        return_value=mock_model_path,
     ):
         yield
 

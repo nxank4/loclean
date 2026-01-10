@@ -75,8 +75,8 @@ def mock_model_path(temp_cache_dir: Any) -> Any:
 @pytest.fixture
 def mock_hf_download(mock_model_path: Any) -> Any:
     with patch(
-        "loclean.inference.local.llama_cpp.hf_hub_download",
-        return_value=str(mock_model_path),
+        "loclean.inference.local.llama_cpp.download_model",
+        return_value=mock_model_path,
     ):
         yield
 
@@ -213,22 +213,26 @@ class TestLlamaCppEngine:
                 with patch("loclean.inference.local.llama_cpp.LlamaGrammar"):
                     with patch("loclean.cache.LocleanCache"):
                         with patch(
-                            "loclean.inference.local.llama_cpp.hf_hub_download"
+                            "loclean.inference.local.llama_cpp.download_model"
                         ) as mock_download:
-                            mock_download.return_value = str(
+                            mock_download.return_value = (
                                 temp_cache_dir / "downloaded_model.gguf"
                             )
 
                             engine = LlamaCppEngine(cache_dir=temp_cache_dir)
                             expected_repo = engine.model_repo
                             expected_filename = engine.model_filename
+                            expected_model_name = engine.model_name
                             mock_download.reset_mock()
                             engine._get_model_path()
 
                             mock_download.assert_called_once_with(
+                                model_name=expected_model_name,
                                 repo_id=expected_repo,
                                 filename=expected_filename,
-                                local_dir=temp_cache_dir,
+                                cache_dir=temp_cache_dir,
+                                force=False,
+                                show_progress=True,
                             )
 
     def test_get_json_grammar(
