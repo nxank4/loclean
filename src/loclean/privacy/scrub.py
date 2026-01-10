@@ -40,9 +40,8 @@ def replace_entities(
     # Sort by start position (reverse for safe replacement)
     sorted_entities = sorted(entities, key=lambda e: e.start, reverse=True)
 
-    if mode == "mask":
-        generator = None
-    else:  # mode == "fake"
+    generator: FakeDataGenerator | None = None
+    if mode == "fake":
         generator = FakeDataGenerator(locale=locale)
 
     result = text
@@ -50,6 +49,7 @@ def replace_entities(
         if mode == "mask":
             replacement = f"[{entity.type.upper()}]"
         else:  # mode == "fake"
+            assert generator is not None  # Should not happen if mode is validated
             replacement = generator.generate_fake(entity)
 
         result = result[: entity.start] + replacement + result[entity.end :]
@@ -150,17 +150,68 @@ def scrub_dataframe(
         entities = detector.detect(value, strategies)
         scrubbed_map[value] = replace_entities(value, entities, mode, locale)
 
-    # Apply mapping to DataFrame
-    def map_value(x: Any) -> Any:
-        if x is None:
-            return x
-        str_x = str(x)
-        if str_x in scrubbed_map:
-            return scrubbed_map[str_x]
-        return str_x
+    # Create mapping DataFrame and join (similar to narwhals_ops.py approach)
+    mapping_keys = list(scrubbed_map.keys())
+    mapping_values = [scrubbed_map[k] for k in mapping_keys]
 
-    df_nw = df_nw.with_columns(
-        nw.col(target_col).map_elements(map_value)  # type: ignore[arg-type]
+    # Detect backend and create mapping DataFrame
+    native_df_cls = type(df_nw.to_native())
+    module_name = native_df_cls.__module__
+
+    map_df_native: Any
+    if "polars" in module_name:
+        import polars as pl
+
+        map_df_native = pl.DataFrame(
+            {
+                target_col: mapping_keys,
+                f"{target_col}_scrubbed": mapping_values,
+            },
+            schema={
+                target_col: pl.String,
+                f"{target_col}_scrubbed": pl.String,
+            },
+        )
+    elif "pandas" in module_name:
+        import pandas as pd
+
+        map_df_native = pd.DataFrame(
+            {
+                target_col: mapping_keys,
+                f"{target_col}_scrubbed": mapping_values,
+            }
+        )
+    else:
+        # Fallback: use pandas
+        import pandas as pd
+
+        map_df_native = pd.DataFrame(
+            {
+                target_col: mapping_keys,
+                f"{target_col}_scrubbed": mapping_values,
+            }
+        )
+
+    map_df = nw.from_native(map_df_native)
+
+    # Join and replace column
+    result_df = (
+        df_nw.with_columns(
+            nw.col(target_col).cast(nw.String).alias(f"{target_col}_join_key")
+        )
+        .join(
+            map_df,  # type: ignore[arg-type]
+            left_on=f"{target_col}_join_key",
+            right_on=target_col,
+            how="left",
+        )
+        .with_columns(
+            nw.coalesce([nw.col(f"{target_col}_scrubbed"), nw.col(target_col)]).alias(
+                target_col
+            )
+        )
+        .drop([f"{target_col}_join_key", f"{target_col}_scrubbed"])
+        .to_native()
     )
 
-    return df_nw.to_native()
+    return result_df

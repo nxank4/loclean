@@ -8,6 +8,7 @@ from loclean.privacy.regex_detector import RegexDetector
 from loclean.privacy.schemas import PIIEntity
 
 if TYPE_CHECKING:
+    from loclean.cache import LocleanCache
     from loclean.inference.base import InferenceEngine
 
 logger = logging.getLogger(__name__)
@@ -86,7 +87,7 @@ class PIIDetector:
     def __init__(
         self,
         inference_engine: "InferenceEngine | None" = None,
-        cache=None,
+        cache: "LocleanCache | None" = None,
     ) -> None:
         """
         Initialize PII detector.
@@ -160,4 +161,3 @@ class PIIDetector:
         resolved_entities = resolve_overlaps(all_entities)
 
         return resolved_entities
-
