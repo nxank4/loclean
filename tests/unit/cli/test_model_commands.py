@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from click.exceptions import Exit
 from rich.console import Console
 
 from loclean.cli.model_commands import check_status, download_model, list_models
@@ -129,7 +130,7 @@ def test_download_model_not_found(mock_registry: Mock, mock_console: Console) ->
         },
     }
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(Exit):
         download_model(
             name="invalid-model",
             cache_dir=None,
@@ -154,7 +155,7 @@ def test_download_model_error(
     }
     mock_download.side_effect = Exception("Download failed")
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(Exit):
         download_model(
             name="phi-3-mini",
             cache_dir=None,
