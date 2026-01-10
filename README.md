@@ -113,7 +113,7 @@ _in progress..._
 
 The development of Loclean is organized into three phases, prioritizing MVP delivery while maintaining a long-term vision.
 
-## Phase 1: The "Smart" Engine (Phần Lõi Hybrid)
+## Phase 1: The "Smart" Engine (Hybrid Core)
 
 **Goal: Get `loclean.clean()` running fast and accurately.**
 
@@ -121,7 +121,7 @@ The development of Loclean is organized into three phases, prioritizing MVP deli
 * [ ] **Strict Output (Pydantic + GBNF)**: Ensure 100% LLM outputs valid JSON Schema. (Using llama-cpp-python grammar).
 * [ ] **Simple Extraction**: Extract basic information from raw text (Unstructured to Structured).
 
-## Phase 2: The "Safe" Layer (Bảo mật & Tối ưu)
+## Phase 2: The "Safe" Layer (Security & Optimization)
 
 **Goal: Convince enterprises to trust and adopt the library.**
 
@@ -129,7 +129,7 @@ The development of Loclean is organized into three phases, prioritizing MVP deli
 * [ ] **SQLite Caching System**: Cache LLM results to avoid redundant costs/time. (As discussed above).
 * [ ] **Batch Processing**: Parallel processing (Parallelism) to handle millions of rows without freezing.
 
-## Phase 3: The "Magic" (Tính năng nâng cao)
+## Phase 3: The "Magic" (Advanced Features)
 
 **Goal: Do things that Regex can never do.**
 
