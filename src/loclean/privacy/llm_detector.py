@@ -60,8 +60,10 @@ class LLMDetector:
         # Build instruction from template
         instruction = self.template.render(strategies=llm_strategies)
 
-        # Check cache
-        cached_results = self.cache.get_batch(items, instruction)
+        # Check cache - use a consistent instruction key
+        # We'll use a simple instruction string for caching
+        cache_instruction = f"Detect {', '.join(llm_strategies)}"
+        cached_results = self.cache.get_batch(items, cache_instruction)
         misses = [item for item in items if item not in cached_results]
 
         results: List[PIIDetectionResult] = []
@@ -80,13 +82,13 @@ class LLMDetector:
                 else:
                     results.append(PIIDetectionResult(entities=[], reasoning=None))
 
-        # Process misses using inference engine
+            # Process misses using inference engine
         if misses:
             logger.info(f"Cache miss for {len(misses)} items. Running LLM inference...")
 
             # Use the inference engine's clean_batch method
             # We'll adapt it for PII detection
-            batch_results = self._detect_with_llm(misses, instruction)
+            batch_results = self._detect_with_llm(misses, llm_strategies)
 
             # Cache valid results
             valid_results = {
@@ -95,7 +97,9 @@ class LLMDetector:
                 if result.entities
             }
             if valid_results:
-                self.cache.set_batch(list(valid_results.keys()), instruction, valid_results)
+                self.cache.set_batch(
+                    list(valid_results.keys()), cache_instruction, valid_results
+                )
 
             # Add to results list
             results.extend(batch_results)
@@ -103,14 +107,14 @@ class LLMDetector:
         return results
 
     def _detect_with_llm(
-        self, items: List[str], instruction: str
+        self, items: List[str], strategies: List[str]
     ) -> List[PIIDetectionResult]:
         """
         Detect PII using LLM inference.
 
         Args:
             items: List of text items
-            instruction: Instruction for LLM
+            strategies: List of PII types to detect
 
         Returns:
             List of detection results
@@ -130,6 +134,11 @@ class LLMDetector:
             # Direct LLM access (for LlamaCppEngine)
             for item in items:
                 try:
+                    # Build instruction from template for this item
+                    instruction = self.template.render(
+                        strategies=strategies, item=item
+                    )
+                    # Format prompt using adapter
                     prompt = self.inference_engine.adapter.format(instruction, item)
                     stop_tokens = self.inference_engine.adapter.get_stop_tokens()
 
