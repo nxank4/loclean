@@ -28,6 +28,38 @@ Leverage the power of Small Language Models (SLMs) like **Phi-3** and **Llama-3*
 
 Forget about "hallucinations" or parsing loose text. Loclean uses **GBNF Grammars** and **Pydantic V2** to force the LLM to output valid, type-safe JSON. If it breaks the schema, it doesn't pass.
 
+## Structured Extraction with Pydantic
+
+Extract structured data from unstructured text with guaranteed schema compliance:
+
+```python
+from pydantic import BaseModel
+import loclean
+
+class Product(BaseModel):
+    name: str
+    price: int
+    color: str
+
+# Extract from text
+item = loclean.extract("Bán cái áo thun đỏ giá 50k", schema=Product)
+print(item.name)  # "áo thun"
+print(item.price)  # 50000
+
+# Extract from DataFrame (default: structured dict for performance)
+import polars as pl
+df = pl.DataFrame({"description": ["Bán áo thun đỏ giá 50k"]})
+result = loclean.extract(df, schema=Product, target_col="description")
+
+# Query with Polars Struct (vectorized operations)
+result.filter(pl.col("description_extracted").struct.field("price") > 50000)
+```
+
+The `extract()` function ensures 100% compliance with your Pydantic schema through:
+- **Dynamic GBNF Grammar Generation**: Automatically converts Pydantic schemas to GBNF grammars
+- **JSON Repair**: Automatically fixes malformed JSON output from LLMs
+- **Retry Logic**: Retries with adjusted prompts when validation fails
+
 ## Backend Agnostic (Zero-Copy)
 
 Built on **Narwhals**, Loclean supports **Pandas**, **Polars**, and **PyArrow** natively.
