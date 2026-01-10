@@ -148,3 +148,5 @@ We love contributions! Loclean is strictly open-source under the **Apache 2.0 Li
 5. **Push** to your fork and submit a **Pull Request**.
 
 _Built for the Data Community._
+
+[![Star History Chart](https://api.star-history.com/svg?repos=nxank4/loclean&type=date&legend=top-left)](https://www.star-history.com/#nxank4/loclean&type=date&legend=top-left)
