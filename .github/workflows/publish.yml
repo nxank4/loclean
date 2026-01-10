@@ -40,7 +40,7 @@ jobs:
           VERSION=${TAG_NAME#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Tag: $TAG_NAME -> Version: $VERSION"
-          
+
           # Update _version.py with version from tag
           cat > src/loclean/_version.py << EOF
           """Version information for loclean package."""
