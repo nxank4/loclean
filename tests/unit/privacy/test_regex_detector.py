@@ -1,6 +1,5 @@
 """Tests for regex-based PII detection."""
 
-import pytest
 
 from loclean.privacy.regex_detector import RegexDetector
 

@@ -1,8 +1,6 @@
 """Tests for hybrid PII detector with overlap resolution."""
 
-from unittest.mock import Mock
 
-import pytest
 
 from loclean.privacy.detector import PIIDetector, resolve_overlaps
 from loclean.privacy.schemas import PIIEntity

@@ -2,8 +2,8 @@
 
 import pytest
 
-from loclean.privacy.scrub import replace_entities, scrub_string
 from loclean.privacy.schemas import PIIEntity
+from loclean.privacy.scrub import replace_entities, scrub_string
 
 
 class TestReplaceEntities:
