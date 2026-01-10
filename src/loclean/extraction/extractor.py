@@ -62,7 +62,8 @@ class Extractor:
         Args:
             text: Input text to extract from.
             schema: Pydantic BaseModel class defining the output structure.
-            instruction: Optional custom instruction. If None, auto-generated from schema.
+            instruction: Optional custom instruction.
+                        If None, auto-generated from schema.
 
         Returns:
             Validated Pydantic model instance.
