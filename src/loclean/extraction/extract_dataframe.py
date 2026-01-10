@@ -105,9 +105,15 @@ def extract_dataframe(
 
     # Convert to output format
     if output_type == "dict":
-        output_map = _convert_to_dict_format(extracted_map, schema)
+        output_map: dict[str, dict[str, Any] | None] = _convert_to_dict_format(
+            extracted_map, schema
+        )
     else:  # output_type == "pydantic"
-        output_map = extracted_map
+        # For pydantic output, convert BaseModel to dict for DataFrame storage
+        output_map = {
+            k: (v.model_dump() if v is not None else None)
+            for k, v in extracted_map.items()
+        }
 
     # Create mapping DataFrame and join
     mapping_keys = list(output_map.keys())
