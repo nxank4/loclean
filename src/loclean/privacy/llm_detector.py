@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, List
 
 from jinja2 import Template
 
@@ -93,7 +93,7 @@ class LLMDetector:
             # Cache valid results
             valid_results = {
                 item: result.model_dump()
-                for item, result in zip(misses, batch_results)
+                for item, result in zip(misses, batch_results, strict=False)
                 if result.entities
             }
             if valid_results:
