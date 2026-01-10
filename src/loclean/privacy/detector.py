@@ -62,16 +62,16 @@ def resolve_overlaps(entities: List[PIIEntity]) -> List[PIIEntity]:
     sorted_entities = sorted(entities, key=lambda e: (-e.length, e.start))
 
     resolved: List[PIIEntity] = []
-        for entity in sorted_entities:
-            # Check if this entity overlaps with any already resolved entity
-            overlaps = False
-            for resolved_entity in resolved:
-                if (
-                    entity.start < resolved_entity.end
-                    and entity.end > resolved_entity.start
-                ):
-                    overlaps = True
-                    break
+    for entity in sorted_entities:
+        # Check if this entity overlaps with any already resolved entity
+        overlaps = False
+        for resolved_entity in resolved:
+            if (
+                entity.start < resolved_entity.end
+                and entity.end > resolved_entity.start
+            ):
+                overlaps = True
+                break
 
         if not overlaps:
             resolved.append(entity)
