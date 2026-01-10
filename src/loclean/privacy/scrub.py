@@ -126,12 +126,16 @@ def scrub_dataframe(
 
     # Get unique values for batch processing
     unique_df = df_nw.unique(subset=[target_col])
-    unique_values = unique_df[target_col].to_list()
+    unique_values_raw = unique_df[target_col].to_list()
 
-    # Filter out None and empty strings
-    unique_values = [
-        str(x) for x in unique_values if x is not None and str(x).strip() != ""
-    ]
+    # Filter out None and empty strings, convert to string
+    unique_values: list[str] = []
+    unique_map: dict[str, Any] = {}  # Map string representation to original value
+    for x in unique_values_raw:
+        if x is not None and str(x).strip() != "":
+            str_val = str(x)
+            unique_values.append(str_val)
+            unique_map[str_val] = x
 
     if not unique_values:
         logger.warning("No valid values found. Returning original DataFrame.")
@@ -147,10 +151,16 @@ def scrub_dataframe(
         scrubbed_map[value] = replace_entities(value, entities, mode, locale)
 
     # Apply mapping to DataFrame
+    def map_value(x: Any) -> Any:
+        if x is None:
+            return x
+        str_x = str(x)
+        if str_x in scrubbed_map:
+            return scrubbed_map[str_x]
+        return str_x
+
     df_nw = df_nw.with_columns(
-        nw.col(target_col).map_elements(
-            lambda x: scrubbed_map.get(str(x), str(x)) if x is not None else x
-        )
+        nw.col(target_col).map_elements(map_value)  # type: ignore[arg-type]
     )
 
     return df_nw.to_native()
