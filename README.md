@@ -67,23 +67,35 @@ mamba install -c conda-forge loclean
 
 ## Optional Dependencies
 
-**For DataFrame operations (Pandas, Polars, PyArrow):**
+The basic installation includes **local inference** support (via `llama-cpp-python`). Loclean uses **Narwhals** for backend-agnostic DataFrame operations, so if you already have **Pandas**, **Polars**, or **PyArrow** installed, the basic installation is sufficient.
+
+**Install DataFrame libraries (if not already present):**
+
+If you don't have any DataFrame library installed, or want to ensure you have all supported backends:
 
 ```bash
 pip install loclean[data]
 ```
 
+This installs: `pandas>=2.3.3`, `polars>=0.20.0`, `pyarrow>=22.0.0`
+
 **For Cloud API support (OpenAI, Anthropic, Gemini):**
+
+Cloud API support is planned for future releases. Currently, only local inference is available:
 
 ```bash
 pip install loclean[cloud]
 ```
 
-**Install everything:**
+**Install all optional dependencies:**
 
 ```bash
 pip install loclean[all]
 ```
+
+This installs both `loclean[data]` and `loclean[cloud]`. Useful for production environments where you want all features available.
+
+> **Note for developers:** If you're contributing to Loclean, use the [Development Installation](#development-installation) section below (git clone + `uv sync --dev`), not `loclean[all]`.
 
 ## Development Installation
 
@@ -105,7 +117,7 @@ pip install -e ".[dev]"
 
 _in progress..._
 
-# How It Works (The Architecture)
+# How It Works
 
 _in progress..._
 
