@@ -9,7 +9,7 @@ from loclean._version import __version__
 from loclean.engine.narwhals_ops import NarwhalsEngine
 from loclean.inference.manager import LocalInferenceEngine
 
-__all__ = ["__version__", "clean", "get_engine", "scrub"]
+__all__ = ["__version__", "clean", "get_engine", "scrub", "extract"]
 
 # Global singleton instance
 # Note: This singleton pattern is not thread-safe. Do not call get_engine()
