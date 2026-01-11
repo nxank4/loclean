@@ -70,7 +70,7 @@ def clean(
                     If 1 or parallel=False, uses sequential processing.
                     Defaults to None.
         **engine_kwargs: Additional keyword arguments forwarded to the
-            underlying LocalInferenceEngine for advanced configuration.
+            underlying LlamaCppEngine for advanced configuration.
 
     Returns:
         DataFrame with added 'clean_value', 'clean_unit', and 'clean_reasoning'
@@ -93,7 +93,7 @@ def clean(
     else:
         # When users provide configuration, create a dedicated engine instance
         # so that global singleton behavior remains unchanged.
-        engine = LocalInferenceEngine(
+        engine = LlamaCppEngine(
             cache_dir=cache_dir,
             model_name=model_name,
             n_ctx=n_ctx,
@@ -184,7 +184,7 @@ def scrub(
         ):
             inference_engine = get_engine()
         else:
-            inference_engine = LocalInferenceEngine(
+            inference_engine = LlamaCppEngine(
                 cache_dir=cache_dir,
                 model_name=model_name,
                 n_ctx=n_ctx,
@@ -300,7 +300,7 @@ def extract(
         inference_engine = get_engine()
         cache = inference_engine.cache if hasattr(inference_engine, "cache") else None
     else:
-        inference_engine = LocalInferenceEngine(
+        inference_engine = LlamaCppEngine(
             cache_dir=cache_dir,
             model_name=model_name,
             n_ctx=n_ctx,
