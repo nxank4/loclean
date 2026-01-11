@@ -44,7 +44,7 @@ jobs:
         run: uv run mypy .
 
   tests:
-    name: 🔎 Test on ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    name: 🔎 Test on ${{ matrix.os }} / Python ${{ matrix.python-version }} / ${{ matrix.backend }}
     needs: quality
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -53,6 +53,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12"]
+        backend: [pandas, polars]
 
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +72,23 @@ jobs:
           save-cache: "true"
 
       - name: Install dependencies
+        env:
+          # Force uv to prefer pre-built wheels over source builds
+          # This significantly speeds up llama-cpp-python installation (5-10 min -> ~30 sec)
+          UV_PREFER_BINARY: 1
         run: uv sync --all-extras --dev
 
+      - name: Verify backend installation
+        shell: bash
+        run: |
+          if [ "${{ matrix.backend }}" == "pandas" ]; then
+            uv run python -c "import pandas; print(f'pandas {pandas.__version__}')"
+          else
+            uv run python -c "import polars; print(f'polars {polars.__version__}')"
+          fi
+
       - name: 🔎 Run Tests
+        shell: bash
+        env:
+          LOCLEAN_TEST_BACKEND: ${{ matrix.backend }}
         run: uv run pytest tests/ -v -m "not cloud and not slow"
