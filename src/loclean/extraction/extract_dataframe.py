@@ -152,11 +152,6 @@ def extract_dataframe(
             right_on=target_col,
             how="left",
         )
-        .with_columns(
-            nw.coalesce([nw.col(f"{target_col}_extracted"), nw.lit(None)]).alias(
-                f"{target_col}_extracted"
-            )
-        )
         .drop([f"{target_col}_join_key"])
         .to_native()
     )

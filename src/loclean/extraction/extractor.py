@@ -98,7 +98,6 @@ class Extractor:
         )
 
         if result is None:
-            from pydantic_core import ValidationError as CoreValidationError
 
             msg = (
                 f"Failed to extract valid {schema.__name__} from text "
