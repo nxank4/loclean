@@ -35,7 +35,9 @@ class LLMDetector:
         self.cache = cache or LocleanCache()
 
         # Load grammar and template
-        self.grammar_str = get_grammar_preset("pii_detection")
+        from loclean.utils.resources import load_grammar
+
+        self.grammar_str = load_grammar("pii_detection.gbnf")
         self.template_str = load_template("pii_detection.j2")
         self.template = Template(self.template_str)
 
@@ -135,7 +137,9 @@ class LLMDetector:
             # Load PII detection grammar
             from llama_cpp import LlamaGrammar  # type: ignore[attr-defined]
 
-            pii_grammar = LlamaGrammar.from_string(self.grammar_str, verbose=False)
+            # Strip grammar string to avoid parsing issues
+            grammar_str_clean = self.grammar_str.strip()
+            pii_grammar = LlamaGrammar.from_string(grammar_str_clean, verbose=False)
 
             # Direct LLM access (for LlamaCppEngine)
             for item in items:
