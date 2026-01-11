@@ -10,9 +10,13 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'Loclean',
-			social: {
-				github: 'https://github.com/nxank4/loclean',
-			},
+			social: [
+				{
+					icon: 'github',
+					label: 'GitHub',
+					href: 'https://github.com/nxank4/loclean',
+				},
+			],
 			sidebar: [
 				{
 					label: '🚀 Getting Started',
