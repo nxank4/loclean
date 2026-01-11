@@ -7,6 +7,8 @@ description: Download and manage GGUF models for local inference.
 
 Loclean automatically downloads models on first use, but you can pre-download them using the CLI for faster startup times.
 
+> **See also:** [Installation](/loclean/getting-started/installation/) | [Configuration](/loclean/reference/configuration/) | [API Reference](/loclean/reference/api/)
+
 ## CLI Commands
 
 ### Download a Model
@@ -54,3 +56,10 @@ loclean model download --name phi-3-mini --cache-dir /path/to/cache
 - **For Balance**: Use `phi-3-mini` (default, good performance)
 - **For Quality**: Use `qwen3-4b` or `gemma-3-4b` (larger, better quality)
 - **For Reasoning**: Use `deepseek-r1` (specialized for reasoning tasks)
+
+## Related Topics
+
+- [Installation Guide](/loclean/getting-started/installation/) - Setup instructions
+- [Configuration](/loclean/reference/configuration/) - Model and engine configuration
+- [API Reference](/loclean/reference/api/) - Function parameters and options
+- [Performance Optimization](/loclean/guides/performance/) - Model selection tips
