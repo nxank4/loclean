@@ -134,12 +134,15 @@ class LLMDetector:
         if hasattr(self.inference_engine, "llm") and hasattr(
             self.inference_engine, "adapter"
         ):
-            # Load PII detection grammar
+            # Load PII detection grammar using JSON schema (more reliable)
             from llama_cpp import LlamaGrammar  # type: ignore[attr-defined]
+            from loclean.privacy.schemas import PIIDetectionResult
+            import json
 
-            # Strip grammar string to avoid parsing issues
-            grammar_str_clean = self.grammar_str.strip()
-            pii_grammar = LlamaGrammar.from_string(grammar_str_clean, verbose=False)
+            # Use JSON schema approach like extraction
+            json_schema = PIIDetectionResult.model_json_schema()
+            json_schema_str = json.dumps(json_schema)
+            pii_grammar = LlamaGrammar.from_json_schema(json_schema_str)
 
             # Direct LLM access (for LlamaCppEngine)
             for item in items:
