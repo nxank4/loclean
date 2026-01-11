@@ -8,7 +8,6 @@ export default defineConfig({
 	site: 'https://nxank4.github.io',
 	base: '/loclean',
 	integrations: [
-		expressiveCode(),
 		starlight({
 			title: 'Loclean',
 			logo: {
