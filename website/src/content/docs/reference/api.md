@@ -41,6 +41,7 @@ def clean(
 ### Returns
 
 DataFrame with added columns:
+
 - `{target_col}_clean_value`: Extracted numeric value (float)
 - `{target_col}_clean_unit`: Extracted unit (string)
 - `{target_col}_clean_reasoning`: LLM reasoning (string)
@@ -61,15 +62,15 @@ print(result)
 **Output:**
 ```
 shape: (3, 4)
-┌────────┬───────────────────┬──────────────────┬──────────────────────┐
+┌────────┬────────────────────┬───────────────────┬────────────────────────┐
 │ weight ┆ weight_clean_value ┆ weight_clean_unit ┆ weight_clean_reasoning │
-│ ---    ┆ ---                ┆ ---                ┆ ---                   │
-│ str    ┆ f64                ┆ str                ┆ str                   │
-╞════════╪════════════════════╪════════════════════╪══════════════════════╡
-│ 5kg    ┆ 5.0                ┆ kg                 ┆ Extracted numeric... │
-│ 3.5 kg ┆ 3.5                ┆ kg                 ┆ Extracted numeric... │
-│ 5000g  ┆ 5.0                ┆ kg                 ┆ Converted 5000g...  │
-└────────┴───────────────────┴──────────────────┴──────────────────────┘
+│ ---    ┆ ---                ┆ ---               ┆ ---                    │
+│ str    ┆ f64                ┆ str               ┆ str                    │
+╞════════╪════════════════════╪═══════════════════╪════════════════════════╡
+│ 5kg    ┆ 5.0                ┆ kg                ┆ Extracted numeric...   │
+│ 3.5 kg ┆ 3.5                ┆ kg                ┆ Extracted numeric...   │
+│ 5000g  ┆ 5.0                ┆ kg                ┆ Converted 5000g...     │
+└────────┴────────────────────┴───────────────────┴────────────────────────┘
 ```
 
 ---
@@ -136,15 +137,21 @@ print(result)
 ```
 
 **Output:**
+
+Text extraction:
 ```
 t-shirt 50000 red
+```
+
+DataFrame extraction:
+```
 shape: (1, 2)
 ┌─────────────────────────────┬──────────────────────────────────────┐
-│ description                 ┆ description_extracted                 │
+│ description                 ┆ description_extracted                │
 │ ---                         ┆ struct[3]                            │
-│ str                         ┆ {name: str, price: i64, color: str}   │
+│ str                         ┆ {name: str, price: i64, color: str}  │
 ╞═════════════════════════════╪══════════════════════════════════════╡
-│ Selling red t-shirt for 50k ┆ {t-shirt, 50000, red}                 │
+│ Selling red t-shirt for 50k ┆ {t-shirt, 50000, red}                │
 └─────────────────────────────┴──────────────────────────────────────┘
 ```
 
@@ -208,13 +215,13 @@ print(result)
 ```
 Contact [REDACTED] at [REDACTED]
 shape: (1, 1)
-┌──────────────────────────────┐
-│ text                          │
-│ ---                           │
-│ str                           │
-╞═══════════════════════════════╡
+┌──────────────────────────────────┐
+│ text                             │
+│ ---                              │
+│ str                              │
+╞══════════════════════════════════╡
 │ Contact [REDACTED] at [REDACTED] │
-└──────────────────────────────┘
+└──────────────────────────────────┘
 ```
 df = pl.DataFrame({"text": ["Contact John Doe at john@example.com"]})
 result = loclean.scrub(df, target_col="text")
@@ -262,6 +269,7 @@ IntoFrameT = pd.DataFrame | pl.DataFrame | pl.LazyFrame | Any
 ```
 
 Supports:
+
 - `pandas.DataFrame`
 - `polars.DataFrame`
 - `polars.LazyFrame`
