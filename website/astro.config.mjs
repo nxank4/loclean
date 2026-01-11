@@ -8,6 +8,7 @@ export default defineConfig({
 	site: 'https://nxank4.github.io',
 	base: '/loclean',
 	integrations: [
+		expressiveCode(),
 		starlight({
 			title: 'Loclean',
 			logo: {
@@ -22,6 +23,11 @@ export default defineConfig({
 					href: 'https://github.com/nxank4/loclean',
 				},
 			],
+			editLink: {
+				baseUrl: 'https://github.com/nxank4/loclean/edit/main/website/src/content/docs',
+			},
+			lastUpdated: true,
+			pagination: true,
 			sidebar: [
 				{
 					label: '🚀 Getting Started',
