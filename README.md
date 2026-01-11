@@ -14,9 +14,12 @@
   <a href="https://github.com/nxank4/loclean/actions/workflows/ci.yml"><img src="https://github.com/nxank4/loclean/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
   <a href="https://github.com/nxank4/loclean/blob/main/LICENSE"><img src="https://img.shields.io/github/license/nxank4/loclean?style=flat-square" alt="License"></a>
   <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv"></a>
+  <a href="https://nxank4.github.io/loclean"><img src="https://img.shields.io/badge/docs-loclean-blue?style=flat-square" alt="Documentation"></a>
 </p>
 
 # Why Loclean?
+
+> 📚 **Documentation:** [nxank4.github.io/loclean](https://nxank4.github.io/loclean)
 
 Loclean bridges the gap between **Data Engineering** and **Local AI**, designed for production pipelines where privacy and stability are non-negotiable.
 
