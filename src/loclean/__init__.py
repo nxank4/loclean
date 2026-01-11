@@ -92,13 +92,17 @@ def clean(
     else:
         # When users provide configuration, create a dedicated engine instance
         # so that global singleton behavior remains unchanged.
-        engine = LlamaCppEngine(
-            cache_dir=cache_dir,
-            model_name=model_name,
-            n_ctx=n_ctx,
-            n_gpu_layers=n_gpu_layers,
-            **engine_kwargs,
-        )
+        engine_kwargs_filtered: dict[str, Any] = {}
+        if model_name is not None:
+            engine_kwargs_filtered["model_name"] = model_name
+        if cache_dir is not None:
+            engine_kwargs_filtered["cache_dir"] = cache_dir
+        if n_ctx is not None:
+            engine_kwargs_filtered["n_ctx"] = n_ctx
+        if n_gpu_layers is not None:
+            engine_kwargs_filtered["n_gpu_layers"] = n_gpu_layers
+        engine_kwargs_filtered.update(engine_kwargs)
+        engine = LlamaCppEngine(**engine_kwargs_filtered)
 
     return NarwhalsEngine.process_column(
         df,
@@ -183,13 +187,17 @@ def scrub(
         ):
             inference_engine = get_engine()
         else:
-            inference_engine = LlamaCppEngine(
-                cache_dir=cache_dir,
-                model_name=model_name,
-                n_ctx=n_ctx,
-                n_gpu_layers=n_gpu_layers,
-                **engine_kwargs,
-            )
+            engine_kwargs_filtered: dict[str, Any] = {}
+            if model_name is not None:
+                engine_kwargs_filtered["model_name"] = model_name
+            if cache_dir is not None:
+                engine_kwargs_filtered["cache_dir"] = cache_dir
+            if n_ctx is not None:
+                engine_kwargs_filtered["n_ctx"] = n_ctx
+            if n_gpu_layers is not None:
+                engine_kwargs_filtered["n_gpu_layers"] = n_gpu_layers
+            engine_kwargs_filtered.update(engine_kwargs)
+            inference_engine = LlamaCppEngine(**engine_kwargs_filtered)
 
     if isinstance(input_data, str):
         return scrub_string(
@@ -299,13 +307,17 @@ def extract(
         inference_engine = get_engine()
         cache = inference_engine.cache if hasattr(inference_engine, "cache") else None
     else:
-        inference_engine = LlamaCppEngine(
-            cache_dir=cache_dir,
-            model_name=model_name,
-            n_ctx=n_ctx,
-            n_gpu_layers=n_gpu_layers,
-            **engine_kwargs,
-        )
+        engine_kwargs_filtered: dict[str, Any] = {}
+        if model_name is not None:
+            engine_kwargs_filtered["model_name"] = model_name
+        if cache_dir is not None:
+            engine_kwargs_filtered["cache_dir"] = cache_dir
+        if n_ctx is not None:
+            engine_kwargs_filtered["n_ctx"] = n_ctx
+        if n_gpu_layers is not None:
+            engine_kwargs_filtered["n_gpu_layers"] = n_gpu_layers
+        engine_kwargs_filtered.update(engine_kwargs)
+        inference_engine = LlamaCppEngine(**engine_kwargs_filtered)
         cache = inference_engine.cache if hasattr(inference_engine, "cache") else None
         if cache is None and cache_dir:
             cache = LocleanCache(cache_dir=cache_dir)
