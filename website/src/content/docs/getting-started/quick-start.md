@@ -190,11 +190,16 @@ Built on **Narwhals**, Loclean supports **Pandas**, **Polars**, and **PyArrow** 
 
 ## Interactive Demo
 
-📓 **Try the Interactive Demo:** See [examples/demo.ipynb](https://github.com/nxank4/loclean/blob/main/examples/demo.ipynb) for a Jupyter notebook with runnable examples, including:
-- Weight normalization (g → kg)
-- Currency conversion (EUR → USD)
-- Temperature conversion (Fahrenheit → Celsius)
-- Caching demonstrations
+📓 **Try the Interactive Examples:** See [examples/01-quick-start.ipynb](https://github.com/nxank4/loclean/blob/main/examples/01-quick-start.ipynb) for a Jupyter notebook with runnable examples, including:
+- Structured extraction with Pydantic
+- Data cleaning with DataFrames
+- Privacy scrubbing
+- Working with Pandas/Polars
+
+For more detailed examples, check out:
+- [02-data-cleaning.ipynb](https://github.com/nxank4/loclean/blob/main/examples/02-data-cleaning.ipynb) - Comprehensive data cleaning
+- [03-privacy-scrubbing.ipynb](https://github.com/nxank4/loclean/blob/main/examples/03-privacy-scrubbing.ipynb) - PII scrubbing
+- [04-structured-extraction.ipynb](https://github.com/nxank4/loclean/blob/main/examples/04-structured-extraction.ipynb) - Advanced extraction
 
 ## Next Steps
 

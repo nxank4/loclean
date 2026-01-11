@@ -69,12 +69,6 @@ Advanced structured extraction:
 - Performance optimization
 - Caching demonstrations
 
-### 5. [demo.ipynb](./demo.ipynb)
-Original demo notebook with:
-- Weight normalization
-- Currency conversion
-- Temperature conversion
-- Caching demonstrations
 
 ## Requirements
 
