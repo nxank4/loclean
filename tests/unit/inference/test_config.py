@@ -24,7 +24,7 @@ class TestEngineConfig:
         """Test that EngineConfig has correct default values."""
         config = EngineConfig()
         assert config.engine == "llama-cpp"
-        assert config.model == "phi-3-mini-4k-instruct"
+        assert config.model == "phi-3-mini"
         assert config.api_key is None
         assert config.cache_dir == Path.home() / ".cache" / "loclean"
         assert config.n_ctx == 4096
@@ -234,7 +234,7 @@ class TestLoadConfig:
             ):
                 config = load_config()
                 assert config.engine == "llama-cpp"
-                assert config.model == "phi-3-mini-4k-instruct"
+                assert config.model == "phi-3-mini"
                 assert config.api_key is None
                 assert config.n_ctx == 4096
                 assert config.n_gpu_layers == 0

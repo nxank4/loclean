@@ -29,7 +29,7 @@ class EngineConfig(BaseModel):
     )
 
     model: str = Field(
-        default="phi-3-mini-4k-instruct",
+        default="phi-3-mini",
         description="Model identifier (GGUF path or cloud model ID)",
     )
 
