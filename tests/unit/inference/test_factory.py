@@ -77,8 +77,9 @@ class TestCreateEngine:
 
         assert isinstance(engine, LlamaCppEngine)
         assert isinstance(engine, InferenceEngine)
-        # Note: config.model might fallback to "phi-3-mini" if not in registry
-        assert engine.model_name in ["phi-3-mini", config.model]
+        # Default model should be "phi-3-mini" and match config.model
+        assert engine.model_name == "phi-3-mini"
+        assert config.model == "phi-3-mini"
         assert engine.cache_dir == temp_cache_dir
 
     def test_create_llama_cpp_engine_with_custom_model(
