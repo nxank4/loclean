@@ -1,0 +1,34 @@
+---
+title: Loclean
+description: Local-first Semantic Data Cleaning & Extraction library for Python.
+template: splash
+hero:
+  tagline: Local-first Semantic Data Cleaning & Extraction library for Python.
+  actions:
+    - text: Getting Started
+      link: /loclean/getting-started/installation/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/nxank4/loclean
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Why Loclean?
+
+<CardGrid stagger>
+	<Card title="Privacy First" icon="seti:lock">
+		Scrub sensitive PII data locally using Regex & LLMs. No data leaves your machine.
+	</Card>
+	<Card title="Structured Extraction" icon="seti:json">
+		Extract complex data into Pydantic models with 100% schema compliance using GBNF.
+	</Card>
+	<Card title="Local & Fast" icon="rocket">
+		Powered by `llama-cpp-python` and quantized GGUF models. Optimized for CPU.
+	</Card>
+	<Card title="Backend Agnostic" icon="seti:python">
+		Works seamlessly with **Pandas**, **Polars**, and **PyArrow** via Narwhals.
+	</Card>
+</CardGrid>
