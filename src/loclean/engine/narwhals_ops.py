@@ -8,7 +8,7 @@ from narwhals.typing import IntoFrameT
 from tqdm import tqdm
 
 if TYPE_CHECKING:
-    from loclean.inference.manager import LocalInferenceEngine
+    from loclean.inference.local.llama_cpp import LlamaCppEngine
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class NarwhalsEngine:
     @staticmethod
     def _process_chunks_parallel(
         chunks: List[List[str]],
-        inference_engine: "LocalInferenceEngine",
+        inference_engine: "LlamaCppEngine",
         instruction: str,
         max_workers: int,
     ) -> Dict[str, Optional[Dict[str, Any]]]:
@@ -77,7 +77,7 @@ class NarwhalsEngine:
     def process_column(
         df_native: IntoFrameT,
         col_name: str,
-        inference_engine: "LocalInferenceEngine",
+        inference_engine: "LlamaCppEngine",
         instruction: str,
         batch_size: int = 50,
         parallel: bool = False,
