@@ -54,37 +54,60 @@ export default defineConfig({
 							const theme = document.documentElement.getAttribute('data-theme') || 
 								(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 							
-							// Update all logo images - use more specific selectors
-							const logoSelectors = [
-								'.starlight-logo img',
-								'.hero-image img',
-								'header img[alt*="logo" i]',
-								'header img[alt*="Loclean" i]',
-								'a[href="/loclean/"] img',
-								'.title-wrapper img',
-								'img[src*="loclean-logo"]'
-							];
+							// Find all images that might be logos
+							const allImages = document.querySelectorAll('img');
 							
-							logoSelectors.forEach((selector) => {
-								const logos = document.querySelectorAll(selector);
-								logos.forEach((img) => {
-									let src = img.getAttribute('src') || img.src;
-									// Handle Astro's asset processing with query params
-									src = src.split('?')[0];
+							allImages.forEach((img) => {
+								let src = img.getAttribute('src') || img.src || '';
+								const alt = (img.getAttribute('alt') || '').toLowerCase();
+								
+								// Check if this is a logo image
+								const isLogo = src.includes('loclean-logo') || 
+								               alt.includes('logo') || 
+								               alt.includes('loclean');
+								
+								if (!isLogo) return;
+								
+								// Handle Astro image optimization URLs (_image?href=...)
+								if (src.includes('_image?href=')) {
+									// Extract the actual file path from the href parameter
+									const hrefMatch = src.match(/href=([^&]+)/);
+									if (hrefMatch) {
+										const decodedHref = decodeURIComponent(hrefMatch[1]);
+										// Check if it contains logo path
+										if (decodedHref.includes('loclean-logo')) {
+											let newHref = decodedHref;
+											if (theme === 'dark' && decodedHref.includes('for-light')) {
+												newHref = decodedHref.replace('for-light', 'for-dark');
+											} else if (theme === 'light' && decodedHref.includes('for-dark')) {
+												newHref = decodedHref.replace('for-dark', 'for-light');
+											}
+											
+											if (newHref !== decodedHref) {
+												// Reconstruct the URL with new href
+												const url = new URL(src, window.location.origin);
+												url.searchParams.set('href', encodeURIComponent(newHref));
+												img.src = url.toString();
+												img.setAttribute('src', img.src);
+											}
+										}
+									}
+								} else {
+									// Handle regular image URLs
+									// Extract base path (before query params)
+									const baseSrc = src.split('?')[0];
+									const queryString = src.includes('?') ? src.split('?').slice(1).join('?') : '';
 									
-									if (theme === 'dark' && src.includes('for-light')) {
-										const newSrc = src.replace('for-light', 'for-dark');
-										// Preserve query params if any
-										const query = (img.getAttribute('src') || img.src).split('?')[1];
-										img.src = query ? newSrc + '?' + query : newSrc;
+									if (theme === 'dark' && baseSrc.includes('for-light')) {
+										const newSrc = baseSrc.replace('for-light', 'for-dark');
+										img.src = queryString ? newSrc + '?' + queryString : newSrc;
 										img.setAttribute('src', img.src);
-									} else if (theme === 'light' && src.includes('for-dark')) {
-										const newSrc = src.replace('for-dark', 'for-light');
-										const query = (img.getAttribute('src') || img.src).split('?')[1];
-										img.src = query ? newSrc + '?' + query : newSrc;
+									} else if (theme === 'light' && baseSrc.includes('for-dark')) {
+										const newSrc = baseSrc.replace('for-dark', 'for-light');
+										img.src = queryString ? newSrc + '?' + queryString : newSrc;
 										img.setAttribute('src', img.src);
 									}
-								});
+								}
 							});
 						}
 						
