@@ -7,27 +7,25 @@ from narwhals.typing import IntoFrameT
 
 from loclean._version import __version__
 from loclean.engine.narwhals_ops import NarwhalsEngine
-from loclean.inference.manager import LocalInferenceEngine
+from loclean.inference.local.llama_cpp import LlamaCppEngine
 
 __all__ = ["__version__", "clean", "get_engine", "scrub", "extract"]
 
 # Global singleton instance
 # Note: This singleton pattern is not thread-safe. Do not call get_engine()
 # from multiple threads simultaneously during initialization.
-_ENGINE_INSTANCE: Optional[LocalInferenceEngine] = None
+_ENGINE_INSTANCE: Optional[LlamaCppEngine] = None
 
 
-def get_engine() -> LocalInferenceEngine:
+def get_engine() -> LlamaCppEngine:
     """
-    Get or create the global LocalInferenceEngine instance.
+    Get or create the global LlamaCppEngine instance.
 
     Note: This function is not thread-safe during first initialization.
     """
     global _ENGINE_INSTANCE
     if _ENGINE_INSTANCE is None:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            _ENGINE_INSTANCE = LocalInferenceEngine()
+        _ENGINE_INSTANCE = LlamaCppEngine()
     return _ENGINE_INSTANCE
 
 
