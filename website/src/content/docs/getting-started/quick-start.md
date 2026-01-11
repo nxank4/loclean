@@ -39,6 +39,13 @@ print(item.price)  # 50000
 print(item.color)  # "red"
 ```
 
+**Output:**
+```
+t-shirt
+50000
+red
+```
+
 ## Data Cleaning
 
 Clean messy data in DataFrame columns:
@@ -63,6 +70,21 @@ result = loclean.clean(
 print(result.select(["weight", "weight_clean_value", "weight_clean_unit"]))
 ```
 
+**Output:**
+```
+shape: (4, 3)
+┌────────┬───────────────────┬──────────────────┐
+│ weight ┆ weight_clean_value ┆ weight_clean_unit │
+│ ---    ┆ ---                ┆ ---               │
+│ str    ┆ f64                ┆ str               │
+╞════════╪════════════════════╪═══════════════════╡
+│ 5kg    ┆ 5.0                ┆ kg                │
+│ 3.5 kg ┆ 3.5                ┆ kg                │
+│ 5000g  ┆ 5.0                ┆ kg                │
+│ 2.2kg  ┆ 2.2                ┆ kg                │
+└────────┴───────────────────┴──────────────────┘
+```
+
 ## Privacy Scrubbing
 
 Scrub sensitive PII data:
@@ -75,7 +97,12 @@ text = "Contact John Doe at john@example.com or 555-1234"
 
 # Scrub PII
 cleaned = loclean.scrub(text, mode="mask")
-print(cleaned)  # "Contact [REDACTED] at [REDACTED] or [REDACTED]"
+print(cleaned)
+```
+
+**Output:**
+```
+Contact [REDACTED] at [REDACTED] or [REDACTED]
 ```
 
 ## Working with DataFrames
@@ -121,6 +148,14 @@ Built on **Narwhals**, Loclean supports **Pandas**, **Polars**, and **PyArrow** 
 - Running Polars? We keep it lazy.
 - Running Pandas? We handle it seamlessly.
 - **No heavy dependency lock-in.**
+
+## Interactive Demo
+
+📓 **Try the Interactive Demo:** See [examples/demo.ipynb](https://github.com/nxank4/loclean/blob/main/examples/demo.ipynb) for a Jupyter notebook with runnable examples, including:
+- Weight normalization (g → kg)
+- Currency conversion (EUR → USD)
+- Temperature conversion (Fahrenheit → Celsius)
+- Caching demonstrations
 
 ## Next Steps
 
