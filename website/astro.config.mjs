@@ -55,13 +55,28 @@ export default defineConfig({
 								(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 							
 							// Only update sidebar logo (header logo), not hero images (handled by Starlight)
-							const sidebarLogos = document.querySelectorAll('header img[alt*="logo" i], .starlight-logo img, .title-wrapper img');
+							const sidebarLogos = document.querySelectorAll('header img[alt*="logo" i], .starlight-logo img, .title-wrapper img, a[href="/loclean/"] img');
 							
 							sidebarLogos.forEach((img) => {
 								let src = img.getAttribute('src') || img.src || '';
 								
 								// Skip Astro image optimization URLs (they cause errors)
-								if (src.includes('_image?href=')) {
+								if (src.includes('_image?href=') || src.includes('/@fs/')) {
+									// For dev server URLs with /@fs/, try to update the path
+									if (src.includes('/@fs/')) {
+										const basePath = src.split('?')[0];
+										const queryString = src.includes('?') ? '?' + src.split('?').slice(1).join('?') : '';
+										
+										if (theme === 'dark' && basePath.includes('for-light')) {
+											const newPath = basePath.replace('for-light', 'for-dark');
+											img.src = newPath + queryString;
+											img.setAttribute('src', img.src);
+										} else if (theme === 'light' && basePath.includes('for-dark')) {
+											const newPath = basePath.replace('for-dark', 'for-light');
+											img.src = newPath + queryString;
+											img.setAttribute('src', img.src);
+										}
+									}
 									return;
 								}
 								
@@ -72,15 +87,15 @@ export default defineConfig({
 								
 								// Extract base path (before query params)
 								const baseSrc = src.split('?')[0];
-								const queryString = src.includes('?') ? src.split('?').slice(1).join('?') : '';
+								const queryString = src.includes('?') ? '?' + src.split('?').slice(1).join('?') : '';
 								
 								if (theme === 'dark' && baseSrc.includes('for-light')) {
 									const newSrc = baseSrc.replace('for-light', 'for-dark');
-									img.src = queryString ? newSrc + '?' + queryString : newSrc;
+									img.src = newSrc + queryString;
 									img.setAttribute('src', img.src);
 								} else if (theme === 'light' && baseSrc.includes('for-dark')) {
 									const newSrc = baseSrc.replace('for-dark', 'for-light');
-									img.src = queryString ? newSrc + '?' + queryString : newSrc;
+									img.src = newSrc + queryString;
 									img.setAttribute('src', img.src);
 								}
 							});
