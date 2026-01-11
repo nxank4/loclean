@@ -32,6 +32,13 @@ print(item.price)  # 50000
 print(item.color)  # "red"
 ```
 
+**Output:**
+```
+t-shirt
+50000
+red
+```
+
 ## Working with DataFrames
 
 ```python
@@ -47,9 +54,22 @@ df = pl.DataFrame({
 result = loclean.extract(df, schema=Product, target_col="description")
 
 # Query extracted data
-result.filter(
+filtered = result.filter(
     pl.col("description_extracted").struct.field("price") > 40000
 )
+print(filtered)
+```
+
+**Output:**
+```
+shape: (1, 2)
+┌─────────────────────────────┬──────────────────────────────────────┐
+│ description                 ┆ description_extracted                 │
+│ ---                         ┆ struct[3]                            │
+│ str                         ┆ {name: str, price: i64, color: str}   │
+╞═════════════════════════════╪══════════════════════════════════════╡
+│ Selling red t-shirt for 50k ┆ {t-shirt, 50000, red}               │
+└─────────────────────────────┴──────────────────────────────────────┘
 ```
 
 ## Complex Schema Examples
@@ -85,6 +105,13 @@ person = loclean.extract(text, schema=Person)
 print(person.name)              # "John Doe"
 print(person.address.city)      # "New York"
 print(person.phone_numbers)     # ["555-1234", "555-5678"]
+```
+
+**Output:**
+```
+John Doe
+New York
+['555-1234', '555-5678']
 ```
 
 ### Union Types

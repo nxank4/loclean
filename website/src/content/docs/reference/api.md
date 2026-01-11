@@ -55,6 +55,21 @@ import polars as pl
 
 df = pl.DataFrame({"weight": ["5kg", "3.5 kg", "5000g"]})
 result = loclean.clean(df, target_col="weight")
+print(result)
+```
+
+**Output:**
+```
+shape: (3, 4)
+┌────────┬───────────────────┬──────────────────┬──────────────────────┐
+│ weight ┆ weight_clean_value ┆ weight_clean_unit ┆ weight_clean_reasoning │
+│ ---    ┆ ---                ┆ ---                ┆ ---                   │
+│ str    ┆ f64                ┆ str                ┆ str                   │
+╞════════╪════════════════════╪════════════════════╪══════════════════════╡
+│ 5kg    ┆ 5.0                ┆ kg                 ┆ Extracted numeric... │
+│ 3.5 kg ┆ 3.5                ┆ kg                 ┆ Extracted numeric... │
+│ 5000g  ┆ 5.0                ┆ kg                 ┆ Converted 5000g...  │
+└────────┴───────────────────┴──────────────────┴──────────────────────┘
 ```
 
 ---
@@ -112,10 +127,25 @@ class Product(BaseModel):
 
 # From text
 item = loclean.extract("Selling red t-shirt for 50k", schema=Product)
+print(item.name, item.price, item.color)
 
 # From DataFrame
 df = pl.DataFrame({"description": ["Selling red t-shirt for 50k"]})
 result = loclean.extract(df, schema=Product, target_col="description")
+print(result)
+```
+
+**Output:**
+```
+t-shirt 50000 red
+shape: (1, 2)
+┌─────────────────────────────┬──────────────────────────────────────┐
+│ description                 ┆ description_extracted                 │
+│ ---                         ┆ struct[3]                            │
+│ str                         ┆ {name: str, price: i64, color: str}   │
+╞═════════════════════════════╪══════════════════════════════════════╡
+│ Selling red t-shirt for 50k ┆ {t-shirt, 50000, red}                 │
+└─────────────────────────────┴──────────────────────────────────────┘
 ```
 
 ---
@@ -162,11 +192,30 @@ def scrub(
 
 ```python
 import loclean
+import polars as pl
 
 # Scrub text
 cleaned = loclean.scrub("Contact John Doe at john@example.com")
+print(cleaned)
 
 # Scrub DataFrame
+df = pl.DataFrame({"text": ["Contact John Doe at john@example.com"]})
+result = loclean.scrub(df, target_col="text")
+print(result)
+```
+
+**Output:**
+```
+Contact [REDACTED] at [REDACTED]
+shape: (1, 1)
+┌──────────────────────────────┐
+│ text                          │
+│ ---                           │
+│ str                           │
+╞═══════════════════════════════╡
+│ Contact [REDACTED] at [REDACTED] │
+└──────────────────────────────┘
+```
 df = pl.DataFrame({"text": ["Contact John Doe at john@example.com"]})
 result = loclean.scrub(df, target_col="text")
 ```

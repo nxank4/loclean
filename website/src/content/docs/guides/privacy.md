@@ -29,7 +29,11 @@ text = "Contact John Doe at john@example.com or call 555-1234"
 # Scrub all PII (default: mask mode)
 cleaned = loclean.scrub(text)
 print(cleaned)
-# "Contact [REDACTED] at [REDACTED] or call [REDACTED]"
+```
+
+**Output:**
+```
+Contact [REDACTED] at [REDACTED] or call [REDACTED]
 ```
 
 ### Scrub DataFrame
@@ -51,6 +55,17 @@ result = loclean.scrub(df, target_col="text")
 print(result["text"])
 ```
 
+**Output:**
+```
+shape: (3,)
+Series: 'text' [str]
+[
+	"Contact [REDACTED] at [REDACTED]"
+	"Call [REDACTED] at [REDACTED]"
+	"Email: [REDACTED]"
+]
+```
+
 ## Scrubbing Modes
 
 ### Mask Mode (Default)
@@ -62,7 +77,12 @@ cleaned = loclean.scrub(
     "John Doe: john@example.com",
     mode="mask"
 )
-# "[REDACTED]: [REDACTED]"
+print(cleaned)
+```
+
+**Output:**
+```
+[REDACTED]: [REDACTED]
 ```
 
 ### Replace Mode
@@ -74,7 +94,12 @@ cleaned = loclean.scrub(
     "John Doe: john@example.com",
     mode="replace"
 )
-# "Jane Smith: jane.smith@example.net"
+print(cleaned)
+```
+
+**Output:**
+```
+Jane Smith: jane.smith@example.net
 ```
 
 ## Selective Scrubbing

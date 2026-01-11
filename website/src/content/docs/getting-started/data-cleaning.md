@@ -36,6 +36,21 @@ result = loclean.clean(
 print(result)
 ```
 
+**Output:**
+```
+shape: (4, 4)
+┌────────┬───────────────────┬──────────────────┬──────────────────────┐
+│ weight ┆ weight_clean_value ┆ weight_clean_unit ┆ weight_clean_reasoning │
+│ ---    ┆ ---                ┆ ---                ┆ ---                   │
+│ str    ┆ f64                ┆ str                ┆ str                   │
+╞════════╪════════════════════╪════════════════════╪══════════════════════╡
+│ 5kg    ┆ 5.0                ┆ kg                 ┆ Extracted numeric... │
+│ 3.5 kg ┆ 3.5                ┆ kg                 ┆ Extracted numeric... │
+│ 5000g  ┆ 5.0                ┆ kg                 ┆ Converted 5000g...  │
+│ 2.2kg  ┆ 2.2                ┆ kg                 ┆ Extracted numeric... │
+└────────┴───────────────────┴──────────────────┴──────────────────────┘
+```
+
 ## Understanding the Output
 
 The `clean()` function adds three new columns to your DataFrame:
@@ -59,6 +74,22 @@ result = loclean.clean(
     target_col="price",
     instruction="Extract the numeric value and currency code (USD, EUR, etc.)"
 )
+print(result.select(["price", "price_clean_value", "price_clean_unit"]))
+```
+
+**Output:**
+```
+shape: (4, 3)
+┌─────────────┬──────────────────┬─────────────────┐
+│ price       ┆ price_clean_value ┆ price_clean_unit │
+│ ---         ┆ ---                ┆ ---              │
+│ str         ┆ f64                ┆ str              │
+╞═════════════╪════════════════════╪═════════════════╡
+│ $50         ┆ 50.0               ┆ USD              │
+│ 50 USD      ┆ 50.0               ┆ USD              │
+│ €45         ┆ 45.0               ┆ EUR              │
+│ 100 dollars ┆ 100.0              ┆ USD              │
+└─────────────┴──────────────────┴─────────────────┘
 ```
 
 ## Working with Different Backends

@@ -11,7 +11,7 @@ export default defineConfig({
 		starlight({
 			title: 'Loclean',
 			logo: {
-				src: './src/assets/loclean-logo-light.svg',
+				src: './src/assets/loclean-logo-dark.svg',
 				alt: 'Loclean logo',
 			},
 			social: [

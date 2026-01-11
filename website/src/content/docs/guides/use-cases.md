@@ -41,6 +41,20 @@ result = loclean.extract(
 expensive_products = result.filter(
     pl.col("product_extracted").struct.field("price") > 50
 )
+print(expensive_products)
+```
+
+**Output:**
+```
+shape: (2, 2)
+┌──────────────────────────────┬────────────────────────────────────────────┐
+│ product                      ┆ product_extracted                          │
+│ ---                          ┆ struct[4]                                  │
+│ str                          ┆ {name: str, size: str, price: f64, ...}   │
+╞══════════════════════════════╪════════════════════════════════════════════╡
+│ Blue Jeans, Size 32, ...     ┆ {Blue Jeans, 32, 49.99, USD}               │
+│ Sneakers - $80 - Size 10      ┆ {Sneakers, 10, 80.0, USD}                  │
+└──────────────────────────────┴────────────────────────────────────────────┘
 ```
 
 ## Medical Records Anonymization
@@ -69,6 +83,20 @@ anonymized = loclean.scrub(
 
 # Safe for analysis without privacy concerns
 print(anonymized)
+```
+
+**Output:**
+```
+shape: (3, 1)
+┌────────────────────────────────────────────────────────────────────────────┐
+│ record                                                                     │
+│ ---                                                                        │
+│ str                                                                        │
+╞════════════════════════════════════════════════════════════════════════════╡
+│ Patient [REDACTED], DOB: [REDACTED], SSN: [REDACTED], diagnosed...        │
+│ [REDACTED], born [REDACTED], phone [REDACTED], condition Y                │
+│ Dr. [REDACTED] treated patient at [REDACTED] on [REDACTED]                │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Financial Data Extraction
@@ -107,6 +135,19 @@ total_spending = result.filter(
 ).select(
     pl.col("text_extracted").struct.field("amount").sum()
 )
+print(total_spending)
+```
+
+**Output:**
+```
+shape: (1, 1)
+┌──────────────────────────────────────────────┐
+│ text_extracted.struct.field("amount").sum()  │
+│ ---                                          │
+│ f64                                          │
+╞══════════════════════════════════════════════╡
+│ 250.0                                        │
+└──────────────────────────────────────────────┘
 ```
 
 ## Customer Support Ticket Classification

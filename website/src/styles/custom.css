@@ -11,6 +11,28 @@
 	--sl-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
+/* Logo theme switching */
+:root[data-theme="light"] .starlight-logo img,
+:root[data-theme="light"] .hero-image img {
+	content: url("../../assets/loclean-logo-dark.svg");
+}
+
+:root[data-theme="dark"] .starlight-logo img,
+:root[data-theme="dark"] .hero-image img {
+	content: url("../../assets/loclean-logo-light.svg");
+}
+
+/* Text color for light/dark themes */
+:root[data-theme="light"] {
+	--sl-color-text: #1e293b;
+	--sl-color-text-accent: #0f172a;
+}
+
+:root[data-theme="dark"] {
+	--sl-color-text: #f1f5f9;
+	--sl-color-text-accent: #ffffff;
+}
+
 /* Code blocks */
 .sl-markdown-content pre {
 	border-radius: 8px;
