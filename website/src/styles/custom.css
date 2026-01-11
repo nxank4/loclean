@@ -1,7 +1,97 @@
 /* Custom styles for Loclean documentation */
 
 :root {
-	/* Custom color overrides can go here */
+	/* Brand colors */
+	--sl-color-accent-low: #3b82f6;
+	--sl-color-accent: #2563eb;
+	--sl-color-accent-high: #1e40af;
+	
+	/* Typography */
+	--sl-font: 'Inter', system-ui, sans-serif;
+	--sl-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-/* Add any custom styling as needed */
+/* Code blocks */
+.sl-markdown-content pre {
+	border-radius: 8px;
+	background: var(--sl-color-bg-nav);
+	border: 1px solid var(--sl-color-hairline);
+}
+
+.sl-markdown-content code {
+	font-family: var(--sl-font-mono);
+	font-size: 0.9em;
+}
+
+/* Improve readability */
+.sl-markdown-content {
+	line-height: 1.7;
+}
+
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.sl-markdown-content h3 {
+	font-weight: 600;
+	letter-spacing: -0.02em;
+}
+
+/* Card styling */
+.starlight-card {
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.starlight-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Callout boxes */
+.sl-markdown-content blockquote {
+	border-left: 4px solid var(--sl-color-accent);
+	padding-left: 1rem;
+	margin-left: 0;
+	background: var(--sl-color-bg-nav);
+	border-radius: 4px;
+	padding: 1rem;
+}
+
+/* Table styling */
+.sl-markdown-content table {
+	border-collapse: collapse;
+	width: 100%;
+	margin: 1.5rem 0;
+}
+
+.sl-markdown-content table th,
+.sl-markdown-content table td {
+	border: 1px solid var(--sl-color-hairline);
+	padding: 0.75rem;
+	text-align: left;
+}
+
+.sl-markdown-content table th {
+	background: var(--sl-color-bg-nav);
+	font-weight: 600;
+}
+
+/* Link styling */
+.sl-markdown-content a {
+	color: var(--sl-color-accent);
+	text-decoration: none;
+	transition: color 0.2s ease;
+}
+
+.sl-markdown-content a:hover {
+	color: var(--sl-color-accent-high);
+	text-decoration: underline;
+}
+
+/* Improve spacing */
+.sl-markdown-content > * + * {
+	margin-top: 1.5rem;
+}
+
+.sl-markdown-content > h2 + *,
+.sl-markdown-content > h3 + * {
+	margin-top: 1rem;
+}

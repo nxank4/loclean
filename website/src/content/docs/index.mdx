@@ -3,32 +3,73 @@ title: Loclean
 description: Local-first Semantic Data Cleaning & Extraction library for Python.
 template: splash
 hero:
-  tagline: Local-first Semantic Data Cleaning & Extraction library for Python.
+  tagline: The All-in-One Local AI Data Cleaner. Clean, extract, and scrub data with privacy-first local LLMs.
+  image:
+    alt: Loclean logo
+    file: ../../assets/loclean-logo-light.svg
   actions:
-    - text: Getting Started
+    - text: Get Started
       link: /loclean/getting-started/installation/
       icon: right-arrow
       variant: primary
     - text: View on GitHub
       link: https://github.com/nxank4/loclean
       icon: external
+    - text: Quick Start
+      link: /loclean/getting-started/quick-start/
+      icon: code
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
 ## Why Loclean?
 
+Loclean bridges the gap between **Data Engineering** and **Local AI**, designed for production pipelines where privacy and stability are non-negotiable.
+
 <CardGrid stagger>
 	<Card title="Privacy First" icon="seti:lock">
-		Scrub sensitive PII data locally using Regex & LLMs. No data leaves your machine.
+		Scrub sensitive PII data locally using Regex & LLMs. No data leaves your machine. Zero cloud costs.
 	</Card>
 	<Card title="Structured Extraction" icon="seti:json">
-		Extract complex data into Pydantic models with 100% schema compliance using GBNF.
+		Extract complex data into Pydantic models with 100% schema compliance using GBNF grammars. No hallucinations.
 	</Card>
 	<Card title="Local & Fast" icon="rocket">
-		Powered by `llama-cpp-python` and quantized GGUF models. Optimized for CPU.
+		Powered by `llama-cpp-python` and quantized GGUF models. Optimized for CPU with optional GPU acceleration.
 	</Card>
 	<Card title="Backend Agnostic" icon="seti:python">
-		Works seamlessly with **Pandas**, **Polars**, and **PyArrow** via Narwhals.
+		Works seamlessly with **Pandas**, **Polars**, and **PyArrow** via Narwhals. Zero-copy, preserves lazy evaluation.
+	</Card>
+	<Card title="Deterministic Outputs" icon="seti:check">
+		GBNF grammars and Pydantic V2 force valid, type-safe JSON. If it breaks the schema, it doesn't pass.
+	</Card>
+	<Card title="Production Ready" icon="seti:gear">
+		Built for data pipelines. Batch processing, parallel execution, SQLite caching, and comprehensive error handling.
 	</Card>
 </CardGrid>
+
+## Quick Example
+
+```python
+from pydantic import BaseModel
+import loclean
+
+class Product(BaseModel):
+    name: str
+    price: int
+    color: str
+
+# Extract from text
+item = loclean.extract("Selling red t-shirt for 50k", schema=Product)
+print(item.name)   # "t-shirt"
+print(item.price)  # 50000
+print(item.color)  # "red"
+```
+
+## Key Features
+
+- 🔒 **100% Local**: All processing happens on your machine
+- 🎯 **Type Safe**: Pydantic schemas ensure correctness
+- ⚡ **Fast**: Hybrid regex + LLM approach
+- 🔄 **Backend Agnostic**: Works with any DataFrame library
+- 💾 **Cached**: SQLite caching for performance
+- 🛡️ **Privacy**: Scrub PII without data leaving your infrastructure

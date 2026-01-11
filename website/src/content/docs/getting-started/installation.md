@@ -10,6 +10,8 @@ sidebar:
 - Python 3.10, 3.11, 3.12, or 3.13
 - No GPU required (runs on CPU by default)
 
+> **Install from PyPI:** [pypi.org/project/loclean](https://pypi.org/project/loclean)
+
 ## Basic Installation
 
 **Using pip:**
@@ -79,3 +81,16 @@ uv sync --dev
 # Or using pip
 pip install -e ".[dev]"
 ```
+
+## Next Steps
+
+- Get started with the [Quick Start](/loclean/getting-started/quick-start/) guide
+- Learn about [Data Cleaning](/loclean/getting-started/data-cleaning/) features
+- Explore [Privacy Scrubbing](/loclean/guides/privacy/) capabilities
+- Check the [API Reference](/loclean/reference/api/) for complete documentation
+
+## Resources
+
+- **GitHub Repository:** [github.com/nxank4/loclean](https://github.com/nxank4/loclean)
+- **PyPI Package:** [pypi.org/project/loclean](https://pypi.org/project/loclean)
+- **Issues & Support:** [github.com/nxank4/loclean/issues](https://github.com/nxank4/loclean/issues)

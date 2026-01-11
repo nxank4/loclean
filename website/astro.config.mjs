@@ -1,6 +1,6 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
@@ -10,6 +10,10 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'Loclean',
+			logo: {
+				src: './src/assets/loclean-logo-light.svg',
+				alt: 'Loclean logo',
+			},
 			social: [
 				{
 					icon: 'github',
@@ -25,6 +29,10 @@ export default defineConfig({
 				{
 					label: '📘 User Guide',
 					autogenerate: { directory: 'guides' },
+				},
+				{
+					label: '🧠 Concepts',
+					autogenerate: { directory: 'concepts' },
 				},
 				{
 					label: '🔬 API Reference',
