@@ -14,12 +14,12 @@
 /* Logo theme switching */
 :root[data-theme="light"] .starlight-logo img,
 :root[data-theme="light"] .hero-image img {
-	content: url("../../assets/loclean-logo-dark.svg");
+	content: url("../../assets/loclean-logo-for-light.svg");
 }
 
 :root[data-theme="dark"] .starlight-logo img,
 :root[data-theme="dark"] .hero-image img {
-	content: url("../../assets/loclean-logo-light.svg");
+	content: url("../../assets/loclean-logo-for-dark.svg");
 }
 
 /* Text color for light/dark themes */
@@ -116,4 +116,57 @@
 .sl-markdown-content > h2 + *,
 .sl-markdown-content > h3 + * {
 	margin-top: 1rem;
+}
+
+/* Output formatting - separate text and tables */
+.sl-markdown-content pre code {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	overflow-x: auto;
+}
+
+/* Better table formatting for outputs */
+.sl-markdown-content pre {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+/* Mermaid diagram styling */
+.sl-markdown-content .mermaid {
+	margin: 2rem 0;
+	text-align: center;
+}
+
+/* Home page refinements */
+.sl-markdown-content h2 {
+	margin-top: 3rem;
+	margin-bottom: 1.5rem;
+}
+
+/* Hero section spacing */
+.hero {
+	margin-bottom: 3rem;
+}
+
+/* Card grid improvements */
+.starlight-card-grid {
+	gap: 1.5rem;
+}
+
+/* Quick Example section */
+.sl-markdown-content > h2:has(+ pre) {
+	margin-top: 2.5rem;
+}
+
+/* Better code block spacing */
+.sl-markdown-content pre + p {
+	margin-top: 1rem;
+}
+
+/* Output section styling */
+.sl-markdown-content strong:has-text("Output") {
+	display: block;
+	margin-top: 1.5rem;
+	margin-bottom: 0.5rem;
+	font-weight: 600;
 }

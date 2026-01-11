@@ -50,10 +50,10 @@ shape: (2, 2)
 ┌──────────────────────────────┬────────────────────────────────────────────┐
 │ product                      ┆ product_extracted                          │
 │ ---                          ┆ struct[4]                                  │
-│ str                          ┆ {name: str, size: str, price: f64, ...}   │
+│ str                          ┆ {name: str, size: str, price: f64, ...}    │
 ╞══════════════════════════════╪════════════════════════════════════════════╡
 │ Blue Jeans, Size 32, ...     ┆ {Blue Jeans, 32, 49.99, USD}               │
-│ Sneakers - $80 - Size 10      ┆ {Sneakers, 10, 80.0, USD}                  │
+│ Sneakers - $80 - Size 10     ┆ {Sneakers, 10, 80.0, USD}                  │
 └──────────────────────────────┴────────────────────────────────────────────┘
 ```
 
@@ -93,9 +93,9 @@ shape: (3, 1)
 │ ---                                                                        │
 │ str                                                                        │
 ╞════════════════════════════════════════════════════════════════════════════╡
-│ Patient [REDACTED], DOB: [REDACTED], SSN: [REDACTED], diagnosed...        │
-│ [REDACTED], born [REDACTED], phone [REDACTED], condition Y                │
-│ Dr. [REDACTED] treated patient at [REDACTED] on [REDACTED]                │
+│ Patient [REDACTED], DOB: [REDACTED], SSN: [REDACTED], diagnosed...         │
+│ [REDACTED], born [REDACTED], phone [REDACTED], condition Y                 │
+│ Dr. [REDACTED] treated patient at [REDACTED] on [REDACTED]                 │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 

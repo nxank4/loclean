@@ -39,16 +39,16 @@ print(result)
 **Output:**
 ```
 shape: (4, 4)
-┌────────┬───────────────────┬──────────────────┬──────────────────────┐
+┌────────┬────────────────────┬───────────────────┬────────────────────────┐
 │ weight ┆ weight_clean_value ┆ weight_clean_unit ┆ weight_clean_reasoning │
-│ ---    ┆ ---                ┆ ---                ┆ ---                   │
-│ str    ┆ f64                ┆ str                ┆ str                   │
-╞════════╪════════════════════╪════════════════════╪══════════════════════╡
-│ 5kg    ┆ 5.0                ┆ kg                 ┆ Extracted numeric... │
-│ 3.5 kg ┆ 3.5                ┆ kg                 ┆ Extracted numeric... │
-│ 5000g  ┆ 5.0                ┆ kg                 ┆ Converted 5000g...  │
-│ 2.2kg  ┆ 2.2                ┆ kg                 ┆ Extracted numeric... │
-└────────┴───────────────────┴──────────────────┴──────────────────────┘
+│ ---    ┆ ---                ┆ ---               ┆ ---                    │
+│ str    ┆ f64                ┆ str               ┆ str                    │
+╞════════╪════════════════════╪═══════════════════╪════════════════════════╡
+│ 5kg    ┆ 5.0                ┆ kg                ┆ Extracted numeric...   │
+│ 3.5 kg ┆ 3.5                ┆ kg                ┆ Extracted numeric...   │
+│ 5000g  ┆ 5.0                ┆ kg                ┆ Converted 5000g...     │
+│ 2.2kg  ┆ 2.2                ┆ kg                ┆ Extracted numeric...   │
+└────────┴────────────────────┴───────────────────┴────────────────────────┘
 ```
 
 ## Understanding the Output
@@ -80,16 +80,16 @@ print(result.select(["price", "price_clean_value", "price_clean_unit"]))
 **Output:**
 ```
 shape: (4, 3)
-┌─────────────┬──────────────────┬─────────────────┐
+┌─────────────┬───────────────────┬──────────────────┐
 │ price       ┆ price_clean_value ┆ price_clean_unit │
-│ ---         ┆ ---                ┆ ---              │
-│ str         ┆ f64                ┆ str              │
-╞═════════════╪════════════════════╪═════════════════╡
-│ $50         ┆ 50.0               ┆ USD              │
-│ 50 USD      ┆ 50.0               ┆ USD              │
-│ €45         ┆ 45.0               ┆ EUR              │
-│ 100 dollars ┆ 100.0              ┆ USD              │
-└─────────────┴──────────────────┴─────────────────┘
+│ ---         ┆ ---               ┆ ---              │
+│ str         ┆ f64               ┆ str              │
+╞═════════════╪═══════════════════╪══════════════════╡
+│ $50         ┆ 50.0              ┆ USD              │
+│ 50 USD      ┆ 50.0              ┆ USD              │
+│ €45         ┆ 45.0              ┆ EUR              │
+│ 100 dollars ┆ 100.0             ┆ USD              │
+└─────────────┴───────────────────┴──────────────────┘
 ```
 
 ## Working with Different Backends
@@ -235,6 +235,8 @@ result = loclean.clean(
 )
 ```
 
+**Note:** Missing values result in `None` for `clean_value`, `clean_unit`, and `clean_reasoning`.
+
 ## Related Topics
 
 - [Quick Start Guide](/loclean/getting-started/quick-start/) - Basic usage examples
@@ -242,5 +244,3 @@ result = loclean.clean(
 - [Performance Optimization](/loclean/guides/performance/) - Tips for faster processing
 - [API Reference](/loclean/reference/api/) - Complete `clean()` function documentation
 - [Use Cases](/loclean/guides/use-cases/) - Real-world examples
-# Missing values result in None for clean_value, clean_unit, clean_reasoning
-```

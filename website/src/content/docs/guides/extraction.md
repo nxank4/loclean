@@ -64,11 +64,11 @@ print(filtered)
 ```
 shape: (1, 2)
 ┌─────────────────────────────┬──────────────────────────────────────┐
-│ description                 ┆ description_extracted                 │
+│ description                 ┆ description_extracted                │
 │ ---                         ┆ struct[3]                            │
-│ str                         ┆ {name: str, price: i64, color: str}   │
+│ str                         ┆ {name: str, price: i64, color: str}  │
 ╞═════════════════════════════╪══════════════════════════════════════╡
-│ Selling red t-shirt for 50k ┆ {t-shirt, 50000, red}               │
+│ Selling red t-shirt for 50k ┆ {t-shirt, 50000, red}                │
 └─────────────────────────────┴──────────────────────────────────────┘
 ```
 

@@ -46,6 +46,45 @@ t-shirt
 red
 ```
 
+## Working with Tabular Data
+
+Process entire DataFrames with automatic batch processing:
+
+```python
+import polars as pl
+import loclean
+
+# Create DataFrame with messy data
+df = pl.DataFrame({
+    "weight": ["5kg", "3.5 kg", "5000g", "2.2kg"]
+})
+
+# Clean the entire column
+result = loclean.clean(
+    df,
+    target_col="weight",
+    instruction="Convert all weights to kg"
+)
+
+# View results
+print(result.select(["weight", "weight_clean_value", "weight_clean_unit"]))
+```
+
+**Output:**
+```
+shape: (4, 3)
+┌────────┬────────────────────┬───────────────────┐
+│ weight ┆ weight_clean_value ┆ weight_clean_unit │
+│ ---    ┆ ---                ┆ ---               │
+│ str    ┆ f64                ┆ str               │
+╞════════╪════════════════════╪═══════════════════╡
+│ 5kg    ┆ 5.0                ┆ kg                │
+│ 3.5 kg ┆ 3.5                ┆ kg                │
+│ 5000g  ┆ 5.0                ┆ kg                │
+│ 2.2kg  ┆ 2.2                ┆ kg                │
+└────────┴────────────────────┴───────────────────┘
+```
+
 ## Data Cleaning
 
 Clean messy data in DataFrame columns:
@@ -73,7 +112,7 @@ print(result.select(["weight", "weight_clean_value", "weight_clean_unit"]))
 **Output:**
 ```
 shape: (4, 3)
-┌────────┬───────────────────┬──────────────────┐
+┌────────┬────────────────────┬───────────────────┐
 │ weight ┆ weight_clean_value ┆ weight_clean_unit │
 │ ---    ┆ ---                ┆ ---               │
 │ str    ┆ f64                ┆ str               │
@@ -82,7 +121,7 @@ shape: (4, 3)
 │ 3.5 kg ┆ 3.5                ┆ kg                │
 │ 5000g  ┆ 5.0                ┆ kg                │
 │ 2.2kg  ┆ 2.2                ┆ kg                │
-└────────┴───────────────────┴──────────────────┘
+└────────┴────────────────────┴───────────────────┘
 ```
 
 ## Privacy Scrubbing
