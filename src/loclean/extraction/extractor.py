@@ -98,10 +98,13 @@ class Extractor:
         )
 
         if result is None:
-            raise ValidationError(
+            from pydantic_core import ValidationError as CoreValidationError
+
+            msg = (
                 f"Failed to extract valid {schema.__name__} from text "
                 f"after {self.max_retries} retries"
             )
+            raise ValueError(msg) from None
 
         # Cache result
         if self.cache:
@@ -229,20 +232,29 @@ class Extractor:
                 # Extract text from output
                 text_output: str | None = None
                 if isinstance(output, dict) and "choices" in output:
-                    text_output = str(output["choices"][0]["text"]).strip()
+                    choice_text = output["choices"][0].get("text")
+                    if choice_text is not None:
+                        text_output = str(choice_text).strip()
                 else:
                     if hasattr(output, "__iter__") and not isinstance(
                         output, (str, bytes)
                     ):
                         first_item = next(iter(output), None)
                         if isinstance(first_item, dict) and "choices" in first_item:
-                            text_output = str(first_item["choices"][0]["text"]).strip()
+                            choice_text = first_item["choices"][0].get("text")
+                            if choice_text is not None:
+                                text_output = str(choice_text).strip()
 
                 if text_output is None:
                     logger.warning(f"No text extracted for '{text[:50]}...'")
                     return self._retry_extraction(
                         text, schema, instruction, retry_count
                     )
+
+                # Ensure text_output is a string, not dict
+                if isinstance(text_output, dict):
+                    import json
+                    text_output = json.dumps(text_output)
 
                 # Parse and validate
                 return self._parse_and_validate(
@@ -297,15 +309,33 @@ class Extractor:
         """
         # Try to parse JSON
         try:
-            data = json.loads(text_output)
-        except json.JSONDecodeError:
-            # Try to repair JSON
-            repaired = repair_json(text_output)
-            try:
-                data = json.loads(repaired)
-            except json.JSONDecodeError as e:
-                logger.warning(f"JSON decode failed even after repair: {e}")
-                raise ValidationError(f"Invalid JSON: {text_output[:100]}") from e
+            # Check if text_output is already a dict (from repair_json)
+            if isinstance(text_output, dict):
+                data = text_output
+            else:
+                data = json.loads(text_output)
+        except (json.JSONDecodeError, TypeError) as e:
+            # TypeError can occur if text_output is already a dict
+            if isinstance(text_output, dict):
+                # Already a dict, use it directly
+                data = text_output
+            else:
+                # Try to repair JSON
+                repaired = repair_json(text_output)
+                # Check if repair_json returned a dict
+                if isinstance(repaired, dict):
+                    data = repaired
+                else:
+                    try:
+                        data = json.loads(repaired)
+                    except (json.JSONDecodeError, TypeError) as parse_error:
+                        logger.warning(
+                            f"JSON decode failed even after repair: {parse_error}. "
+                            f"Original error: {e}. Text: {str(text_output)[:100]}"
+                        )
+                        raise ValueError(
+                            f"Invalid JSON: {str(text_output)[:100]}"
+                        ) from parse_error
 
         # Validate against schema
         try:
