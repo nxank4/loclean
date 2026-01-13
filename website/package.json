@@ -1,18 +1,24 @@
 {
   "name": "website",
-  "type": "module",
   "version": "0.0.1",
+  "private": true,
   "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "export": "next build && next export"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.37.2",
-    "astro": "^5.6.1",
-    "mermaid": "^11.12.2",
-    "sharp": "^0.34.2"
+    "next": "^14.2.0",
+    "nextra": "^2.13.0",
+    "nextra-theme-docs": "^2.13.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.5.0"
   }
 }

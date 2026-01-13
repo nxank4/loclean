@@ -1,0 +1,108 @@
+/* Custom styles for Nextra documentation */
+
+:root {
+  /* Brand colors - Blue theme */
+  --nextra-primary-hue: 217deg;
+  --nextra-primary-saturation: 100%;
+}
+
+/* Logo theme switching */
+html[data-theme='light'] .nextra-nav-container img[alt='Loclean logo'] {
+  content: url('/loclean/loclean-logo-for-light.svg');
+}
+
+html[data-theme='dark'] .nextra-nav-container img[alt='Loclean logo'] {
+  content: url('/loclean/loclean-logo-for-dark.svg');
+}
+
+/* Typography improvements */
+article {
+  line-height: 1.7;
+}
+
+article h1,
+article h2,
+article h3 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Code blocks */
+pre {
+  border-radius: 8px;
+  border: 1px solid var(--nextra-border-color);
+}
+
+code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9em;
+}
+
+/* Blockquotes / Callouts */
+article blockquote {
+  border-left: 4px solid var(--nextra-primary-hue);
+  padding-left: 1rem;
+  margin-left: 0;
+  background: var(--nextra-bg-mono);
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+/* Table styling */
+article table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.5rem 0;
+}
+
+article table th,
+article table td {
+  border: 1px solid var(--nextra-border-color);
+  padding: 0.75rem;
+  text-align: left;
+}
+
+article table th {
+  background: var(--nextra-bg-mono);
+  font-weight: 600;
+}
+
+/* Link styling */
+article a {
+  color: hsl(var(--nextra-primary-hue) var(--nextra-primary-saturation) 50%);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+article a:hover {
+  color: hsl(var(--nextra-primary-hue) var(--nextra-primary-saturation) 40%);
+  text-decoration: underline;
+}
+
+/* Spacing improvements */
+article > * + * {
+  margin-top: 1.5rem;
+}
+
+article > h2 + *,
+article > h3 + * {
+  margin-top: 1rem;
+}
+
+/* Code block improvements */
+pre code {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: auto;
+}
+
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Mermaid diagram styling */
+.mermaid {
+  margin: 2rem 0;
+  text-align: center;
+}
