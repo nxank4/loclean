@@ -15,7 +15,9 @@ export const pageMap = [{
     route: "/concepts/how-it-works",
     frontMatter: {
       "title": "How It Works",
-      "description": "Understanding Loclean's architecture and design principles."
+      "description": "Understanding Loclean's architecture and design principles.",
+      "toc": true,
+      "sidebar_position": 1
     }
   }]
 }, {
@@ -28,21 +30,27 @@ export const pageMap = [{
     route: "/getting-started/data-cleaning",
     frontMatter: {
       "title": "Data Cleaning",
-      "description": "Clean and normalize data using semantic extraction with clean() function."
+      "description": "Clean and normalize data using semantic extraction with clean() function.",
+      "toc": true,
+      "sidebar_position": 3
     }
   }, {
     name: "installation",
     route: "/getting-started/installation",
     frontMatter: {
       "title": "Installation",
-      "description": "Install Loclean for local-first semantic data cleaning."
+      "description": "Install Loclean for local-first semantic data cleaning.",
+      "toc": true,
+      "sidebar_position": 2
     }
   }, {
     name: "quick-start",
     route: "/getting-started/quick-start",
     frontMatter: {
       "title": "Quick Start",
-      "description": "Get started with Loclean in minutes."
+      "description": "Get started with Loclean in minutes.",
+      "toc": true,
+      "sidebar_position": 1
     }
   }]
 }, {
@@ -55,35 +63,45 @@ export const pageMap = [{
     route: "/guides/extraction",
     frontMatter: {
       "title": "Structured Extraction",
-      "description": "Extract structured data from unstructured text with Pydantic schemas."
+      "description": "Extract structured data from unstructured text with Pydantic schemas.",
+      "toc": true,
+      "sidebar_position": 1
     }
   }, {
     name: "models",
     route: "/guides/models",
     frontMatter: {
       "title": "Model Management",
-      "description": "Download and manage GGUF models for local inference."
+      "description": "Download and manage GGUF models for local inference.",
+      "toc": true,
+      "sidebar_position": 3
     }
   }, {
     name: "performance",
     route: "/guides/performance",
     frontMatter: {
       "title": "Performance Optimization",
-      "description": "Tips and best practices for optimizing Loclean performance."
+      "description": "Tips and best practices for optimizing Loclean performance.",
+      "toc": true,
+      "sidebar_position": 4
     }
   }, {
     name: "privacy",
     route: "/guides/privacy",
     frontMatter: {
       "title": "Privacy Scrubbing",
-      "description": "Scrub sensitive PII data locally using Regex & LLMs."
+      "description": "Scrub sensitive PII data locally using Regex & LLMs.",
+      "toc": true,
+      "sidebar_position": 2
     }
   }, {
     name: "use-cases",
     route: "/guides/use-cases",
     frontMatter: {
       "title": "Use Cases",
-      "description": "Real-world scenarios and examples using Loclean."
+      "description": "Real-world scenarios and examples using Loclean.",
+      "toc": true,
+      "sidebar_position": 5
     }
   }]
 }, {
@@ -91,7 +109,9 @@ export const pageMap = [{
   route: "/",
   frontMatter: {
     "title": "Loclean",
-    "description": "Local-first Semantic Data Cleaning & Extraction library for Python."
+    "description": "Local-first Semantic Data Cleaning & Extraction library for Python.",
+    "toc": false,
+    "sidebar_position": 1
   }
 }, {
   name: "reference",
@@ -103,14 +123,18 @@ export const pageMap = [{
     route: "/reference/api",
     frontMatter: {
       "title": "API Reference",
-      "description": "Complete API documentation for Loclean functions."
+      "description": "Complete API documentation for Loclean functions.",
+      "toc": true,
+      "sidebar_position": 1
     }
   }, {
     name: "configuration",
     route: "/reference/configuration",
     frontMatter: {
       "title": "Configuration",
-      "description": "Configure Loclean engines, models, and caching."
+      "description": "Configure Loclean engines, models, and caching.",
+      "toc": true,
+      "sidebar_position": 2
     }
   }]
 }];

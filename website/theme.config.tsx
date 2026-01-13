@@ -24,6 +24,27 @@ const config: DocsThemeConfig = {
   search: {
     placeholder: 'Search documentation...',
   },
+  darkMode: true,
+  nextThemes: {
+    defaultTheme: 'system',
+  },
+  toc: {
+    backToTop: true,
+  },
+  gitTimestamp: ({ timestamp }) => (
+    <>Last updated on {timestamp.toLocaleDateString()}</>
+  ),
+  head: (
+    <>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta property="og:title" content="Loclean Documentation" />
+      <meta property="og:description" content="Local-first Semantic Data Cleaning & Extraction library for Python" />
+    </>
+  ),
+  navigation: {
+    prev: true,
+    next: true,
+  },
 };
 
 export default config;

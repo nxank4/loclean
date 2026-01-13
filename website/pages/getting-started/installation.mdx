@@ -1,6 +1,8 @@
 ---
 title: Installation
 description: Install Loclean for local-first semantic data cleaning.
+toc: true
+sidebar_position: 2
 ---
 
 
@@ -10,7 +12,9 @@ description: Install Loclean for local-first semantic data cleaning.
 - Python 3.10, 3.11, 3.12, or 3.13
 - No GPU required (runs on CPU by default)
 
-> **Install from PyPI:** [pypi.org/project/loclean](https://pypi.org/project/loclean)
+:::info
+**Install from PyPI:** [pypi.org/project/loclean](https://pypi.org/project/loclean)
+:::
 
 ## Basic Installation
 
@@ -64,7 +68,9 @@ pip install loclean[all]
 
 This installs both `loclean[data]` and `loclean[cloud]`. Useful for production environments where you want all features available.
 
-> **Note for developers:** If you're contributing to Loclean, use the [Development Installation](#development-installation) section below (git clone + `uv sync --dev`), not `loclean[all]`.
+:::warning
+**Note for developers:** If you're contributing to Loclean, use the [Development Installation](#development-installation) section below (git clone + `uv sync --dev`), not `loclean[all]`.
+:::
 
 ## Development Installation
 

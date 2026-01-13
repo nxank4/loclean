@@ -1,3 +1,6 @@
 export default {
-  'how-it-works': 'How It Works',
+  'how-it-works': {
+    title: 'How It Works',
+    type: 'page',
+  },
 };

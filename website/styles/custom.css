@@ -38,16 +38,6 @@ code {
   font-size: 0.9em;
 }
 
-/* Blockquotes / Callouts */
-article blockquote {
-  border-left: 4px solid var(--nextra-primary-hue);
-  padding-left: 1rem;
-  margin-left: 0;
-  background: var(--nextra-bg-mono);
-  border-radius: 4px;
-  padding: 1rem;
-}
-
 /* Table styling */
 article table {
   border-collapse: collapse;
@@ -105,4 +95,25 @@ pre {
 .mermaid {
   margin: 2rem 0;
   text-align: center;
+}
+
+/* Nextra component enhancements */
+/* Cards component */
+.nextra-cards {
+  gap: 1.5rem;
+}
+
+/* Callout component */
+.nextra-callout {
+  border-radius: 8px;
+}
+
+/* Tabs component */
+.nextra-tabs {
+  margin: 1.5rem 0;
+}
+
+/* Steps component */
+.nextra-steps {
+  margin: 1.5rem 0;
 }

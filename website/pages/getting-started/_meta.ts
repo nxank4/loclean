@@ -1,5 +1,14 @@
 export default {
-  'quick-start': 'Quick Start',
-  'installation': 'Installation',
-  'data-cleaning': 'Data Cleaning',
+  'quick-start': {
+    title: 'Quick Start',
+    type: 'page',
+  },
+  'installation': {
+    title: 'Installation',
+    type: 'page',
+  },
+  'data-cleaning': {
+    title: 'Data Cleaning',
+    type: 'page',
+  },
 };
