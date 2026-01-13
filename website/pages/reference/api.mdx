@@ -44,9 +44,9 @@ def clean(
 
 DataFrame with added columns:
 
-- `{target_col}_clean_value`: Extracted numeric value (float)
-- `{target_col}_clean_unit`: Extracted unit (string)
-- `{target_col}_clean_reasoning`: LLM reasoning (string)
+- ``{target_col}_clean_value``: Extracted numeric value (float)
+- ``{target_col}_clean_unit``: Extracted unit (string)
+- ``{target_col}_clean_reasoning``: LLM reasoning (string)
 
 Return type matches input type (pandas → pandas, Polars → Polars, etc.)
 
@@ -115,7 +115,7 @@ def extract(
 ### Returns
 
 - If `input_data` is `str`: Returns extracted data (dict or Pydantic model)
-- If `input_data` is DataFrame: Returns DataFrame with `{target_col}_extracted` column
+- If `input_data` is DataFrame: Returns DataFrame with ``{target_col}_extracted`` column
 
 ### Example
 
@@ -153,7 +153,7 @@ shape: (1, 2)
 │ ---                         ┆ struct[3]                            │
 │ str                         ┆ {name: str, price: i64, color: str}  │
 ╞═════════════════════════════╪══════════════════════════════════════╡
-│ Selling red t-shirt for 50k ┆ {t-shirt, 50000, red}                │
+│ Selling red t-shirt for 50k ┆ ``{t-shirt, 50000, red}``                │
 └─────────────────────────────┴──────────────────────────────────────┘
 ```
 
@@ -224,9 +224,6 @@ shape: (1, 1)
 ╞══════════════════════════════════╡
 │ Contact [REDACTED] at [REDACTED] │
 └──────────────────────────────────┘
-```
-df = pl.DataFrame({"text": ["Contact John Doe at john@example.com"]})
-result = loclean.scrub(df, target_col="text")
 ```
 
 ---
