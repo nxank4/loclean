@@ -7,12 +7,22 @@
 }
 
 /* Logo theme switching */
-html[data-theme='light'] .nextra-nav-container img[alt='Loclean logo'] {
+html[data-theme='light'] .loclean-logo,
+html[data-theme='light'] .nextra-nav-container .loclean-logo {
   content: url('/loclean/loclean-logo-for-light.svg');
 }
 
-html[data-theme='dark'] .nextra-nav-container img[alt='Loclean logo'] {
+html[data-theme='dark'] .loclean-logo,
+html[data-theme='dark'] .nextra-nav-container .loclean-logo {
   content: url('/loclean/loclean-logo-for-dark.svg');
+}
+
+/* Fallback for system theme */
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) .loclean-logo,
+  html:not([data-theme]) .nextra-nav-container .loclean-logo {
+    content: url('/loclean/loclean-logo-for-dark.svg');
+  }
 }
 
 /* Typography improvements */

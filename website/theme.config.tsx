@@ -1,16 +1,8 @@
 import { DocsThemeConfig } from 'nextra-theme-docs';
+import Logo from './components/Logo';
 
 const config: DocsThemeConfig = {
-  logo: (
-    <span>
-      <img
-        src="/loclean/loclean-logo-for-light.svg"
-        alt="Loclean logo"
-        style={{ height: '24px', marginRight: '8px', verticalAlign: 'middle' }}
-      />
-      <span style={{ fontWeight: 600 }}>Loclean</span>
-    </span>
-  ),
+  logo: <Logo />,
   project: {
     link: 'https://github.com/nxank4/loclean',
   },
