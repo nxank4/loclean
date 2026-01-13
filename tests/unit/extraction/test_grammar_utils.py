@@ -1,5 +1,6 @@
 """Tests for grammar utilities."""
 
+import json
 from unittest.mock import Mock, patch
 
 import pytest
@@ -27,10 +28,13 @@ def test_get_grammar_from_schema_success() -> None:
         assert grammar == mock_grammar
         mock_grammar_class.from_json_schema.assert_called_once()
         # Verify JSON schema was generated
+        # Note: get_grammar_from_schema passes JSON string, not dict
         call_args = mock_grammar_class.from_json_schema.call_args[0][0]
-        assert "properties" in call_args
-        assert "name" in call_args["properties"]
-        assert "price" in call_args["properties"]
+        # Parse JSON string to dict for verification
+        json_schema = json.loads(call_args)
+        assert "properties" in json_schema
+        assert "name" in json_schema["properties"]
+        assert "price" in json_schema["properties"]
 
 
 def test_get_grammar_from_schema_invalid_type() -> None:
