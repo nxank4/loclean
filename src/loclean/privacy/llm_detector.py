@@ -1,6 +1,5 @@
 """LLM-based semantic PII detection for unstructured data types."""
 
-import json
 import logging
 from typing import TYPE_CHECKING, List
 
@@ -8,7 +7,7 @@ from jinja2 import Template
 
 from loclean.cache import LocleanCache
 from loclean.privacy.schemas import PIIDetectionResult
-from loclean.utils.resources import get_grammar_preset, load_template
+from loclean.utils.resources import load_template
 
 if TYPE_CHECKING:
     from loclean.inference.base import InferenceEngine
@@ -135,9 +134,11 @@ class LLMDetector:
             self.inference_engine, "adapter"
         ):
             # Load PII detection grammar using JSON schema (more reliable)
-            from llama_cpp import LlamaGrammar  # type: ignore[attr-defined]
-            from loclean.privacy.schemas import PIIDetectionResult
             import json
+
+            from llama_cpp import LlamaGrammar  # type: ignore[attr-defined]
+
+            from loclean.privacy.schemas import PIIDetectionResult
 
             # Use JSON schema approach like extraction
             json_schema = PIIDetectionResult.model_json_schema()
