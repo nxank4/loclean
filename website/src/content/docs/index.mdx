@@ -6,8 +6,7 @@ hero:
   tagline: The All-in-One Local AI Data Cleaner. Clean, extract, and scrub data with privacy-first local LLMs.
   image:
     alt: Loclean logo
-    dark: ../../assets/loclean-logo-for-dark.svg
-    light: ../../assets/loclean-logo-for-light.svg
+    file: ../../assets/loclean-logo-for-light.svg
   actions:
     - text: Get Started
       link: /loclean/getting-started/installation/
@@ -16,6 +15,9 @@ hero:
     - text: View on GitHub
       link: https://github.com/nxank4/loclean
       icon: external
+    - text: Quick Start
+      link: /loclean/getting-started/quick-start/
+      icon: right-arrow
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
@@ -37,10 +39,10 @@ Loclean bridges the gap between **Data Engineering** and **Local AI**, designed 
 	<Card title="Backend Agnostic" icon="seti:python">
 		Works seamlessly with **Pandas**, **Polars**, and **PyArrow** via Narwhals. Zero-copy, preserves lazy evaluation.
 	</Card>
-	<Card title="Deterministic Outputs" icon="seti:markdown">
+	<Card title="Deterministic Outputs" icon="check">
 		GBNF grammars and Pydantic V2 force valid, type-safe JSON. If it breaks the schema, it doesn't pass.
 	</Card>
-	<Card title="Production Ready" icon="seti:docker">
+	<Card title="Production Ready" icon="gear">
 		Built for data pipelines. Batch processing, parallel execution, SQLite caching, and comprehensive error handling.
 	</Card>
 </CardGrid>
@@ -72,4 +74,4 @@ t-shirt
 red
 ```
 
-📓 **Try the Interactive Examples:** See [examples/01-quick-start.ipynb](https://github.com/nxank4/loclean/blob/main/examples/01-quick-start.ipynb) for a Jupyter notebook with runnable examples and more detailed outputs.
+📓 **Try the Interactive Demo:** See [examples/demo.ipynb](https://github.com/nxank4/loclean/blob/main/examples/demo.ipynb) for a Jupyter notebook with runnable examples and more detailed outputs.

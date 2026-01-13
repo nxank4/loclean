@@ -11,10 +11,15 @@
 	--sl-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-/* Logo theme switching - Starlight handles hero images automatically with dark/light config */
-/* Sidebar logo theme switching */
-.starlight-logo img {
-	transition: opacity 0.2s ease;
+/* Logo theme switching */
+:root[data-theme="light"] .starlight-logo img,
+:root[data-theme="light"] .hero-image img {
+	content: url("../../assets/loclean-logo-for-light.svg");
+}
+
+:root[data-theme="dark"] .starlight-logo img,
+:root[data-theme="dark"] .hero-image img {
+	content: url("../../assets/loclean-logo-for-dark.svg");
 }
 
 /* Text color for light/dark themes */
@@ -158,91 +163,10 @@
 	margin-top: 1rem;
 }
 
-/* Output section styling - Make output visually distinct from input code */
-/* Style "Output:" label */
-.sl-markdown-content p:has(strong:contains("Output")) {
+/* Output section styling */
+.sl-markdown-content strong:has-text("Output") {
+	display: block;
 	margin-top: 1.5rem;
 	margin-bottom: 0.5rem;
-}
-
-.sl-markdown-content p:has(strong:contains("Output")) strong {
 	font-weight: 600;
-	color: var(--sl-color-accent);
-	position: relative;
-	padding-left: 1.5rem;
-	display: inline-block;
-}
-
-.sl-markdown-content p:has(strong:contains("Output")) strong::before {
-	content: "→";
-	position: absolute;
-	left: 0;
-	color: var(--sl-color-accent);
-	font-weight: bold;
-}
-
-/* Style output blocks marked by JavaScript */
-.sl-markdown-content figure.expressive-code[data-output="true"],
-.sl-markdown-content figure.expressive-code.output-block {
-	border-left: 4px solid var(--sl-color-accent) !important;
-	border-radius: 6px;
-	margin-top: 0.5rem;
-	position: relative;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	overflow: hidden;
-}
-
-/* Add subtle background tint for output blocks in light theme */
-:root[data-theme="light"] .sl-markdown-content figure.expressive-code[data-output="true"],
-:root[data-theme="light"] .sl-markdown-content figure.expressive-code.output-block {
-	border-color: #3b82f6 !important;
-}
-
-:root[data-theme="light"] .sl-markdown-content figure.expressive-code[data-output="true"] pre,
-:root[data-theme="light"] .sl-markdown-content figure.expressive-code.output-block pre {
-	background: #f0f7ff !important;
-}
-
-:root[data-theme="light"] .sl-markdown-content figure.expressive-code[data-output="true"] .frame,
-:root[data-theme="light"] .sl-markdown-content figure.expressive-code.output-block .frame {
-	background: #f0f7ff !important;
-}
-
-/* Add subtle background tint for output blocks in dark theme */
-:root[data-theme="dark"] .sl-markdown-content figure.expressive-code[data-output="true"],
-:root[data-theme="dark"] .sl-markdown-content figure.expressive-code.output-block {
-	border-color: #60a5fa !important;
-}
-
-:root[data-theme="dark"] .sl-markdown-content figure.expressive-code[data-output="true"] pre,
-:root[data-theme="dark"] .sl-markdown-content figure.expressive-code.output-block pre {
-	background: #1e293b !important;
-}
-
-:root[data-theme="dark"] .sl-markdown-content figure.expressive-code[data-output="true"] .frame,
-:root[data-theme="dark"] .sl-markdown-content figure.expressive-code.output-block .frame {
-	background: #1e293b !important;
-}
-
-/* Style regular pre blocks marked as output (fallback for non-Expressive Code) */
-.sl-markdown-content pre[data-output="true"],
-.sl-markdown-content pre.output-block {
-	background: var(--sl-color-bg-nav) !important;
-	border-left: 4px solid var(--sl-color-accent) !important;
-	border-radius: 6px;
-	margin-top: 0.5rem;
-	position: relative;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-:root[data-theme="light"] .sl-markdown-content pre[data-output="true"],
-:root[data-theme="light"] .sl-markdown-content pre.output-block {
-	background: #f0f7ff !important;
-	border-color: #3b82f6 !important;
-}
-
-:root[data-theme="dark"] .sl-markdown-content pre[data-output="true"],
-:root[data-theme="dark"] .sl-markdown-content pre.output-block {
-	background: #1e293b !important;
-	border-color: #60a5fa !important;
 }
