@@ -138,8 +138,6 @@ class LLMDetector:
 
             from llama_cpp import LlamaGrammar  # type: ignore[attr-defined]
 
-            from loclean.privacy.schemas import PIIDetectionResult
-
             # Use JSON schema approach like extraction
             json_schema = PIIDetectionResult.model_json_schema()
             json_schema_str = json.dumps(json_schema)

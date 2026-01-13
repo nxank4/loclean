@@ -98,7 +98,6 @@ class Extractor:
         )
 
         if result is None:
-
             msg = (
                 f"Failed to extract valid {schema.__name__} from text "
                 f"after {self.max_retries} retries"
@@ -253,6 +252,7 @@ class Extractor:
                 # Ensure text_output is a string, not dict
                 if isinstance(text_output, dict):
                     import json
+
                     text_output = json.dumps(text_output)
 
                 # Parse and validate

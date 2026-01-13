@@ -67,6 +67,7 @@ def get_grammar_from_schema(schema: type[BaseModel]) -> "LlamaGrammar":
     # Convert JSON Schema to GBNF grammar using llama-cpp-python
     # LlamaGrammar.from_json_schema expects a JSON string, not a dict
     import json
+
     json_schema_str = json.dumps(json_schema)
     grammar = LlamaGrammar.from_json_schema(json_schema_str)
 

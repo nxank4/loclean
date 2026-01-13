@@ -158,9 +158,9 @@ class LlamaCppEngine(InferenceEngine):
             ModelDownloadError: For other download-related errors.
         """
         return download_model(
-                        model_name=self.model_name,
-                        repo_id=self.model_repo,
-                        filename=self.model_filename,
+            model_name=self.model_name,
+            repo_id=self.model_repo,
+            filename=self.model_filename,
             cache_dir=self.cache_dir,
             force=False,
             show_progress=True,

@@ -45,7 +45,7 @@ class FakeDataGenerator:
             original = entity.value
             # Remove all non-digit characters to check length
             digits_only = "".join(c for c in original if c.isdigit())
-            
+
             # Generate fake number based on original format
             if len(digits_only) <= 7:
                 # Short format (e.g., 555-1234) - use simple US format
