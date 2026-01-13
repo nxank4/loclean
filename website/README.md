@@ -1,49 +1,54 @@
-# Starlight Starter Kit: Basics
+# Loclean Documentation
 
-[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
-
-```
-npm create astro@latest -- --template starlight
-```
-
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Built with [Nextra](https://nextra.site/) - a Next.js-based documentation framework.
 
 ## 🚀 Project Structure
 
-Inside of your Astro + Starlight project, you'll see the following folders and files:
-
 ```
 .
-├── public/
-├── src/
-│   ├── assets/
-│   ├── content/
-│   │   └── docs/
-│   └── content.config.ts
-├── astro.config.mjs
-├── package.json
-└── tsconfig.json
+├── pages/              # Documentation pages (MDX files)
+│   ├── _meta.ts       # Navigation metadata
+│   ├── getting-started/
+│   ├── guides/
+│   ├── concepts/
+│   └── reference/
+├── public/            # Static assets (images, logos, favicon)
+├── styles/            # Custom CSS
+├── theme.config.tsx   # Nextra theme configuration
+├── next.config.mjs    # Next.js + Nextra configuration
+└── package.json
 ```
-
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
-
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
-
-Static assets, like favicons, can be placed in the `public/` directory.
 
 ## 🧞 Commands
 
-All commands are run from the root of the project, from a terminal:
+All commands are run from the `website/` directory:
 
 | Command                   | Action                                           |
 | :------------------------ | :----------------------------------------------- |
 | `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+| `npm run dev`             | Starts local dev server at `localhost:3000`      |
+| `npm run build`           | Build your production site to `./out/`          |
+| `npm run start`           | Start production server (after build)            |
+
+## 📝 Content
+
+Documentation pages are written in MDX format and located in the `pages/` directory. The file structure determines the URL structure.
+
+Navigation is configured via `_meta.ts` files in each directory.
+
+## 🎨 Customization
+
+- **Theme**: Edit `theme.config.tsx` for logo, colors, and navigation
+- **Styles**: Custom CSS in `styles/custom.css`
+- **Configuration**: Next.js config in `next.config.mjs`
+
+## 📦 Deployment
+
+The site is configured for static export to GitHub Pages:
+- Base path: `/loclean`
+- Output directory: `out/`
+- Static export enabled
 
 ## 👀 Want to learn more?
 
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+Check out [Nextra documentation](https://nextra.site/) or [Next.js documentation](https://nextjs.org/docs).
