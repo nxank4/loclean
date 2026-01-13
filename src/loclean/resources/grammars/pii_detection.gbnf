@@ -1,8 +1,8 @@
-root      ::= object
-object    ::= "{" ws "entities" ws ":" ws array ws ("," ws "reasoning" ws ":" ws string)? ws "}"
-array     ::= "[" ws (entity ("," ws entity)*)? ws "]"
-entity    ::= "{" ws "type" ws ":" ws pii_type ws "," ws "value" ws ":" ws string ws "}"
-pii_type  ::= "\"person\"" | "\"address\""
-string    ::= "\"" ([^"\\] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F]{4}))* "\""
-ws        ::= [ \t\n\r]*
+root   ::= object
+object ::= "{" ws "entities" ws ":" ws array ws ("," ws "reasoning" ws ":" ws string)? ws "}"
+array  ::= "[" ws (entity ("," ws entity)*)? ws "]"
+entity ::= "{" ws "type" ws ":" ws pii_type ws "," ws "value" ws ":" ws string ws "}"
+pii_type ::= "\"person\"" | "\"address\""
+string ::= "\"" ([^"\\] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F]{4}))* "\""
+ws     ::= [ \t\n]*
 

@@ -9,9 +9,30 @@ from loclean.privacy.schemas import PIIEntity
 # Email pattern (RFC 5322 compliant, simplified)
 EMAIL_PATTERN = r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b"
 
-# Vietnamese phone patterns
-# Formats: 0909123456, 0912345678, +84901234567, 84901234567
-PHONE_PATTERN = r"\b(?:\+84|84|0)[3-9]\d{8,9}\b"
+# International phone patterns
+# Supports multiple formats:
+# - International: +1-555-123-4567, +44 20 7946 0958, +33 1 23 45 67 89
+# - US/Canada: (555) 123-4567, 555-123-4567, 555.123.4567, 5551234567
+# - Vietnamese: 0909123456, +84901234567, 84901234567
+# - UK: 020 7946 0958, 07946 095 123
+# Pattern requires minimum 7 digits to avoid false positives (dates, short numbers)
+PHONE_PATTERN = (
+    r"(?<!\d)(?:"  # Negative lookbehind to avoid matching mid-number
+    # International: +44 20 7946 0958, +33 1 23 45 67 89
+    r"(?:\+\d{1,4}[\s.-]?\d{1,4}(?:[\s.-]?\d{1,4}){1,})(?!\d)"
+    r"|"  # OR
+    # US/Canada: (555) 123-4567, 555-123-4567
+    r"\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}(?!\d)"
+    r"|"  # OR
+    r"\d{3}[\s.-]?\d{4}(?!\d)"  # Short US: 555-1234 (7 digits minimum)
+    r"|"  # OR
+    r"(?:\+84|84|0)[3-9]\d{8,9}(?!\d)"  # Vietnamese: 0909123456, +84901234567
+    r"|"  # OR
+    r"0\d{2,3}[\s-]?\d{3,4}[\s-]?\d{3,4}(?!\d)"  # UK: 020 7946 0958
+    r"|"  # OR
+    r"\d{10,}(?!\d)"  # Long numbers (10+ digits) - likely phone numbers
+    r")"
+)
 
 # Credit card patterns (Visa, MasterCard, Amex)
 # Visa: 13-16 digits starting with 4
@@ -55,9 +76,14 @@ class RegexDetector:
     @staticmethod
     def detect_phone(text: str) -> List[PIIEntity]:
         """
-        Detect Vietnamese phone numbers in text.
+        Detect international phone numbers in text.
 
-        Supports formats: 0909123456, 0912345678, +84901234567, 84901234567
+        Supports multiple formats:
+        - International: +1-555-123-4567, +44 20 7946 0958, +33 1 23 45 67 89
+        - US/Canada: (555) 123-4567, 555-123-4567, 555.123.4567, 5551234567
+        - Vietnamese: 0909123456, +84901234567, 84901234567
+        - UK: 020 7946 0958, 07946 095 123
+        - General formats with country codes and various separators
 
         Args:
             text: Input text to scan
