@@ -41,7 +41,42 @@ class FakeDataGenerator:
             Fake data string matching the entity type
         """
         if entity.type == "phone":
-            return str(self.faker.phone_number())
+            # Try to preserve format of original phone number
+            original = entity.value
+            # Remove all non-digit characters to check length
+            digits_only = "".join(c for c in original if c.isdigit())
+
+            # Generate fake number based on original format
+            if len(digits_only) <= 7:
+                # Short format (e.g., 555-1234) - use simple US format
+                fake_digits = self.faker.numerify("#######")
+                # Try to preserve separator style
+                if "-" in original:
+                    return f"{fake_digits[:3]}-{fake_digits[3:]}"
+                elif " " in original:
+                    return f"{fake_digits[:3]} {fake_digits[3:]}"
+                elif "." in original:
+                    return f"{fake_digits[:3]}.{fake_digits[3:]}"
+                else:
+                    return fake_digits
+            elif len(digits_only) <= 10:
+                # Standard US format (e.g., 555-123-4567)
+                fake_digits = self.faker.numerify("##########")
+                if "(" in original and ")" in original:
+                    return f"({fake_digits[:3]}) {fake_digits[3:6]}-{fake_digits[6:]}"
+                elif "-" in original:
+                    parts = original.split("-")
+                    if len(parts) == 3:
+                        return f"{fake_digits[:3]}-{fake_digits[3:6]}-{fake_digits[6:]}"
+                    else:
+                        return f"{fake_digits[:3]}-{fake_digits[3:]}"
+                elif " " in original:
+                    return f"{fake_digits[:3]} {fake_digits[3:6]} {fake_digits[6:]}"
+                else:
+                    return fake_digits
+            else:
+                # International or long format - use faker's phone_number
+                return str(self.faker.phone_number())
         elif entity.type == "email":
             return str(self.faker.email())
         elif entity.type == "person":

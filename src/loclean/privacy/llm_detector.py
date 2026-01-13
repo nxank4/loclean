@@ -1,6 +1,5 @@
 """LLM-based semantic PII detection for unstructured data types."""
 
-import json
 import logging
 from typing import TYPE_CHECKING, List
 
@@ -8,7 +7,7 @@ from jinja2 import Template
 
 from loclean.cache import LocleanCache
 from loclean.privacy.schemas import PIIDetectionResult
-from loclean.utils.resources import get_grammar_preset, load_template
+from loclean.utils.resources import load_template
 
 if TYPE_CHECKING:
     from loclean.inference.base import InferenceEngine
@@ -35,7 +34,9 @@ class LLMDetector:
         self.cache = cache or LocleanCache()
 
         # Load grammar and template
-        self.grammar_str = get_grammar_preset("pii_detection")
+        from loclean.utils.resources import load_grammar
+
+        self.grammar_str = load_grammar("pii_detection.gbnf")
         self.template_str = load_template("pii_detection.j2")
         self.template = Template(self.template_str)
 
@@ -132,10 +133,15 @@ class LLMDetector:
         if hasattr(self.inference_engine, "llm") and hasattr(
             self.inference_engine, "adapter"
         ):
-            # Load PII detection grammar
+            # Load PII detection grammar using JSON schema (more reliable)
+            import json
+
             from llama_cpp import LlamaGrammar  # type: ignore[attr-defined]
 
-            pii_grammar = LlamaGrammar.from_string(self.grammar_str, verbose=False)
+            # Use JSON schema approach like extraction
+            json_schema = PIIDetectionResult.model_json_schema()
+            json_schema_str = json.dumps(json_schema)
+            pii_grammar = LlamaGrammar.from_json_schema(json_schema_str)
 
             # Direct LLM access (for LlamaCppEngine)
             for item in items:
