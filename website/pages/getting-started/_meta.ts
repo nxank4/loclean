@@ -1,0 +1,5 @@
+export default {
+  'quick-start': 'Quick Start',
+  'installation': 'Installation',
+  'data-cleaning': 'Data Cleaning',
+};
