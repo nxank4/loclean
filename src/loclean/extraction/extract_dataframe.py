@@ -237,10 +237,8 @@ def _create_polars_mapping_df(
                 struct_fields[field_name] = pl.Utf8
 
         # Create Struct column
-        struct_values = [
-            pl.Struct(mapping_values[i]) if mapping_values[i] is not None else None
-            for i in range(len(mapping_values))
-        ]
+        # Pass dict values directly - Polars will convert to Struct based on dtype
+        struct_values = mapping_values
 
         return pl.DataFrame(
             {
