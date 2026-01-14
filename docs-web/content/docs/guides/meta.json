@@ -1,0 +1,8 @@
+{
+  "title": "Guides",
+  "pages": [
+    "data-cleaning",
+    "privacy-scrubbing",
+    "structured-extraction"
+  ]
+}

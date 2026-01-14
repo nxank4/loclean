@@ -1,0 +1,116 @@
+---
+title: Privacy Scrubbing
+description: Learn how to scrub sensitive PII data locally using Loclean.
+---
+
+This guide demonstrates how to scrub sensitive PII (Personally Identifiable Information) data locally using Loclean.
+
+## Basic Usage
+
+### Scrub Text
+
+Scrub all PII (default: mask mode).
+
+```python title="scrub_text.py"
+import loclean
+
+# Text with PII
+text = "Contact John Doe at john@example.com or call 555-1234"
+
+cleaned = loclean.scrub(text)
+print(f"Original: {text}")
+print(f"Cleaned:  {cleaned}")
+```
+
+**Output:**
+```text
+Original: Contact John Doe at john@example.com or call 555-1234
+Cleaned:  Contact [PERSON] at [EMAIL] or call [PHONE]
+```
+
+### Scrub DataFrame
+
+Scrub PII in DataFrame column. Returns DataFrame with scrubbed column (same structure as input).
+
+```python title="scrub_dataframe.py"
+import polars as pl
+import loclean
+
+df = pl.DataFrame(
+    {
+        "text": [
+            "Contact John Doe at john@example.com",
+            "Call Mary Smith at 555-1234",  # US phone format
+            "Email: admin@company.com",
+        ]
+    }
+)
+
+print("Original DataFrame:")
+print(df)
+
+result = loclean.scrub(df, target_col="text")
+
+print("\nCleaned DataFrame:")
+print(result)
+```
+
+## Scrubbing Modes
+
+### Mask Mode (Default)
+
+Replaces PII with type-specific placeholders like `[PERSON]`, `[EMAIL]`, `[PHONE]`.
+
+```python
+text = "John Doe: john@example.com"
+cleaned = loclean.scrub(text, mode="mask")
+print(f"Original: {text}")
+print(f"Masked:   {cleaned}")
+```
+
+### Fake Mode
+
+Replace PII with fake data instead of masking.
+
+```python
+# Replace PII with fake data (mode="fake")
+text = "Contact John Doe at john@example.com or call 555-1234"
+cleaned = loclean.scrub(
+    text,
+    mode="fake",
+    locale="en_US",  # Use English locale for fake data
+)
+print(f"Original: {text}")
+print(f"Fake:     {cleaned}")
+```
+
+**Output:**
+```text
+Original: Contact John Doe at john@example.com or call 555-1234
+Fake:     Contact Michael Rodriguez at ianderson@example.net or call 357-4163
+```
+
+## Selective Scrubbing
+
+Scrub only specific PII types by specifying `strategies`. Available strategies:
+- `"person"`: Person names (requires LLM)
+- `"phone"`: Phone numbers
+- `"email"`: Email addresses
+- `"credit_card"`: Credit card numbers
+- `"address"`: Physical addresses (requires LLM)
+- `"ip_address"`: IP addresses
+
+```python
+# Only scrub emails and phone numbers
+# Note: "person" is not in strategies, so "John Doe" remains unchanged
+text = "John Doe: john@example.com, 555-1234"
+cleaned = loclean.scrub(text, strategies=["email", "phone"])
+print(f"Original: {text}")
+print(f"Cleaned:  {cleaned}")
+```
+
+**Output:**
+```text
+Original: John Doe: john@example.com, 555-1234
+Cleaned:  John Doe: [EMAIL], [PHONE]
+```

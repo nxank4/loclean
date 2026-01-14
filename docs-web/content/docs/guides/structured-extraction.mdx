@@ -1,0 +1,185 @@
+---
+title: Structured Extraction
+description: Extract structured data from unstructured text with 100% schema compliance using Pydantic models.
+---
+
+This guide demonstrates how to extract structured data from unstructured text with 100% schema compliance using Pydantic models and GBNF grammars.
+
+## Basic Example
+
+Extract structured data from unstructured text.
+
+```python title="basic_extraction.py"
+import loclean
+from pydantic import BaseModel
+
+class Product(BaseModel):
+    name: str
+    price: int
+    color: str
+
+# Extract from text
+item = loclean.extract("Selling red t-shirt for 50k", schema=Product)
+print(f"Name: {item.name}")
+print(f"Price: {item.price}")
+print(f"Color: {item.color}")
+```
+
+**Output:**
+```text
+Name: red t-shirt
+Price: 50
+Color: red
+```
+
+## Working with DataFrames
+
+Extract structured data from DataFrame columns.
+
+```python title="dataframe_extraction.py"
+import polars as pl
+import loclean
+from pydantic import BaseModel
+
+class Product(BaseModel):
+    name: str
+    price: int
+    color: str
+
+df = pl.DataFrame(
+    {"description": ["Selling red t-shirt for 50k", "Blue jeans available for 30k"]}
+)
+
+result = loclean.extract(df, schema=Product, target_col="description")
+
+# Show extracted data with expanded struct fields for better readability
+print("Extracted Data:")
+print(
+    result.with_columns(
+        [
+            pl.col("description_extracted").struct.field("name").alias("product_name"),
+            pl.col("description_extracted")
+            .struct.field("price")
+            .alias("product_price"),
+            pl.col("description_extracted")
+            .struct.field("color")
+            .alias("product_color"),
+        ]
+    )
+)
+```
+
+**Output:**
+```text
+Extracted Data:
+shape: (2, 5)
+┌─────────────────────────┬─────────────────────────┬──────────────┬───────────────┬───────────────┐
+│ description             ┆ description_extracted   ┆ product_name ┆ product_price ┆ product_color │
+│ ---                     ┆ ---                     ┆ ---          ┆ ---           ┆ ---           │
+│ str                     ┆ struct[3]               ┆ str          ┆ i64           ┆ str           │
+╞═════════════════════════╪═════════════════════════╪══════════════╪═══════════════╪═══════════════╡
+│ Selling red t-shirt for ┆ {"red                   ┆ red t-shirt  ┆ 50            ┆ red           │
+│ 50k                     ┆ t-shirt",50,"red"}      ┆              ┆               ┆               │
+│ Blue jeans available    ┆ {"Blue                  ┆ Blue jeans   ┆ 30            ┆ Blue          │
+│ for 30k                 ┆ jeans",30,"Blue"}       ┆              ┆               ┆               │
+└─────────────────────────┴─────────────────────────┴──────────────┴───────────────┴───────────────┘
+```
+
+## Advanced Features
+
+### Nested Schemas
+
+Extract nested data structures using nested Pydantic models.
+
+```python
+from typing import List, Optional
+from pydantic import BaseModel
+import loclean
+
+class Address(BaseModel):
+    street: str
+    city: str
+    state: str
+    zip_code: str
+
+class Person(BaseModel):
+    name: str
+    age: int
+    email: str
+    address: Address  # Nested schema
+    phone_numbers: List[str]  # List of strings
+    notes: Optional[str] = None  # Optional field
+
+text = """
+John Doe, age 35, email: john@example.com
+Lives at 123 Main St, New York, NY 10001
+Phones: 555-1234, 555-5678
+Notes: Preferred contact method is email
+"""
+
+person = loclean.extract(text, schema=Person)
+print(f"Name: {person.name}")
+print(f"Address: {person.address.street}, {person.address.city}")
+print(f"Phone Numbers: {person.phone_numbers}")
+```
+
+### Custom Instructions
+
+Provide custom instructions to guide the extraction.
+
+```python
+# Custom instruction to extract price in actual currency units
+class ProductWithPrice(BaseModel):
+    name: str
+    price: int  # Price in actual currency units (not thousands)
+    color: str
+
+text = "Selling red t-shirt for 50k"
+item = loclean.extract(
+    text,
+    schema=ProductWithPrice,
+    instruction=(
+        "Extract the product name (e.g., 'red t-shirt'), "
+        "price in actual currency units ('50k' means 50000, not 50), "
+        "and color."
+    ),
+)
+print(f"Price: {item.price}")  # Should be 50000 with custom instruction
+```
+
+### Output Types for DataFrames
+
+Choose between structured dict (default, faster) or Pydantic instances.
+
+```python
+# Default: output_type="dict" (Polars Struct - faster, vectorized)
+result_dict = loclean.extract(
+    df, schema=Product, target_col="description", output_type="dict"
+)
+
+# Alternative: output_type="pydantic" (Pydantic instances - slower, breaks vectorization)
+result_pydantic = loclean.extract(
+    df, schema=Product, target_col="description", output_type="pydantic"
+)
+```
+
+### Optional Fields
+
+Optional fields are handled gracefully - they can be None if not found.
+
+```python
+class ProductWithOptional(BaseModel):
+    name: str
+    price: int
+    color: str
+    discount: Optional[int] = None
+    description: Optional[str] = None
+
+# Text without optional fields
+text1 = "Selling red t-shirt for 50k"
+item1 = loclean.extract(text1, schema=ProductWithOptional) # discount is None
+
+# Text with optional fields
+text2 = "Selling red t-shirt for 50k, 10% discount, premium quality"
+item2 = loclean.extract(text2, schema=ProductWithOptional) # discount is 10
+```
