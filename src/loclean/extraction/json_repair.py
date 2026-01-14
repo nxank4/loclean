@@ -58,6 +58,11 @@ def repair_json(text: str) -> str:
 
     try:
         repaired = json_repair.repair_json(text)
+        # json_repair can return either str or dict, ensure we return str
+        if isinstance(repaired, dict):
+            import json
+
+            repaired = json.dumps(repaired)
         if repaired != text:
             logger.debug("Successfully repaired JSON")
         return repaired
