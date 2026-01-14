@@ -1,0 +1,164 @@
+---
+title: Data Cleaning
+description: Learn how to clean and normalize messy data using loclean.clean().
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+This guide demonstrates how to clean and normalize messy data using `loclean.clean()`.
+
+## Basic Usage
+
+Clean messy data in DataFrame columns.
+
+```python title="basic_cleaning.py"
+import polars as pl
+import loclean
+
+# Create a DataFrame with messy data
+df = pl.DataFrame({"weight": ["5kg", "3.5 kg", "5000g", "2.2kg"]})
+print("Input Data:")
+print(df)
+
+# Clean the weight column
+# Instruction: Extract values as-is (no unit conversion)
+# Note: "5000g" stays as 5000.0 g, not converted to kg
+result = loclean.clean(
+    df, target_col="weight", instruction="Extract the numeric value and unit as-is."
+)
+print("\nCleaned Results:")
+print(result.select(["weight", "clean_value", "clean_unit"]))
+```
+
+**Output:**
+```text
+Cleaned Results:
+shape: (4, 3)
+┌────────┬─────────────┬────────────┐
+│ weight ┆ clean_value ┆ clean_unit │
+│ ---    ┆ ---         ┆ ---        │
+│ str    ┆ f64         ┆ str        │
+╞════════╪═════════════╪════════════╡
+│ 5kg    ┆ 5.0         ┆ kg         │
+│ 3.5 kg ┆ 3.5         ┆ kg         │
+│ 5000g  ┆ 5000.0      ┆ g          │
+│ 2.2kg  ┆ 2.2         ┆ kg         │
+└────────┴─────────────┴────────────┘
+```
+
+## Custom Instructions
+
+Provide custom instructions to guide the extraction. Different instructions produce different results.
+
+### Example 1: Unit Conversion
+
+```python
+# Convert all weights to the same unit (kg)
+df_weight = pl.DataFrame({"weight": ["5kg", "3.5 kg", "5000g", "2.2kg"]})
+
+result_converted = loclean.clean(
+    df_weight, target_col="weight", instruction="Convert all weights to kg"
+)
+
+print("With unit conversion (all to kg):")
+print(result_converted.select(["weight", "clean_value", "clean_unit"]))
+```
+
+**Output:**
+```text
+With unit conversion (all to kg):
+shape: (4, 3)
+┌────────┬─────────────┬────────────┐
+│ weight ┆ clean_value ┆ clean_unit │
+│ ---    ┆ ---         ┆ ---        │
+│ str    ┆ f64         ┆ str        │
+╞════════╪═════════════╪════════════╡
+│ 5kg    ┆ 5.0         ┆ kg         │
+│ 3.5 kg ┆ 3.5         ┆ kg         │
+│ 5000g  ┆ 5.0         ┆ kg         │
+│ 2.2kg  ┆ 2.2         ┆ kg         │
+└────────┴─────────────┴────────────┘
+```
+
+### Example 2: Extract Price with Currency
+
+```python
+df_price = pl.DataFrame({"price": ["$50", "50 USD", "€45", "100 dollars"]})
+
+result = loclean.clean(
+    df_price,
+    target_col="price",
+    instruction="Extract the numeric value and currency code (USD, EUR, etc.)",
+)
+
+print("Extract price with currency:")
+print(result.select(["price", "clean_value", "clean_unit"]))
+```
+
+## Working with Different Backends
+
+<Tabs items={['Pandas', 'Polars']}>
+  <Tab value="Pandas">
+  ```python
+  import pandas as pd
+  import loclean
+
+  # Clean with Pandas DataFrame
+  df_pandas = pd.DataFrame({"temperature": ["25°C", "77F", "298K"]})
+
+  result = loclean.clean(
+      df_pandas,
+      target_col="temperature",
+      instruction="Extract temperature value and unit",
+  )
+
+  print(f"Result type: {type(result)}")
+  # Pandas: use column selection with list
+  print(result[["temperature", "clean_value", "clean_unit"]])
+  ```
+  </Tab>
+  <Tab value="Polars">
+  ```python
+  import polars as pl
+  import loclean
+
+  # Clean with Polars DataFrame
+  df_polars = pl.DataFrame({"distance": ["5km", "3 miles", "1000m"]})
+
+  result = loclean.clean(
+      df_polars, target_col="distance", instruction="Extract distance value and unit"
+  )
+
+  print(f"Result type: {type(result)}")
+  print(result.select(["distance", "clean_value", "clean_unit"]))
+  ```
+  </Tab>
+</Tabs>
+
+## Handling Missing Values
+
+`clean()` handles missing values gracefully. `None` and empty strings result in `None` for all output columns.
+
+```python
+df_with_nulls = pl.DataFrame({"weight": ["5kg", None, "3kg", ""]})
+result = loclean.clean(
+    df_with_nulls, target_col="weight", instruction="Extract weight value and unit"
+)
+
+print(result.select(["weight", "clean_value", "clean_unit"]))
+```
+
+**Output:**
+```text
+shape: (4, 3)
+┌────────┬─────────────┬────────────┐
+│ weight ┆ clean_value ┆ clean_unit │
+│ ---    ┆ ---         ┆ ---        │
+│ str    ┆ f64         ┆ str        │
+╞════════╪═════════════╪════════════╡
+│ 5kg    ┆ 5.0         ┆ kg         │
+│ null   ┆ null        ┆ null       │
+│ 3kg    ┆ 3.0         ┆ kg         │
+│        ┆ null        ┆ null       │
+└────────┴─────────────┴────────────┘
+```

@@ -1,0 +1,42 @@
+---
+title: Introduction
+description: Welcome to the Loclean documentation.
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Book, Code, Calculator, ShieldCheck } from 'lucide-react';
+
+**Loclean** is a powerful Python library for local data cleaning and extraction using LLMs. It allows you to:
+
+- Extract structured data from unstructured text with 100% schema compliance.
+- Clean and normalize messy data in DataFrames.
+- Scrub sensitive PII data locally without sending data to external APIs.
+
+## Guides
+
+<Cards>
+  <Card
+    icon={<Book />}
+    href="/docs/getting-started"
+    title="Getting Started"
+    description="Learn the basics of Loclean in 5 minutes."
+  />
+  <Card
+    icon={<Calculator />}
+    href="/docs/guides/data-cleaning"
+    title="Data Cleaning"
+    description="Clean and normalize messy data automatically."
+  />
+  <Card
+    icon={<ShieldCheck />}
+    href="/docs/guides/privacy-scrubbing"
+    title="Privacy Scrubbing"
+    description="Detect and redact PII from your data locally."
+  />
+  <Card
+    icon={<Code />}
+    href="/docs/guides/structured-extraction"
+    title="Structured Extraction"
+    description="Extract complex structures using Pydantic models."
+  />
+</Cards>

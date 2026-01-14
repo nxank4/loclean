@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+@source "../../../node_modules/fumadocs-ui/dist/**/*.js";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+.logo-light { display: block !important; }
+.logo-dark { display: none !important; }
+
+:is(.dark .logo-light) { display: none !important; }
+:is(.dark .logo-dark) { display: block !important; }
+
