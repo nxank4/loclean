@@ -1,0 +1,198 @@
+---
+title: Getting Started
+description: Learn the core features of Loclean including structured extraction, data cleaning, and privacy scrubbing.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+This guide demonstrates the core features of Loclean:
+- Structured extraction with Pydantic
+- Data cleaning with DataFrames
+- Privacy scrubbing
+- Working with different backends (Pandas/Polars)
+
+## Installation
+
+```bash
+pip install loclean
+```
+
+## 1. Structured Extraction with Pydantic
+
+Extract structured data from unstructured text with guaranteed schema compliance.
+
+```python title="extraction.py"
+import loclean
+from pydantic import BaseModel
+
+class Product(BaseModel):
+    name: str
+    price: int
+    color: str
+
+# Extract from text
+item = loclean.extract("Selling red t-shirt for 50k", schema=Product)
+print(f"Name: {item.name}")
+print(f"Price: {item.price}")
+print(f"Color: {item.color}")
+```
+
+**Output:**
+```text
+Name: red t-shirt
+Price: 50
+Color: red
+```
+
+## 2. Working with Tabular Data (Polars)
+
+Process entire DataFrames with automatic batch processing.
+
+```python title="cleaning_polars.py"
+import polars as pl
+import loclean
+
+# Create DataFrame with messy data
+df = pl.DataFrame({"weight": ["5kg", "3.5 kg", "5000g", "2.2kg"]})
+
+print("Input Data:")
+print(df)
+
+# Clean the entire column
+result = loclean.clean(df, target_col="weight", instruction="Convert all weights to kg")
+
+# View results
+print("\nCleaned Results:")
+print(result.select(["weight", "clean_value", "clean_unit"]))
+```
+
+**Output:**
+```text
+Input Data:
+shape: (4, 1)
+┌────────┐
+│ weight │
+│ ---    │
+│ str    │
+╞════════╡
+│ 5kg    │
+│ 3.5 kg │
+│ 5000g  │
+│ 2.2kg  │
+└────────┘
+
+Cleaned Results:
+shape: (4, 3)
+┌────────┬─────────────┬────────────┐
+│ weight ┆ clean_value ┆ clean_unit │
+│ ---    ┆ ---         ┆ ---        │
+│ str    ┆ f64         ┆ str        │
+╞════════╪═════════════╪════════════╡
+│ 5kg    ┆ 5.0         ┆ kg         │
+│ 3.5 kg ┆ 3.5         ┆ kg         │
+│ 5000g  ┆ 5.0         ┆ kg         │
+│ 2.2kg  ┆ 2.2         ┆ kg         │
+└────────┴─────────────┴────────────┘
+```
+
+## 3. Working with Pandas
+
+Loclean works seamlessly with Pandas as well.
+
+```python title="cleaning_pandas.py"
+import pandas as pd
+import loclean
+from pydantic import BaseModel
+
+class Product(BaseModel):
+    name: str
+    price: int
+    color: str
+
+# Create Pandas DataFrame
+df_pandas = pd.DataFrame({"description": ["Selling red t-shirt for 50k"]})
+
+# Extract structured data
+result = loclean.extract(df_pandas, schema=Product, target_col="description")
+print(f"Result type: {type(result)}")
+print(result)
+```
+
+## 4. Privacy Scrubbing
+
+Scrub sensitive PII data locally.
+
+```python title="privacy.py"
+import loclean
+
+# Text with PII
+text = "Contact John Doe at john@example.com or call 555-1234"
+
+# Scrub PII (default: mask mode)
+cleaned = loclean.scrub(text, mode="mask")
+print(f"Original: {text}")
+print(f"Cleaned:  {cleaned}")
+```
+
+**Output:**
+```text
+Original: Contact John Doe at john@example.com or call 555-1234
+Cleaned:  Contact [PERSON] at [EMAIL] or call [PHONE]
+```
+
+## 5. Extraction with DataFrames
+
+Extract structured data from DataFrame columns and flatten the result for easy analysis.
+
+```python title="dataframe_extraction.py"
+import polars as pl
+import loclean
+
+df = pl.DataFrame(
+    {"description": ["Selling red t-shirt for 50k", "Blue jeans available for 30k"]}
+)
+
+result = loclean.extract(df, schema=Product, target_col="description")
+
+# Show extracted data with expanded struct fields for better readability
+print("Extracted Data:")
+print(
+    result.with_columns(
+        [
+            pl.col("description_extracted").struct.field("name").alias("product_name"),
+            pl.col("description_extracted")
+            .struct.field("price")
+            .alias("product_price"),
+            pl.col("description_extracted")
+            .struct.field("color")
+            .alias("product_color"),
+        ]
+    )
+)
+```
+
+## Best Practices
+
+<Steps>
+<Step>
+### Use appropriate backends
+Polars is faster for large datasets, Pandas for compatibility.
+</Step>
+<Step>
+### Batch processing
+DataFrames are automatically batched for efficient inference.
+</Step>
+<Step>
+### Custom instructions
+Provide clear instructions for better extraction/cleaning results.
+</Step>
+<Step>
+### Schema design
+Use Pydantic models with appropriate types for structured extraction.
+</Step>
+<Step>
+### Privacy first
+Always scrub PII before sharing or storing data.
+</Step>
+</Steps>
