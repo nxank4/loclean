@@ -13,7 +13,7 @@ import { useState } from 'react';
 interface CopyPageProps {
   title: string;
   description?: string;
-  content: string; // The raw MDX content
+  content: string;
 }
 
 export function CopyPage({ title, description, content }: CopyPageProps) {
@@ -32,7 +32,6 @@ export function CopyPage({ title, description, content }: CopyPageProps) {
       case 'markdown':
         return `${header}${content}`;
       case 'plaintext':
-        // Simple regex to strip some markdown syntax for plaintext
         return `${header}${content}`.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[*#`]/g, '');
       case 'claude':
         return `Here is the documentation for ${title}:\n\n${header}${content}\n\nPlease explain this section and provide examples.`;
@@ -50,7 +49,11 @@ export function CopyPage({ title, description, content }: CopyPageProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-full bg-background/80 shadow-sm border-border/70 text-muted-foreground hover:text-foreground hover:bg-accent/80 hover:shadow-md transition-transform duration-150 ease-out hover:scale-105 active:scale-95"
+        >
           {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           <span className="sr-only">Copy Page</span>
         </Button>

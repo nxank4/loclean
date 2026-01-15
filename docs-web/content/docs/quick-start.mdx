@@ -1,0 +1,45 @@
+---
+title: Quick Start
+description: Install Loclean and run your first extraction and cleaning example in minutes.
+---
+
+## 1. Install
+
+```bash title="terminal"
+pip install loclean
+```
+
+## 2. First Extraction (Text → Pydantic)
+
+```python title="extraction.py"
+import loclean
+from pydantic import BaseModel
+
+
+class Product(BaseModel):
+    name: str
+    price: int
+    color: str
+
+
+item = loclean.extract("Selling red t-shirt for 50k", schema=Product)
+print(item)
+```
+
+## 3. First Cleaning (DataFrame)
+
+```python title="cleaning.py"
+import polars as pl
+import loclean
+
+df = pl.DataFrame({"weight": ["5kg", "3.5 kg", "5000g", "2.2kg"]})
+
+result = loclean.clean(
+    df, target_col="weight", instruction="Convert all weights to kg"
+)
+
+print(result.select(["weight", "clean_value", "clean_unit"]))
+```
+
+For more detailed explanations and examples, read the **Getting Started** and **Guides** sections.
+
