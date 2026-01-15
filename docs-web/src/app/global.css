@@ -12,3 +12,6 @@
 :is(.dark .logo-light) { display: none !important; }
 :is(.dark .logo-dark) { display: block !important; }
 
+button[data-theme-toggle] {
+  display: none !important;
+}
