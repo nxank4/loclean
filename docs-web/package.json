@@ -45,6 +45,7 @@
   "overrides": {
     "@emoji-mart/react": {
       "react": "$react"
-    }
+    },
+    "diff": ">=8.0.3"
   }
 }
