@@ -6,7 +6,10 @@ const withMDX = createMDX();
 const config = {
   output: 'export',
   reactStrictMode: true,
-
+  basePath: process.env.BASE_PATH || '',
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default withMDX(config);

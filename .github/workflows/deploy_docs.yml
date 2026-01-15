@@ -39,6 +39,8 @@ jobs:
 
       - name: Build
         working-directory: docs-web
+        env:
+          BASE_PATH: '/loclean'
         run: npm run build
 
       - name: Upload artifact
