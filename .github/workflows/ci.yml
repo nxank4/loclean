@@ -110,7 +110,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # Check if website files changed in PR
-            if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "^website/"; then
+            if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "^docs-web/"; then
               echo "has_changes=true" >> $GITHUB_OUTPUT
             else
               echo "has_changes=false" >> $GITHUB_OUTPUT
@@ -125,14 +125,14 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: website/package-lock.json
+          cache-dependency-path: docs-web/package-lock.json
 
       - name: Install dependencies
         if: steps.check_changes.outputs.has_changes == 'true'
-        working-directory: website
+        working-directory: docs-web
         run: npm ci
 
       - name: Build documentation
         if: steps.check_changes.outputs.has_changes == 'true'
-        working-directory: website
+        working-directory: docs-web
         run: npm run build
