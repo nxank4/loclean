@@ -68,7 +68,6 @@ export function PageActions({ markdownUrl, githubUrl, title }: PageActionsProps)
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // clipboard/network failures should not break the page
     }
   };
 
@@ -81,7 +80,6 @@ export function PageActions({ markdownUrl, githubUrl, title }: PageActionsProps)
 
   return (
     <div className="flex items-center">
-      {/* Primary copy button */}
       <button
         onClick={() => handleCopy()}
         className="inline-flex h-8 items-center gap-1.5 rounded-l-md border border-r-0 border-fd-border bg-fd-background px-3 text-xs font-medium text-fd-foreground shadow-sm transition-all duration-150 ease-out hover:bg-fd-accent hover:text-fd-accent-foreground active:scale-[0.98]"
@@ -100,7 +98,6 @@ export function PageActions({ markdownUrl, githubUrl, title }: PageActionsProps)
         )}
       </button>
 
-      {/* Dropdown for format selection */}
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
           <button

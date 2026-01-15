@@ -19,7 +19,6 @@ export function LLMPageActions({ markdownUrl }: LLMPageActionsProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // swallow errors; clipboard failures should not crash the docs page
     }
   };
 

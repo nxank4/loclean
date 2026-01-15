@@ -13,7 +13,7 @@ import { useState } from 'react';
 interface CopyPageProps {
   title: string;
   description?: string;
-  content: string; // The raw MDX content
+  content: string;
 }
 
 export function CopyPage({ title, description, content }: CopyPageProps) {
@@ -32,7 +32,6 @@ export function CopyPage({ title, description, content }: CopyPageProps) {
       case 'markdown':
         return `${header}${content}`;
       case 'plaintext':
-        // Simple regex to strip some markdown syntax for plaintext
         return `${header}${content}`.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[*#`]/g, '');
       case 'claude':
         return `Here is the documentation for ${title}:\n\n${header}${content}\n\nPlease explain this section and provide examples.`;

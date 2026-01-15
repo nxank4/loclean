@@ -22,10 +22,8 @@ export async function GET(
 export function generateStaticParams() {
   const params = source.generateParams();
   return params.filter((param) => {
-    // Filter out root
     if (param.slug.length === 0) return false;
     
-    // Filter out if it is a parent of another page (file vs directory conflict)
     const currentPath = param.slug.join('/');
     return !params.some((p) => {
       const otherPath = p.slug.join('/');
