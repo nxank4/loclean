@@ -132,6 +132,11 @@ jobs:
         working-directory: docs-web
         run: npm ci
 
+      - name: Lint documentation code
+        if: steps.check_changes.outputs.has_changes == 'true'
+        working-directory: docs-web
+        run: npm run lint
+
       - name: Build documentation
         if: steps.check_changes.outputs.has_changes == 'true'
         working-directory: docs-web
