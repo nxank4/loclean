@@ -1,4 +1,4 @@
-import { CopyPage } from '@/components/copy-page';
+import { PageActions } from '@/components/ai-page-actions';
 import { getPageImage, source } from '@/lib/source';
 import { getMDXComponents } from '@/mdx-components';
 import { DocsBody, DocsDescription, DocsPage, DocsTitle } from 'fumadocs-ui/layouts/docs/page';
@@ -12,44 +12,26 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   if (!page) notFound();
 
   const MDX = page.data.body;
-  
-  // Read raw content for CopyPage
-  const fs = await import('fs');
-  const path = await import('path');
-  
-  let filePath = (page as any).file?.path;
-  if (!filePath && (page as any).info?.path) {
-    filePath = (page as any).info.path;
-  }
-  
-  let rawContent = '';
-  if (filePath) {
-    try {
-      const fullPath = path.join(process.cwd(), 'content/docs', filePath);
-      rawContent = fs.readFileSync(fullPath, 'utf-8');
-    } catch (e) {
-      console.error(`Failed to read file at ${filePath}`, e);
-    }
-  }
 
   return (
     <DocsPage toc={page.data.toc} full={page.data.full}>
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4 border-b pt-2 pb-6">
         <DocsTitle>{page.data.title}</DocsTitle>
-        <CopyPage 
-          title={page.data.title} 
-          description={page.data.description} 
-          content={rawContent} 
+        <PageActions
+          markdownUrl={`${page.url}.mdx`}
+          githubUrl={`https://github.com/nxank4/loclean/blob/main/docs-web/content/docs/${page.path}`}
+          title={page.data.title}
         />
       </div>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
-        <MDX
-          components={getMDXComponents({
-            // this allows you to link to other pages with relative file paths
-            a: createRelativeLink(source, page),
-          })}
-        />
+        <div className="fd-fade-in-up">
+          <MDX
+            components={getMDXComponents({
+              a: createRelativeLink(source, page),
+            })}
+          />
+        </div>
       </DocsBody>
     </DocsPage>
   );

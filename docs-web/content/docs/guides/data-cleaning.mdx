@@ -11,7 +11,7 @@ This guide demonstrates how to clean and normalize messy data using `loclean.cle
 
 Clean messy data in DataFrame columns.
 
-```python title="basic_cleaning.py"
+```python title="python"
 import polars as pl
 import loclean
 
@@ -52,7 +52,7 @@ Provide custom instructions to guide the extraction. Different instructions prod
 
 ### Example 1: Unit Conversion
 
-```python
+```python title="unit_conversion.py"
 # Convert all weights to the same unit (kg)
 df_weight = pl.DataFrame({"weight": ["5kg", "3.5 kg", "5000g", "2.2kg"]})
 
@@ -82,7 +82,7 @@ shape: (4, 3)
 
 ### Example 2: Extract Price with Currency
 
-```python
+```python title="price_extraction.py"
 df_price = pl.DataFrame({"price": ["$50", "50 USD", "€45", "100 dollars"]})
 
 result = loclean.clean(

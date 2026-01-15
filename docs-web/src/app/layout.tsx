@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Provider } from '@/components/provider';
 import { Inter } from 'next/font/google';
 import './global.css';
@@ -6,9 +7,13 @@ const inter = Inter({
   subsets: ['latin'],
 });
 
-export const metadata = {
+const appUrl =
+  process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+
+export const metadata: Metadata = {
   title: 'Loclean Documentation',
   description: 'Local-first Data Cleaning & Extraction using LLMs',
+  metadataBase: new URL(appUrl),
   icons: {
     icon: [
       {
