@@ -35,7 +35,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: docs-web
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Build
         working-directory: docs-web
