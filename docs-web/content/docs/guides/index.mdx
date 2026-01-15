@@ -1,0 +1,31 @@
+---
+title: Guides Overview
+description: Practical guides for using Loclean for extraction, cleaning, and privacy scrubbing.
+---
+
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Calculator, ShieldCheck, Code } from 'lucide-react';
+
+Loclean guides show how to apply the core APIs to real workflows:
+
+<Cards>
+  <Card
+    icon={<Calculator />}
+    href="/docs/guides/data-cleaning"
+    title="Data Cleaning"
+    description="Clean and normalize messy data using Pandas or Polars."
+  />
+  <Card
+    icon={<ShieldCheck />}
+    href="/docs/guides/privacy-scrubbing"
+    title="Privacy Scrubbing"
+    description="Detect and redact PII locally with high accuracy."
+  />
+  <Card
+    icon={<Code />}
+    href="/docs/guides/structured-extraction"
+    title="Structured Extraction"
+    description="Turn unstructured text into strictly typed JSON with Pydantic."
+  />
+</Cards>
+
