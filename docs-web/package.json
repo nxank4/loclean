@@ -8,9 +8,12 @@
     "start": "serve out",
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
     "postinstall": "fumadocs-mdx",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:links": "tsx scripts/lint.ts"
   },
   "dependencies": {
+    "@lobehub/icons": "^4.0.3",
+    "@lobehub/ui": "^4.20.0",
     "@orama/orama": "^3.1.18",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-slot": "^1.2.4",
@@ -32,9 +35,11 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.1.1",
+    "next-validate-link": "^1.6.4",
     "postcss": "^8.5.6",
     "serve": "^14.2.5",
     "tailwindcss": "^4.1.18",
+    "tsx": "^4.19.2",
     "typescript": "^5.9.3"
   }
 }

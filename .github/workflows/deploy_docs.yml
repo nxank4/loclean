@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'website/**'
+      - 'docs-web/**'
       - '.github/workflows/deploy_docs.yml'
   workflow_dispatch:
 
@@ -30,19 +30,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: docs-web/package-lock.json
 
       - name: Install dependencies
-        working-directory: website
+        working-directory: docs-web
         run: npm ci
 
       - name: Build
-        working-directory: website
+        working-directory: docs-web
         run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: website/dist
+          path: docs-web/out
 
   deploy:
     name: Deploy to GitHub Pages
