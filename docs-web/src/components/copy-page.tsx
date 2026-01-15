@@ -50,7 +50,11 @@ export function CopyPage({ title, description, content }: CopyPageProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-full bg-background/80 shadow-sm border-border/70 text-muted-foreground hover:text-foreground hover:bg-accent/80 hover:shadow-md transition-transform duration-150 ease-out hover:scale-105 active:scale-95"
+        >
           {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           <span className="sr-only">Copy Page</span>
         </Button>
