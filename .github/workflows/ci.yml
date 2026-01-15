@@ -130,7 +130,7 @@ jobs:
       - name: Install dependencies
         if: steps.check_changes.outputs.has_changes == 'true'
         working-directory: docs-web
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Lint documentation code
         if: steps.check_changes.outputs.has_changes == 'true'
