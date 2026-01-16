@@ -27,9 +27,9 @@ def test_set_and_get_batch(temp_cache_db: Any) -> None:
         instruction = "Extract weight"
 
         results = {
-        "10kg": {"value": 10, "unit": "kg"},
-        "500g": {"value": 500, "unit": "g"},
-    }
+            "10kg": {"value": 10, "unit": "kg"},
+            "500g": {"value": 500, "unit": "g"},
+        }
 
         # Set
         cache.set_batch(items, instruction, results)

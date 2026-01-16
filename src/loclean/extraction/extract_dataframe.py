@@ -110,10 +110,7 @@ def extract_dataframe(
         )
     else:  # output_type == "pydantic"
         # For pydantic output, keep as Pydantic model for DataFrame storage
-        output_map = {
-            k: v
-            for k, v in extracted_map.items()
-        }
+        output_map = {k: v for k, v in extracted_map.items()}
 
     # Create mapping DataFrame and join
     mapping_keys = list(output_map.keys())
