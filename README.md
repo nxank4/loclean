@@ -176,11 +176,13 @@ Models are cached in `~/.cache/loclean` by default. You can specify a custom cac
 
 # Quick Start
 
-_in progress..._
+Loclean is best learned by example. We provide a set of Jupyter notebooks to help you get started:
 
-# How It Works
+- **[01-quick-start.ipynb](examples/01-quick-start.ipynb)**: Core features, structured extraction, and Privacy Scrubbing.
+- **[02-data-cleaning.ipynb](examples/02-data-cleaning.ipynb)**: Comprehensive data cleaning strategies.
+- **[03-privacy-scrubbing.ipynb](examples/03-privacy-scrubbing.ipynb)**: Deep dive into PII redaction.
 
-_in progress..._
+Check out the **[examples/](examples/)** directory for more details.
 
 # Roadmap
 
@@ -214,11 +216,7 @@ The development of Loclean is organized into three phases, prioritizing MVP deli
 
 We love contributions! Loclean is strictly open-source under the **Apache 2.0 License**.
 
-1. **Fork** the repo on GitHub.
-2. **Clone** your fork locally.
-3. **Create** a new branch (`git checkout -b feature/amazing-feature`).
-4. **Commit** your changes.
-5. **Push** to your fork and submit a **Pull Request**.
+Please read our **[Contributing Guide](CONTRIBUTION.md)** for details on how to set up your development environment, run tests, and submit Pull Requests.
 
 _Built for the Data Community._
 
