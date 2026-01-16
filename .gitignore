@@ -143,7 +143,7 @@ dmypy.json
 cython_debug/
 
 # uv
-uv.lock
+# uv.lock
 
 # Ignore Cursor files
 .cursor/
