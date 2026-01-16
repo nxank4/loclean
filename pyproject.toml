@@ -118,9 +118,30 @@ show_error_codes = true
 warn_unused_ignores = false
 
 [tool.pytest.ini_options]
-addopts = "-ra -q --strict-markers --cov=src/loclean --cov-report=term-missing"
+addopts = "-ra -q --strict-markers --cov=src/loclean --cov-report=term-missing --cov-report=xml"
+
 testpaths = ["tests"]
 markers = [
     "slow: marks tests as slow",
     "cloud: marks tests that require cloud API access",
 ]
+
+[tool.coverage.run]
+branch = true
+concurrency = ["multiprocessing", "thread"]
+parallel = true
+sigterm = true
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+fail_under = 50
