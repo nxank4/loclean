@@ -184,34 +184,6 @@ Loclean is best learned by example. We provide a set of Jupyter notebooks to hel
 
 Check out the **[examples/](examples/)** directory for more details.
 
-# Roadmap
-
-The development of Loclean is organized into three phases, prioritizing MVP delivery while maintaining a long-term vision.
-
-## Phase 1: The "Smart" Engine (Hybrid Core)
-
-**Goal: Get `loclean.clean()` running fast and accurately.**
-
-* [ ] **Hybrid Router Architecture**: Build `clean(strategy='auto')` function. Automatically run Regex first, LLM second.
-* [ ] **Strict Output (Pydantic + GBNF)**: Ensure 100% LLM outputs valid JSON Schema. (Using llama-cpp-python grammar).
-* [ ] **Simple Extraction**: Extract basic information from raw text (Unstructured to Structured).
-
-## Phase 2: The "Safe" Layer (Security & Optimization)
-
-**Goal: Convince enterprises to trust and adopt the library.**
-
-* [ ] **Semantic PII Redaction**: Masking sensitive names, phone numbers, emails, and addresses.
-* [ ] **SQLite Caching System**: Cache LLM results to avoid redundant costs/time. (As discussed above).
-* [ ] **Batch Processing**: Parallel processing (Parallelism) to handle millions of rows without freezing.
-
-## Phase 3: The "Magic" (Advanced Features)
-
-**Goal: Do things that Regex can never do.**
-
-* [ ] **Contextual Imputation**: Fill missing values based on context (e.g., seeing Zipcode 10001 -> Auto-fill City: New York).
-* [ ] **Entity Canonicalization**: Group entities (Fuzzy matching + Semantic matching).
-* [ ] **Interactive CLI**: Terminal interface to review AI changes with low confidence.
-
 # Contributing
 
 We love contributions! Loclean is strictly open-source under the **Apache 2.0 License**.
