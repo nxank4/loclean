@@ -70,6 +70,7 @@ all = [
 dev = [
     "pytest>=9.0.2",
     "pytest-mock>=3.10.0",
+    "pytest-cov>=4.1.0",
     "ruff>=0.14.10",
     "mypy>=1.9.0",
     "pandas>=2.3.3",
@@ -117,7 +118,7 @@ show_error_codes = true
 warn_unused_ignores = false
 
 [tool.pytest.ini_options]
-addopts = "-ra -q --strict-markers"
+addopts = "-ra -q --strict-markers --cov=src/loclean --cov-report=term-missing"
 testpaths = ["tests"]
 markers = [
     "slow: marks tests as slow",
