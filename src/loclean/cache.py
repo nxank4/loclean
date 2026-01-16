@@ -150,3 +150,14 @@ class LocleanCache:
     def close(self) -> None:
         """Close the database connection."""
         self.conn.close()
+
+    def __enter__(self) -> "LocleanCache":
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any | None,
+    ) -> None:
+        self.close()

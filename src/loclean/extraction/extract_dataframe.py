@@ -104,16 +104,12 @@ def extract_dataframe(
     )
 
     # Convert to output format
+    output_map: dict[str, Any]
     if output_type == "dict":
-        output_map: dict[str, dict[str, Any] | None] = _convert_to_dict_format(
-            extracted_map, schema
-        )
+        output_map = _convert_to_dict_format(extracted_map, schema)
     else:  # output_type == "pydantic"
-        # For pydantic output, convert BaseModel to dict for DataFrame storage
-        output_map = {
-            k: (v.model_dump() if v is not None else None)
-            for k, v in extracted_map.items()
-        }
+        # For pydantic output, keep as Pydantic model for DataFrame storage
+        output_map = {k: v for k, v in extracted_map.items()}
 
     # Create mapping DataFrame and join
     mapping_keys = list(output_map.keys())
@@ -216,7 +212,30 @@ def _create_polars_mapping_df(
             from typing import get_origin
 
             origin = get_origin(field_type)
-            if field_type is str or (
+            # Check for List types first to avoid 'list[str]' matching the
+            # generic 'str' check below
+            if (
+                origin is list
+                or field_type is list
+                or (origin is not None and list in getattr(field_type, "__args__", []))
+                or "List" in str(field_type)
+                or "list" in str(field_type)
+            ):
+                from typing import get_args
+
+                args = get_args(field_type)
+                inner_type = args[0] if args else str
+                inner_pl: Any
+                if inner_type is int:
+                    inner_pl = pl.Int64
+                elif inner_type is float:
+                    inner_pl = pl.Float64
+                elif inner_type is bool:
+                    inner_pl = pl.Boolean
+                else:
+                    inner_pl = pl.Utf8
+                struct_fields[field_name] = pl.List(inner_pl)
+            elif field_type is str or (
                 origin is not None and str in getattr(field_type, "__args__", [])
             ):
                 struct_fields[field_name] = pl.Utf8
@@ -233,8 +252,8 @@ def _create_polars_mapping_df(
             ):
                 struct_fields[field_name] = pl.Boolean
             else:
-                # Fallback to Utf8 for complex types
-                struct_fields[field_name] = pl.Utf8
+                # Fallback to Object for complex types (nested models, etc.)
+                struct_fields[field_name] = pl.Object
 
         # Create Struct column
         # Pass dict values directly - Polars will convert to Struct based on dtype
@@ -254,7 +273,8 @@ def _create_polars_mapping_df(
             {
                 target_col: mapping_keys,
                 f"{target_col}_extracted": mapping_values,
-            }
+            },
+            schema_overrides={f"{target_col}_extracted": pl.Object},
         )
 
 
