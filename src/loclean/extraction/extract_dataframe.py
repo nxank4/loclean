@@ -104,10 +104,9 @@ def extract_dataframe(
     )
 
     # Convert to output format
+    output_map: dict[str, Any]
     if output_type == "dict":
-        output_map: dict[str, dict[str, Any] | None] = _convert_to_dict_format(
-            extracted_map, schema
-        )
+        output_map = _convert_to_dict_format(extracted_map, schema)
     else:  # output_type == "pydantic"
         # For pydantic output, keep as Pydantic model for DataFrame storage
         output_map = {k: v for k, v in extracted_map.items()}
@@ -226,6 +225,7 @@ def _create_polars_mapping_df(
 
                 args = get_args(field_type)
                 inner_type = args[0] if args else str
+                inner_pl: Any
                 if inner_type is int:
                     inner_pl = pl.Int64
                 elif inner_type is float:

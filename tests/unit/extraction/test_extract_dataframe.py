@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock, patch
+from typing import Any
 
 import pandas as pd
 import polars as pl
@@ -21,7 +22,7 @@ class ComplexSchema(BaseModel):
 
 
 @pytest.fixture
-def mock_extractor():
+def mock_extractor() -> Any:
     extractor = MagicMock(spec=Extractor)
     # Default behavior: return a dict mapping input string to a Product model
     extractor.extract_batch.side_effect = lambda values, schema, instruction: {
@@ -30,7 +31,7 @@ def mock_extractor():
     return extractor
 
 
-def test_polars_output_dict(mock_extractor):
+def test_polars_output_dict(mock_extractor: Any) -> None:
     df = pl.DataFrame({"raw": ["item1", "item2"]})
 
     result = extract_dataframe(
@@ -50,7 +51,7 @@ def test_polars_output_dict(mock_extractor):
     assert first_row["raw_extracted"]["price"] == 100
 
 
-def test_polars_output_pydantic(mock_extractor):
+def test_polars_output_pydantic(mock_extractor: Any) -> None:
     df = pl.DataFrame({"raw": ["item1"]})
 
     result = extract_dataframe(
@@ -72,7 +73,7 @@ def test_polars_output_pydantic(mock_extractor):
     assert val.name == "Clean item1"
 
 
-def test_pandas_output_dict(mock_extractor):
+def test_pandas_output_dict(mock_extractor: Any) -> None:
     df = pd.DataFrame({"raw": ["item1"]})
 
     result = extract_dataframe(
@@ -90,7 +91,7 @@ def test_pandas_output_dict(mock_extractor):
     assert val["name"] == "Clean item1"
 
 
-def test_pandas_output_pydantic(mock_extractor):
+def test_pandas_output_pydantic(mock_extractor: Any) -> None:
     df = pd.DataFrame({"raw": ["item1"]})
 
     result = extract_dataframe(
@@ -108,13 +109,13 @@ def test_pandas_output_pydantic(mock_extractor):
     assert val.name == "Clean item1"
 
 
-def test_missing_column(mock_extractor):
+def test_missing_column(mock_extractor: Any) -> None:
     df = pl.DataFrame({"a": [1]})
     with pytest.raises(ValueError, match="Column 'b' not found"):
         extract_dataframe(df, "b", Product, extractor=mock_extractor)
 
 
-def test_empty_dataframe(mock_extractor):
+def test_empty_dataframe(mock_extractor: Any) -> None:
     df = pl.DataFrame({"raw": []}, schema={"raw": pl.Utf8})
     result = extract_dataframe(df, "raw", Product, extractor=mock_extractor)
 
@@ -123,7 +124,7 @@ def test_empty_dataframe(mock_extractor):
     assert "raw_extracted" not in result.columns
 
 
-def test_no_valid_values(mock_extractor):
+def test_no_valid_values(mock_extractor: Any) -> None:
     # Dataframe with None and empty strings
     df = pl.DataFrame({"raw": [None, "", "   "]})
     result = extract_dataframe(df, "raw", Product, extractor=mock_extractor)
@@ -132,7 +133,7 @@ def test_no_valid_values(mock_extractor):
     assert "raw_extracted" not in result.columns
 
 
-def test_extractor_auto_creation():
+def test_extractor_auto_creation() -> None:
     mock_engine = MagicMock()
     df = pl.DataFrame({"raw": ["val"]})
 
@@ -151,7 +152,7 @@ def test_extractor_auto_creation():
         mock_instance.extract_batch.assert_called()
 
 
-def test_extraction_none_value(mock_extractor):
+def test_extraction_none_value(mock_extractor: Any) -> None:
     # Verify handling of None results from extractor
     df = pl.DataFrame({"raw": ["valid", "invalid"]})
 
@@ -171,7 +172,7 @@ def test_extraction_none_value(mock_extractor):
     assert invalid_row["raw_extracted"] is None
 
 
-def test_schema_types(mock_extractor):
+def test_schema_types(mock_extractor: Any) -> None:
     # Verify Polars type mapping for various fields
     df = pl.DataFrame({"raw": ["test"]})
 
