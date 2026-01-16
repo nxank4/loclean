@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-import narwhals as nw
 import pandas as pd
 import polars as pl
 import pytest
@@ -64,7 +63,8 @@ def test_polars_output_pydantic(mock_extractor):
     )
 
     assert "raw_extracted" in result.columns
-    # When using pydantic output type with Polars, it stores as Object because values are Python objects
+    # When using pydantic output type with Polars, it stores as Object because
+    # values are Python objects
     assert result["raw_extracted"].dtype == pl.Object
     
     val = result["raw_extracted"][0]
@@ -140,9 +140,13 @@ def test_extractor_auto_creation():
     # Mock Extractor class to verify it is initialized
     with patch("loclean.extraction.extract_dataframe.Extractor") as MockExtractorCls:
         mock_instance = MockExtractorCls.return_value
-        mock_instance.extract_batch.return_value = {"val": Product(name="Clean val", price=100)}
+        mock_instance.extract_batch.return_value = {
+            "val": Product(name="Clean val", price=100)
+        }
         
-        extract_dataframe(df, "raw", Product, extractor=None, inference_engine=mock_engine)
+        extract_dataframe(
+            df, "raw", Product, extractor=None, inference_engine=mock_engine
+        )
         
         MockExtractorCls.assert_called_once()
         mock_instance.extract_batch.assert_called()
@@ -157,7 +161,9 @@ def test_extraction_none_value(mock_extractor):
         "invalid": None
     }
     
-    result = extract_dataframe(df, "raw", Product, extractor=mock_extractor, output_type="dict")
+    result = extract_dataframe(
+        df, "raw", Product, extractor=mock_extractor, output_type="dict"
+    )
     
     valid_row = result.filter(pl.col("raw") == "valid").row(0, named=True)
     invalid_row = result.filter(pl.col("raw") == "invalid").row(0, named=True)
@@ -181,10 +187,14 @@ def test_schema_types(mock_extractor):
     val = result["raw_extracted"][0]
     assert val["is_valid"] is True
     assert val["score"] == 9.5
-    assert val["tags"] == ["a", "b"] # Polars usually handles lists differently, let's see. 
-    # Current implementation falls back to Utf8 for complex types (list), so it might be str representation.
+    assert val["tags"] == ["a", "b"]
+    # Polars usually handles lists differently, let's see.
+    # Current implementation falls back to Utf8 for complex types (list),
+    # so it might be str representation.
     # Looking at code: struct_fields[field_name] = pl.Utf8 for fallback.
-    # So yes, it will likely be coerced to string or fail if polars can't auto-cast list to utf8 struct field?
-    # Actually, if we pass a dict value (list) to a pl.Utf8 field, Polars might error or cast.
+    # So yes, it will likely be coerced to string or fail if polars can't auto-cast
+    # list to utf8 struct field?
+    # Actually, if we pass a dict value (list) to a pl.Utf8 field, Polars might
+    # error or cast.
     # Let's verify what happens.
     # If it fails, we know we hit the fallback line.

@@ -7,7 +7,6 @@ and Pydantic model instances for advanced use cases.
 
 import logging
 from typing import TYPE_CHECKING, Any, Literal
-import typing
 
 import narwhals as nw
 from narwhals.typing import IntoFrameT
@@ -217,7 +216,8 @@ def _create_polars_mapping_df(
             from typing import get_origin
 
             origin = get_origin(field_type)
-            # Check for List types first to avoid 'list[str]' matching the generic 'str' check below
+            # Check for List types first to avoid 'list[str]' matching the
+            # generic 'str' check below
             if (
                 origin is list
                 or field_type is list
