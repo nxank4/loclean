@@ -1,5 +1,5 @@
-from unittest.mock import MagicMock, patch
 from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import polars as pl
