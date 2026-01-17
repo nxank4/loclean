@@ -131,7 +131,8 @@ def extract_dataframe(
     else:
         raise ValueError(
             f"Unsupported dataframe backend: {module_name}. "
-            "Loclean currently explicitly supports 'pandas' and 'polars' for this operation."
+            "Loclean currently explicitly supports 'pandas' and 'polars' "
+            "for this operation."
         )
 
     map_df = nw.from_native(map_df_native)

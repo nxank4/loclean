@@ -1,5 +1,6 @@
 import loclean
 
+
 def main() -> None:
     print(f"Loclean version: {loclean.__version__}")
     
