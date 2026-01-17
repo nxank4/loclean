@@ -243,32 +243,10 @@ class NarwhalsEngine:
                 }
             )
         else:
-            # Fallback: try native constructor first
-            try:
-                map_df_native = native_df_cls(  # type: ignore[call-arg,assignment]
-                    {
-                        col_name: keys,
-                        "clean_value": clean_values,
-                        "clean_unit": clean_units,
-                        "clean_reasoning": clean_reasonings,
-                    }
-                )
-            except (TypeError, ValueError):
-                # Last resort: use pandas and let Narwhals handle conversion
-                import pandas as pd
-
-                logger.warning(
-                    f"Could not create {native_df_cls.__name__} DataFrame, "
-                    "falling back to pandas. Narwhals will handle conversion."
-                )
-                map_df_native = pd.DataFrame(  # type: ignore[assignment]
-                    {
-                        col_name: keys,
-                        "clean_value": clean_values,
-                        "clean_unit": clean_units,
-                        "clean_reasoning": clean_reasonings,
-                    }
-                )
+            raise ValueError(
+                f"Unsupported dataframe backend: {native_df_cls.__name__}. "
+                "Loclean expects a Polars or Pandas DataFrame."
+            )
 
         map_df = nw.from_native(map_df_native)
 

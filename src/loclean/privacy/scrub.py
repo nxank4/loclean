@@ -48,7 +48,7 @@ def replace_entities(
     for entity in sorted_entities:
         if mode == "mask":
             replacement = f"[{entity.type.upper()}]"
-        else:  # mode == "fake"
+        else:
             assert generator is not None  # Should not happen if mode is validated
             replacement = generator.generate_fake(entity)
 
@@ -182,14 +182,9 @@ def scrub_dataframe(
             }
         )
     else:
-        # Fallback: use pandas
-        import pandas as pd
-
-        map_df_native = pd.DataFrame(
-            {
-                target_col: mapping_keys,
-                f"{target_col}_scrubbed": mapping_values,
-            }
+        raise ValueError(
+            f"Unsupported dataframe type: {module_name}. "
+            "Loclean currently explicitly supports 'pandas' and 'polars' for this operation."
         )
 
     map_df = nw.from_native(map_df_native)

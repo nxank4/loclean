@@ -107,7 +107,7 @@ def extract_dataframe(
     output_map: dict[str, Any]
     if output_type == "dict":
         output_map = _convert_to_dict_format(extracted_map, schema)
-    else:  # output_type == "pydantic"
+    else:
         # For pydantic output, keep as Pydantic model for DataFrame storage
         output_map = {k: v for k, v in extracted_map.items()}
 
@@ -129,10 +129,9 @@ def extract_dataframe(
             target_col, mapping_keys, mapping_values, output_type
         )
     else:
-        # Fallback: use pandas
-
-        map_df_native = _create_pandas_mapping_df(
-            target_col, mapping_keys, mapping_values, output_type
+        raise ValueError(
+            f"Unsupported dataframe backend: {module_name}. "
+            "Loclean currently explicitly supports 'pandas' and 'polars' for this operation."
         )
 
     map_df = nw.from_native(map_df_native)
