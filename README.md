@@ -1,9 +1,9 @@
 <p align="center">
   <a href="https://github.com/nxank4/loclean">
     <picture>
-      <source srcset="src/assets/dark-loclean.svg" media="(prefers-color-scheme: dark)">
-      <source srcset="src/assets/light-loclean.svg" media="(prefers-color-scheme: light)">
-      <img src="src/assets/light-loclean.svg" alt="Loclean logo" width="200" height="200">
+      <source srcset="assets/dark-loclean.svg" media="(prefers-color-scheme: dark)">
+      <source srcset="assets/light-loclean.svg" media="(prefers-color-scheme: light)">
+      <img src="assets/light-loclean.svg" alt="Loclean logo" width="200" height="200">
     </picture>
   </a>
 </p>

@@ -88,18 +88,7 @@ path = "src/loclean/_version.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/loclean"]
 
-[tool.hatch.build]
-include = [
-    "src/loclean/resources",
-    "LICENSE",
-]
-
 [tool.hatch.build.targets.sdist]
-include = [
-    "src/loclean/resources",
-    "tests",
-    "LICENSE",
-]
 
 [tool.ruff]
 line-length = 88
