@@ -6,7 +6,8 @@ JSON repair, Pydantic validation, and retry logic to ensure 100% schema complian
 
 import json
 import logging
-from typing import TYPE_CHECKING
+import time
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ValidationError
 
@@ -17,7 +18,9 @@ if TYPE_CHECKING:
     from loclean.cache import LocleanCache
     from loclean.inference.base import InferenceEngine
 
-logger = logging.getLogger(__name__)
+from loclean.utils.logging import configure_module_logger
+
+logger = configure_module_logger(__name__, level=logging.INFO)
 
 
 class Extractor:
@@ -89,7 +92,9 @@ class Extractor:
                     return schema.model_validate(cached[text])
                 except ValidationError:
                     logger.warning(
-                        f"Cache entry for '{text}' failed validation, recomputing"
+                        f"[yellow]⚠[/yellow] Cache entry for "
+                        f"[dim]'{text[:50]}...'[/dim] failed validation, "
+                        f"[cyan]recomputing[/cyan]"
                     )
 
         # Extract with retry
@@ -133,6 +138,7 @@ class Extractor:
         if not items:
             return {}
 
+        start_time = time.time()
         final_instruction = self._build_instruction(schema, instruction)
 
         # Check cache
@@ -153,10 +159,21 @@ class Extractor:
                         misses.append(item)
                 else:
                     misses.append(item)
+
+            # Log cache statistics with Rich Table
+            from loclean.utils.rich_output import log_cache_stats
+
+            log_cache_stats(
+                total_items=len(items),
+                cache_hits=len(items) - len(misses),
+                cache_misses=len(misses),
+                context="Extraction",
+            )
         else:
             misses = items
 
         # Process misses
+        errors: list[dict[str, Any]] = []
         for item in misses:
             try:
                 result = self._extract_with_retry(
@@ -164,7 +181,34 @@ class Extractor:
                 )
                 results[item] = result
             except ValidationError as e:
-                logger.warning(f"Failed to extract from '{item}': {e}")
+                error_type = "ValidationError"
+                errors.append(
+                    {
+                        "type": error_type,
+                        "item": item,
+                    }
+                )
+                if len(errors) <= 3:
+                    logger.warning(
+                        f"[yellow]⚠[/yellow] Failed to extract from "
+                        f"[dim]'{item[:50]}...'[/dim]: "
+                        f"[red]{str(e)[:60]}{'...' if len(str(e)) > 60 else ''}[/red]"
+                    )
+                results[item] = None
+            except Exception as e:
+                error_type = type(e).__name__
+                errors.append(
+                    {
+                        "type": error_type,
+                        "item": item,
+                    }
+                )
+                if len(errors) <= 3:
+                    logger.warning(
+                        f"[yellow]⚠[/yellow] Failed to extract from "
+                        f"[dim]'{item[:50]}...'[/dim]: "
+                        f"[red]{str(e)[:60]}{'...' if len(str(e)) > 60 else ''}[/red]"
+                    )
                 results[item] = None
 
         # Cache successful results
@@ -179,6 +223,41 @@ class Extractor:
                 self.cache.set_batch(
                     list(valid_results.keys()), cache_key, valid_results
                 )
+
+        # Log processing summary with Rich Table
+        elapsed_time = time.time() - start_time
+        successful = sum(1 for r in results.values() if r is not None)
+        failed = len(results) - successful
+
+        from loclean.utils.rich_output import log_error_summary, log_processing_summary
+
+        log_processing_summary(
+            total_processed=len(items),
+            successful=successful,
+            failed=failed,
+            time_taken=elapsed_time,
+            context="Extraction",
+        )
+
+        # Log error summary if there are many errors
+        if len(errors) > 3:
+            from collections import Counter
+
+            error_counts = Counter(e["type"] for e in errors)
+            error_summary = []
+            for error_type, count in error_counts.items():
+                sample_items = [
+                    e["item"][:50] for e in errors if e["type"] == error_type
+                ][:3]
+                error_summary.append(
+                    {
+                        "type": error_type,
+                        "count": count,
+                        "sample_items": sample_items,
+                    }
+                )
+
+            log_error_summary(error_summary, max_display=5, context="Extraction")
 
         return results
 
@@ -203,7 +282,9 @@ class Extractor:
         """
         if retry_count >= self.max_retries:
             logger.error(
-                f"Max retries ({self.max_retries}) exceeded for text: '{text[:50]}...'"
+                f"[red]❌[/red] Max retries "
+                f"([yellow]{self.max_retries}[/yellow]) exceeded "
+                f"for text: [dim]'{text[:50]}...'[/dim]"
             )
             return None
 
@@ -244,7 +325,10 @@ class Extractor:
                                 text_output = str(choice_text).strip()
 
                 if text_output is None:
-                    logger.warning(f"No text extracted for '{text[:50]}...'")
+                    logger.warning(
+                        f"[yellow]⚠[/yellow] No text extracted for "
+                        f"[dim]'{text[:50]}...'[/dim]"
+                    )
                     return self._retry_extraction(
                         text, schema, instruction, retry_count
                     )
@@ -264,8 +348,8 @@ class Extractor:
                 # Fallback: use inference engine's clean_batch method
                 # This won't use custom grammar, but provides compatibility
                 logger.warning(
-                    "Inference engine does not support custom grammar. "
-                    "Using default extraction method."
+                    "[yellow]⚠[/yellow] Inference engine does not support "
+                    "custom grammar. [dim]Using default extraction method.[/dim]"
                 )
                 batch_results = self.inference_engine.clean_batch([text], instruction)
                 if text in batch_results and batch_results[text] is not None:
@@ -279,7 +363,11 @@ class Extractor:
                 return self._retry_extraction(text, schema, instruction, retry_count)
 
         except Exception as e:
-            logger.warning(f"Extraction attempt {retry_count + 1} failed: {e}")
+            logger.warning(
+                f"[yellow]⚠[/yellow] Extraction attempt "
+                f"[cyan]{retry_count + 1}[/cyan] failed: "
+                f"[red]{str(e)[:60]}{'...' if len(str(e)) > 60 else ''}[/red]"
+            )
             return self._retry_extraction(text, schema, instruction, retry_count)
 
     def _parse_and_validate(
@@ -329,8 +417,9 @@ class Extractor:
                         data = json.loads(repaired)
                     except (json.JSONDecodeError, TypeError) as parse_error:
                         logger.warning(
-                            f"JSON decode failed even after repair: {parse_error}. "
-                            f"Original error: {e}. Text: {str(text_output)[:100]}"
+                            f"[yellow]⚠[/yellow] JSON decode failed even after repair: "
+                            f"[red]{str(parse_error)[:60]}...[/red]. "
+                            f"Original: [dim]{str(e)[:40]}...[/dim]"
                         )
                         raise ValueError(
                             f"Invalid JSON: {str(text_output)[:100]}"
@@ -340,7 +429,10 @@ class Extractor:
         try:
             return schema.model_validate(data)
         except ValidationError as e:
-            logger.warning(f"Pydantic validation failed: {e}")
+            logger.warning(
+                f"[yellow]⚠[/yellow] Pydantic validation failed: "
+                f"[red]{str(e)[:80]}{'...' if len(str(e)) > 80 else ''}[/red]"
+            )
             raise
 
     def _retry_extraction(

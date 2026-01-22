@@ -12,7 +12,9 @@ from loclean.utils.resources import load_template
 if TYPE_CHECKING:
     from loclean.inference.base import InferenceEngine
 
-logger = logging.getLogger(__name__)
+from loclean.utils.logging import configure_module_logger
+
+logger = configure_module_logger(__name__, level=logging.INFO)
 
 
 class LLMDetector:
@@ -87,7 +89,15 @@ class LLMDetector:
 
         # Process misses using inference engine
         if misses:
-            logger.info(f"Cache miss for {len(misses)} items. Running LLM inference...")
+            # Log cache statistics with Rich Table
+            from loclean.utils.rich_output import log_cache_stats
+
+            log_cache_stats(
+                total_items=len(items),
+                cache_hits=len(items) - len(misses),
+                cache_misses=len(misses),
+                context="PII Detection",
+            )
 
             # Use the inference engine's clean_batch method
             # We'll adapt it for PII detection
