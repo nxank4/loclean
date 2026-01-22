@@ -538,7 +538,13 @@ class TestLlamaCppEngine:
         """Test that model registry contains all expected models."""
         from loclean.inference.local.llama_cpp import _MODEL_REGISTRY
 
-        expected_models = ["phi-3-mini", "qwen3-4b", "gemma-3-4b", "deepseek-r1"]
+        expected_models = [
+            "phi-3-mini",
+            "qwen3-4b",
+            "gemma-3-4b",
+            "deepseek-r1",
+            "lfm2.5",
+        ]
         for model_name in expected_models:
             assert model_name in _MODEL_REGISTRY
             assert "repo" in _MODEL_REGISTRY[model_name]
