@@ -13,7 +13,9 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     from llama_cpp import LlamaGrammar  # type: ignore[attr-defined]
 
-logger = logging.getLogger(__name__)
+from loclean.utils.logging import configure_module_logger
+
+logger = configure_module_logger(__name__, level=logging.INFO)
 
 
 @functools.lru_cache(maxsize=128)

@@ -11,7 +11,9 @@ if TYPE_CHECKING:
     from loclean.cache import LocleanCache
     from loclean.inference.base import InferenceEngine
 
-logger = logging.getLogger(__name__)
+from loclean.utils.logging import configure_module_logger
+
+logger = configure_module_logger(__name__, level=logging.INFO)
 
 # Strategies handled by regex (fast)
 REGEX_STRATEGIES = {"email", "phone", "credit_card", "ip_address"}

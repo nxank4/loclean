@@ -8,11 +8,12 @@ import logging
 from typing import TYPE_CHECKING
 
 from loclean.inference.config import EngineConfig
+from loclean.utils.logging import configure_module_logger
 
 if TYPE_CHECKING:
     from loclean.inference.base import InferenceEngine
 
-logger = logging.getLogger(__name__)
+logger = configure_module_logger(__name__, level=logging.INFO)
 
 
 def create_engine(config: EngineConfig) -> "InferenceEngine":

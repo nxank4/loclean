@@ -19,16 +19,9 @@ from loclean.inference.local.exceptions import (
     ModelNotFoundError,
     NetworkError,
 )
+from loclean.utils.logging import configure_module_logger
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+logger = configure_module_logger(__name__, level=logging.INFO)
 
 
 def download_model(
@@ -70,13 +63,19 @@ def download_model(
 
     local_path = cache_dir / filename
     if local_path.exists() and not force:
-        logger.info(f"Model found at {local_path}")
+        logger.info(f"[green]✓[/green] Model found at [dim]{local_path}[/dim]")
         return local_path
 
     if force and local_path.exists():
-        logger.info(f"Force flag set. Re-downloading {filename}...")
+        logger.info(
+            f"[yellow]⚠[/yellow] Force flag set. "
+            f"Re-downloading [cyan]{filename}[/cyan]..."
+        )
 
-    logger.info(f"Model not found locally. Downloading {filename} from {repo_id}...")
+    logger.info(
+        f"[cyan]📥[/cyan] Model not found locally. Downloading [bold]{filename}[/bold] "
+        f"from [dim]{repo_id}[/dim]..."
+    )
 
     # Check cache directory permissions before attempting download
     if cache_dir.exists():
@@ -94,8 +93,8 @@ def download_model(
             raise
         except Exception as e:
             logger.warning(
-                f"Could not verify cache directory permissions: {e}. "
-                "Proceeding with download..."
+                f"[yellow]⚠[/yellow] Could not verify cache directory permissions: "
+                f"[dim]{e}[/dim]. Proceeding with download..."
             )
 
     # Check available disk space (rough estimate - model files are typically 2-8GB)
@@ -113,7 +112,10 @@ def download_model(
     except InsufficientSpaceError:
         raise
     except Exception as e:
-        logger.warning(f"Could not check disk space: {e}. Proceeding with download...")
+        logger.warning(
+            f"[yellow]⚠[/yellow] Could not check disk space: [dim]{e}[/dim]. "
+            f"Proceeding with download..."
+        )
 
     # Attempt to download the model
     try:
@@ -122,7 +124,9 @@ def download_model(
             filename=filename,
             local_dir=cache_dir,
         )
-        logger.info(f"Successfully downloaded model to {path}")
+        logger.info(
+            f"[green]✓[/green] Successfully downloaded model to [dim]{path}[/dim]"
+        )
         return Path(path)
     except FileNotFoundError as e:
         raise ModelNotFoundError(
