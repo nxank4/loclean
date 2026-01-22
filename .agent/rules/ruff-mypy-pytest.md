@@ -7,6 +7,8 @@ trigger: glob
 
 ## 2. Quality Assurance & CI/CD
 - **Linting & Formatting**: Use **Ruff** for linting and formatting.
+  - **Always run**: `uv run ruff check .` to check for import sorting (I001) and other issues
+  - **Auto-fix**: Use `uv run ruff check --fix .` to automatically fix fixable issues
 - **Type Checking**: Use **Mypy** for static type checking.
 - **Conflict Resolution**: Be aware that Mypy changes can sometimes conflict with Ruff rules. **Always double-check Ruff after applying Mypy fixes** to ensure the code remains compliant and to prevent CI/CD failures.
 - **Testing**: Run **Pytest** to verify functionality.

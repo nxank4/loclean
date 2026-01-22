@@ -11,8 +11,11 @@ if TYPE_CHECKING:
     from loclean.inference.local.llama_cpp import LlamaCppEngine
 
 from loclean.utils.logging import configure_module_logger
-from loclean.utils.rich_output import (create_progress, log_batch_stats,
-                                       log_processing_summary)
+from loclean.utils.rich_output import (
+    create_progress,
+    log_batch_stats,
+    log_processing_summary,
+)
 
 logger = configure_module_logger(__name__, level=logging.INFO)
 
