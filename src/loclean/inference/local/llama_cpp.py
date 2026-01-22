@@ -14,16 +14,9 @@ from llama_cpp import Llama, LlamaGrammar  # type: ignore[attr-defined]
 from loclean.inference.adapters import PromptAdapter, get_adapter
 from loclean.inference.base import InferenceEngine
 from loclean.inference.local.downloader import download_model
+from loclean.utils.logging import configure_module_logger
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+logger = configure_module_logger(__name__, level=logging.INFO)
 
 
 def get_model_registry() -> Dict[str, Dict[str, Any]]:
@@ -121,7 +114,8 @@ class LlamaCppEngine(InferenceEngine):
 
         if model_name not in _MODEL_REGISTRY:
             logger.warning(
-                f"Model '{model_name}' not in registry. Falling back to 'phi-3-mini'."
+                f"[yellow]⚠[/yellow] Model [dim]'{model_name}'[/dim] not in registry. "
+                f"Falling back to [cyan]'phi-3-mini'[/cyan]."
             )
             model_name = "phi-3-mini"
             self.model_name = model_name
@@ -132,12 +126,13 @@ class LlamaCppEngine(InferenceEngine):
 
         self.adapter: PromptAdapter = get_adapter(model_name)
         logger.info(
-            f"Using adapter: {type(self.adapter).__name__} for model: {model_name}"
+            f"Using adapter: [cyan]{type(self.adapter).__name__}[/cyan] "
+            f"for model: [bold]{model_name}[/bold]"
         )
 
         self.model_path = self._get_model_path()
 
-        logger.info(f"Loading model from {self.model_path}...")
+        logger.info(f"Loading model from [dim]{self.model_path}[/dim]...")
         self.llm = Llama(
             model_path=str(self.model_path),
             n_ctx=n_ctx,
@@ -150,7 +145,10 @@ class LlamaCppEngine(InferenceEngine):
 
         self.cache = LocleanCache(cache_dir=self.cache_dir)
 
-        logger.info(f"LlamaCppEngine initialized successfully with model: {model_name}")
+        logger.info(
+            f"[green]✓[/green] LlamaCppEngine initialized successfully with model: "
+            f"[bold cyan]{model_name}[/bold cyan]"
+        )
 
     def _get_model_path(self) -> "Path":
         """
@@ -211,12 +209,22 @@ class LlamaCppEngine(InferenceEngine):
         """
         cached_results = self.cache.get_batch(items, instruction)
         misses = [item for item in items if item not in cached_results]
+        hits = len(items) - len(misses)
 
         if not misses:
             return cached_results
 
-        logger.info(f"Cache miss for {len(misses)} items. Running inference...")
+        # Log cache statistics with Rich Table
+        from loclean.utils.rich_output import log_cache_stats
+
+        log_cache_stats(
+            total_items=len(items),
+            cache_hits=hits,
+            cache_misses=len(misses),
+            context="Inference",
+        )
         new_results: Dict[str, Optional[Dict[str, Any]]] = {}
+        errors: List[Dict[str, Any]] = []
 
         stop_tokens = self.adapter.get_stop_tokens()
 
@@ -247,7 +255,18 @@ class LlamaCppEngine(InferenceEngine):
                             text = str(first_item["choices"][0]["text"]).strip()
 
                 if text is None:
-                    logger.warning(f"No text extracted for item '{item}'")
+                    error_type = "No text extracted"
+                    errors.append(
+                        {
+                            "type": error_type,
+                            "item": item,
+                        }
+                    )
+                    if len(errors) <= 3:
+                        logger.warning(
+                            f"[yellow]⚠[/yellow] No text extracted for item: "
+                            f"[dim]'{item}'[/dim]"
+                        )
                     new_results[item] = None
                     continue
 
@@ -256,18 +275,50 @@ class LlamaCppEngine(InferenceEngine):
                 if "value" in data and "unit" in data and "reasoning" in data:
                     new_results[item] = data
                 else:
-                    logger.warning(f"Result for '{item}' missing keys. Raw: {text}")
+                    error_type = "Missing required keys"
+                    errors.append(
+                        {
+                            "type": error_type,
+                            "item": item,
+                        }
+                    )
+                    if len(errors) <= 3:
+                        text_preview = f"{text[:80]}..." if len(text) > 80 else text
+                        logger.warning(
+                            f"[yellow]⚠[/yellow] Result for [dim]'{item}'[/dim] "
+                            f"missing required keys. "
+                            f"Raw: [dim]{text_preview}[/dim]"
+                        )
                     new_results[item] = None
 
             except json.JSONDecodeError as e:
-                raw_text = text if "text" in locals() else "N/A"
-                logger.warning(
-                    f"Failed to decode JSON for item '{item}': {e}. "
-                    f"Raw text: '{raw_text}'"
+                error_type = "JSON decode error"
+                errors.append(
+                    {
+                        "type": error_type,
+                        "item": item,
+                    }
                 )
+                raw_text = text if "text" in locals() else "N/A"
+                if len(errors) <= 3:
+                    logger.warning(
+                        f"Failed to decode JSON for item '{item}': {e}. "
+                        f"Raw text: '{raw_text}'"
+                    )
                 new_results[item] = None
             except Exception as e:
-                logger.error(f"Inference error for item '{item}': {e}")
+                error_type = "Inference error"
+                errors.append(
+                    {
+                        "type": error_type,
+                        "item": item,
+                    }
+                )
+                if len(errors) <= 3:
+                    logger.error(
+                        f"[red]❌[/red] Inference error for [dim]'{item}'[/dim]: "
+                        f"[red]{str(e)[:80]}{'...' if len(str(e)) > 80 else ''}[/red]"
+                    )
                 new_results[item] = None
 
         # Only cache valid results to avoid polluting cache with None values.
@@ -277,5 +328,27 @@ class LlamaCppEngine(InferenceEngine):
             self.cache.set_batch(
                 list(valid_new_results.keys()), instruction, valid_new_results
             )
+
+        # Log error summary if there are many errors
+        if len(errors) > 3:
+            from collections import Counter
+
+            from loclean.utils.rich_output import log_error_summary
+
+            error_counts = Counter(e["type"] for e in errors)
+            error_summary = []
+            for error_type, count in error_counts.items():
+                sample_items = [
+                    e["item"][:50] for e in errors if e["type"] == error_type
+                ][:3]
+                error_summary.append(
+                    {
+                        "type": error_type,
+                        "count": count,
+                        "sample_items": sample_items,
+                    }
+                )
+
+            log_error_summary(error_summary, max_display=5, context="Inference")
 
         return {**cached_results, **new_results}

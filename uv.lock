@@ -1539,7 +1539,6 @@ dependencies = [
     { name = "narwhals" },
     { name = "pydantic" },
     { name = "rich" },
-    { name = "tqdm" },
     { name = "typer" },
 ]
 
@@ -1582,7 +1581,6 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "ruff" },
-    { name = "types-tqdm" },
 ]
 
 [package.metadata]
@@ -1610,7 +1608,6 @@ requires-dist = [
     { name = "pyarrow", marker = "extra == 'data'", specifier = ">=22.0.0" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "rich", specifier = ">=14.0.0" },
-    { name = "tqdm", specifier = ">=4.66.0" },
     { name = "typer", specifier = ">=0.12.0" },
 ]
 provides-extras = ["all", "cloud", "data", "privacy"]
@@ -1628,7 +1625,6 @@ dev = [
     { name = "pytest-cov", specifier = ">=4.1.0" },
     { name = "pytest-mock", specifier = ">=3.10.0" },
     { name = "ruff", specifier = ">=0.14.10" },
-    { name = "types-tqdm" },
 ]
 
 [[package]]
@@ -3223,30 +3219,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/40/ff/c047ddc68c803b46470a357454ef76f4acd8c1088f5cc4891cdd909bfcf6/types_pytz-2025.2.0.20251108.tar.gz", hash = "sha256:fca87917836ae843f07129567b74c1929f1870610681b4c92cb86a3df5817bdb", size = 10961, upload-time = "2025-11-08T02:55:57.001Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e7/c1/56ef16bf5dcd255155cc736d276efa6ae0a5c26fd685e28f0412a4013c01/types_pytz-2025.2.0.20251108-py3-none-any.whl", hash = "sha256:0f1c9792cab4eb0e46c52f8845c8f77cf1e313cb3d68bf826aa867fe4717d91c", size = 10116, upload-time = "2025-11-08T02:55:56.194Z" },
-]
-
-[[package]]
-name = "types-requests"
-version = "2.32.4.20260107"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/0f/f3/a0663907082280664d745929205a89d41dffb29e89a50f753af7d57d0a96/types_requests-2.32.4.20260107.tar.gz", hash = "sha256:018a11ac158f801bfa84857ddec1650750e393df8a004a8a9ae2a9bec6fcb24f", size = 23165, upload-time = "2026-01-07T03:20:54.091Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1c/12/709ea261f2bf91ef0a26a9eed20f2623227a8ed85610c1e54c5805692ecb/types_requests-2.32.4.20260107-py3-none-any.whl", hash = "sha256:b703fe72f8ce5b31ef031264fe9395cac8f46a04661a79f7ed31a80fb308730d", size = 20676, upload-time = "2026-01-07T03:20:52.929Z" },
-]
-
-[[package]]
-name = "types-tqdm"
-version = "4.67.0.20250809"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "types-requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/fb/d0/cf498fc630d9fdaf2428b93e60b0e67b08008fec22b78716b8323cf644dc/types_tqdm-4.67.0.20250809.tar.gz", hash = "sha256:02bf7ab91256080b9c4c63f9f11b519c27baaf52718e5fdab9e9606da168d500", size = 17200, upload-time = "2025-08-09T03:17:43.489Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3f/13/3ff0781445d7c12730befce0fddbbc7a76e56eb0e7029446f2853238360a/types_tqdm-4.67.0.20250809-py3-none-any.whl", hash = "sha256:1a73053b31fcabf3c1f3e2a9d5ecdba0f301bde47a418cd0e0bdf774827c5c57", size = 24020, upload-time = "2025-08-09T03:17:42.453Z" },
 ]
 
 [[package]]

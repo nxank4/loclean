@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     pass
 
-logger = logging.getLogger(__name__)
+from loclean.utils.logging import configure_module_logger
+
+logger = configure_module_logger(__name__, level=logging.INFO)
 
 try:
     import json_repair

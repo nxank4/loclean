@@ -1,16 +1,23 @@
 import logging
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import narwhals as nw
 from narwhals.typing import IntoFrameT
-from tqdm import tqdm
 
 if TYPE_CHECKING:
     from loclean.inference.local.llama_cpp import LlamaCppEngine
 
-logger = logging.getLogger(__name__)
+from loclean.utils.logging import configure_module_logger
+from loclean.utils.rich_output import (
+    create_progress,
+    log_batch_stats,
+    log_processing_summary,
+)
+
+logger = configure_module_logger(__name__, level=logging.INFO)
 
 
 class NarwhalsEngine:
@@ -47,19 +54,49 @@ class NarwhalsEngine:
                 for chunk in chunks
             }
 
-            # Collect results as they complete
-            with tqdm(
-                total=len(chunks), desc="Inference Batches", unit="batch"
-            ) as pbar:
+            # Collect results as they complete - use Rich Progress if available
+            from loclean.utils.rich_output import create_progress
+
+            progress = create_progress(
+                total=len(chunks), description="Processing batches in parallel"
+            )
+            if progress:
+                with progress:
+                    task_id = progress.add_task(
+                        "[cyan]Processing batches[/cyan]", total=len(chunks)
+                    )
+                    for future in as_completed(future_to_chunk):
+                        chunk = future_to_chunk[future]
+                        try:
+                            batch_result: Dict[str, Optional[Dict[str, Any]]] = (
+                                future.result()
+                            )
+                            mapping_results.update(batch_result)
+                            completed += 1
+                            progress.update(task_id, advance=1)
+                        except Exception as e:
+                            logger.error(
+                                f"Error processing chunk {chunk[:3]}...: {e}",
+                                exc_info=True,
+                            )
+                            # Mark failed items as None
+                            for item in chunk:
+                                mapping_results[item] = None
+                            completed += 1
+                            progress.update(task_id, advance=1)
+            else:
+                # Fallback: simple logging without progress bar
+                logger.info(f"Processing {len(chunks)} batches in parallel...")
                 for future in as_completed(future_to_chunk):
                     chunk = future_to_chunk[future]
                     try:
-                        batch_result: Dict[str, Optional[Dict[str, Any]]] = (
-                            future.result()
-                        )
+                        batch_result = future.result()
                         mapping_results.update(batch_result)
                         completed += 1
-                        pbar.update(1)
+                        if completed % max(1, len(chunks) // 10) == 0:
+                            logger.info(
+                                f"Progress: {completed}/{len(chunks)} batches completed"
+                            )
                     except Exception as e:
                         logger.error(
                             f"Error processing chunk {chunk[:3]}...: {e}",
@@ -69,7 +106,10 @@ class NarwhalsEngine:
                         for item in chunk:
                             mapping_results[item] = None
                         completed += 1
-                        pbar.update(1)
+                        if completed % max(1, len(chunks) // 10) == 0:
+                            logger.info(
+                                f"Progress: {completed}/{len(chunks)} batches completed"
+                            )
 
         return mapping_results
 
@@ -130,8 +170,6 @@ class NarwhalsEngine:
             str(x) for x in col_values if x is not None and str(x).strip() != ""
         ]
 
-        logger.info(f"Found {len(uniques)} unique patterns to clean in '{col_name}'.")
-
         if not uniques:
             logger.warning(
                 "No valid unique values found. Returning original DataFrame."
@@ -144,10 +182,14 @@ class NarwhalsEngine:
             uniques[i : i + batch_size] for i in range(0, len(uniques), batch_size)
         ]
 
-        logger.info(
-            "Semantic Cleaning: Processing %d unique patterns in column '%s'.",
-            len(uniques),
-            col_name,
+        # Log batch statistics with Rich Panel
+        log_batch_stats(
+            total_patterns=len(uniques),
+            num_batches=len(chunks),
+            batch_size=batch_size,
+            parallel=parallel,
+            max_workers=max_workers if parallel else None,
+            col_name=col_name,
         )
 
         if parallel and len(chunks) > 1:
@@ -166,29 +208,51 @@ class NarwhalsEngine:
                 parallel = False
                 logger.info("Using sequential processing (max_workers=1)")
 
+        start_time = time.time()
+
         if parallel and len(chunks) > 1:
             # Parallel processing
-            logger.info(
-                f"Processing {len(chunks)} batches in parallel "
-                f"with {max_workers} workers"
-            )
             # max_workers is guaranteed to be int here (checked above)
             assert isinstance(max_workers, int)
             mapping_results = NarwhalsEngine._process_chunks_parallel(
                 chunks, inference_engine, instruction, max_workers
             )
         else:
-            # Sequential processing (default)
-            for chunk in tqdm(chunks, desc="Inference Batches", unit="batch"):
-                batch_result: Dict[str, Optional[Dict[str, Any]]] = (
-                    inference_engine.clean_batch(chunk, instruction=instruction)
-                )
-                mapping_results.update(batch_result)
+            # Sequential processing (default) - use Rich Progress if available
+            progress = create_progress(
+                total=len(chunks), description="Processing batches"
+            )
+            if progress:
+                with progress:
+                    task_id = progress.add_task(
+                        "[cyan]Processing batches[/cyan]", total=len(chunks)
+                    )
+                    for chunk in chunks:
+                        batch_result: Dict[str, Optional[Dict[str, Any]]] = (
+                            inference_engine.clean_batch(chunk, instruction=instruction)
+                        )
+                        mapping_results.update(batch_result)
+                        progress.update(task_id, advance=1)
+            else:
+                # Fallback: simple logging without progress bar
+                logger.info(f"Processing {len(chunks)} batches sequentially...")
+                for idx, chunk in enumerate(chunks, 1):
+                    batch_result = inference_engine.clean_batch(
+                        chunk, instruction=instruction
+                    )
+                    mapping_results.update(batch_result)
+                    if idx % max(1, len(chunks) // 10) == 0:
+                        logger.info(f"Progress: {idx}/{len(chunks)} batches completed")
+
+        elapsed_time = time.time() - start_time
 
         keys: List[str] = []
         clean_values: List[Optional[float]] = []
         clean_units: List[Optional[str]] = []
         clean_reasonings: List[Optional[str]] = []
+
+        successful = 0
+        failed = 0
 
         for original_val, clean_data in mapping_results.items():
             keys.append(original_val)
@@ -196,16 +260,27 @@ class NarwhalsEngine:
                 clean_values.append(clean_data.get("value"))
                 clean_units.append(clean_data.get("unit"))
                 clean_reasonings.append(clean_data.get("reasoning"))
+                successful += 1
             else:
                 clean_values.append(None)
                 clean_units.append(None)
                 clean_reasonings.append(None)
+                failed += 1
 
         if not keys:
             logger.warning(
                 "No concepts were successfully extracted. Returning original DataFrame."
             )
             return df_native
+
+        # Log processing summary with Rich Table
+        log_processing_summary(
+            total_processed=len(keys),
+            successful=successful,
+            failed=failed,
+            time_taken=elapsed_time,
+            context="Semantic Cleaning",
+        )
 
         # 4. Create Mapping DataFrame using the same native backend as the input
         # Detect backend and create DataFrame with correct type
