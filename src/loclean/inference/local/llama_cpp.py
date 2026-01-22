@@ -283,9 +283,7 @@ class LlamaCppEngine(InferenceEngine):
                         }
                     )
                     if len(errors) <= 3:
-                        text_preview = (
-                            f"{text[:80]}..." if len(text) > 80 else text
-                        )
+                        text_preview = f"{text[:80]}..." if len(text) > 80 else text
                         logger.warning(
                             f"[yellow]⚠[/yellow] Result for [dim]'{item}'[/dim] "
                             f"missing required keys. "
