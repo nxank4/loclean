@@ -80,13 +80,26 @@ Built on **Narwhals**, Loclean supports **Pandas**, **Polars**, and **PyArrow** 
 
 ## Basic Installation
 
-**Using pip:**
+**Using pip (recommended):**
 
 ```bash
 pip install loclean
 ```
 
-**Using uv (recommended for faster installs):**
+The basic installation includes **local inference** support (via `llama-cpp-python`). 
+
+> **📦 Installation Notice:** 
+> - **Fast (30-60 seconds):** Pre-built wheels are available for most platforms (Linux x86_64, macOS, Windows)
+> - **Slow (5-10 minutes):** If you see "Building wheels for collected packages: llama-cpp-python", it's building from source. This is **normal** and only happens when no pre-built wheel is available for your platform. Please be patient - this is not an error!
+> 
+> **💡 To ensure fast installation:**
+> ```bash
+> pip install --upgrade pip setuptools wheel
+> pip install loclean
+> ```
+> This ensures pip can find and use pre-built wheels when available.
+
+**Using uv (alternative, often faster):**
 
 ```bash
 uv pip install loclean
@@ -102,7 +115,7 @@ mamba install -c conda-forge loclean
 
 ## Optional Dependencies
 
-The basic installation includes **local inference** support (via `llama-cpp-python`). Loclean uses **Narwhals** for backend-agnostic DataFrame operations, so if you already have **Pandas**, **Polars**, or **PyArrow** installed, the basic installation is sufficient.
+The basic installation includes local inference support. Loclean uses **Narwhals** for backend-agnostic DataFrame operations, so if you already have **Pandas**, **Polars**, or **PyArrow** installed, the basic installation is sufficient.
 
 **Install DataFrame libraries (if not already present):**
 
@@ -171,6 +184,7 @@ loclean model status
 - **qwen3-4b**: Qwen3 4B - Higher quality
 - **gemma-3-4b**: Gemma 3 4B - Larger context
 - **deepseek-r1**: DeepSeek R1 - Reasoning model
+- **lfm2.5**: Liquid LFM2.5-1.2B Instruct (1.17B, 32K context) - Best-in-class 1B scale, optimized for agentic tasks and data extraction
 
 Models are cached in `~/.cache/loclean` by default. You can specify a custom cache directory using the `--cache-dir` option.
 

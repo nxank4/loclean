@@ -73,6 +73,15 @@ _MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
         "size_mb": 1200,
         "description": "DeepSeek R1 (reasoning model)",
     },
+    "lfm2.5": {
+        "repo": "unsloth/LFM2.5-1.2B-Instruct-GGUF",
+        "filename": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+        "size_mb": 800,
+        "description": (
+            "Liquid LFM2.5-1.2B Instruct (1.17B params, 32K context, "
+            "best-in-class 1B scale)"
+        ),
+    },
 }
 
 

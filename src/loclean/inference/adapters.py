@@ -219,6 +219,10 @@ _MODEL_ADAPTER_MAP: Dict[str, type[PromptAdapter]] = {
     # DeepSeek models (use Qwen format)
     "deepseek": QwenAdapter,
     "deepseek-r1": QwenAdapter,
+    # LFM2.5 models (use ChatML format like Qwen)
+    "lfm2.5": QwenAdapter,
+    "lfm2": QwenAdapter,
+    "liquid": QwenAdapter,
 }
 
 
