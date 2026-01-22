@@ -90,9 +90,7 @@ class NarwhalsEngine:
                 for future in as_completed(future_to_chunk):
                     chunk = future_to_chunk[future]
                     try:
-                        batch_result: Dict[str, Optional[Dict[str, Any]]] = (
-                            future.result()
-                        )
+                        batch_result = future.result()
                         mapping_results.update(batch_result)
                         completed += 1
                         if completed % max(1, len(chunks) // 10) == 0:
@@ -239,8 +237,8 @@ class NarwhalsEngine:
                 # Fallback: simple logging without progress bar
                 logger.info(f"Processing {len(chunks)} batches sequentially...")
                 for idx, chunk in enumerate(chunks, 1):
-                    batch_result: Dict[str, Optional[Dict[str, Any]]] = (
-                        inference_engine.clean_batch(chunk, instruction=instruction)
+                    batch_result = inference_engine.clean_batch(
+                        chunk, instruction=instruction
                     )
                     mapping_results.update(batch_result)
                     if idx % max(1, len(chunks) // 10) == 0:

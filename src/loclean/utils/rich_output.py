@@ -34,12 +34,16 @@ def get_rich_console() -> Optional[Console]:
     root_logger = logging.getLogger()
     for handler in root_logger.handlers:
         if hasattr(handler, "console"):
-            return handler.console
+            console = getattr(handler, "console", None)
+            if isinstance(console, Console):
+                return console
 
     # Try to get from current logger
     for handler in logger.handlers:
         if hasattr(handler, "console"):
-            return handler.console
+            console = getattr(handler, "console", None)
+            if isinstance(console, Console):
+                return console
 
     # Fallback: create new console if TTY
     if sys.stderr.isatty():
@@ -269,7 +273,7 @@ def log_error_summary(
         count = error.get("count", 0)
         samples = error.get("sample_items", [])
         sample_str = ", ".join(
-            [f"[dim]'{s[:30]}...'[/dim]" if len(s) > 30 else f"[dim]'{s}'[/dim]"]
+            f"[dim]'{s[:30]}...'[/dim]" if len(s) > 30 else f"[dim]'{s}'[/dim]"
             for s in samples[:2]
         )
         if len(samples) > 2:
