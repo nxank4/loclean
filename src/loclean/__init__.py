@@ -37,6 +37,7 @@ def clean(
     cache_dir: Optional[Path] = None,
     n_ctx: Optional[int] = None,
     n_gpu_layers: Optional[int] = None,
+    verbose: Optional[bool] = None,
     batch_size: int = 50,
     parallel: bool = False,
     max_workers: Optional[int] = None,
@@ -61,6 +62,7 @@ def clean(
             Defaults to ~/.cache/loclean when not provided.
         n_ctx: Optional context window size override for the underlying model.
         n_gpu_layers: Optional number of GPU layers to use (0 = CPU only).
+        verbose: Enable detailed logging of prompts and outputs.
         batch_size: Number of unique values to process per batch. Defaults to 50.
         parallel: Enable parallel processing using ThreadPoolExecutor.
                  Defaults to False for backward compatibility.
@@ -86,6 +88,7 @@ def clean(
         and cache_dir is None
         and n_ctx is None
         and n_gpu_layers is None
+        and verbose is None
         and not engine_kwargs
     ):
         engine = get_engine()
@@ -101,6 +104,8 @@ def clean(
             engine_kwargs_filtered["n_ctx"] = n_ctx
         if n_gpu_layers is not None:
             engine_kwargs_filtered["n_gpu_layers"] = n_gpu_layers
+        if verbose is not None:
+            engine_kwargs_filtered["verbose"] = verbose
         engine_kwargs_filtered.update(engine_kwargs)
         engine = LlamaCppEngine(**engine_kwargs_filtered)
 
@@ -126,6 +131,7 @@ def scrub(
     cache_dir: Optional[Path] = None,
     n_ctx: Optional[int] = None,
     n_gpu_layers: Optional[int] = None,
+    verbose: Optional[bool] = None,
     **engine_kwargs: Any,
 ) -> str | IntoFrameT:
     """
@@ -154,6 +160,7 @@ def scrub(
         cache_dir: Optional custom directory for caching models and results
         n_ctx: Optional context window size override
         n_gpu_layers: Optional number of GPU layers to use (0 = CPU only)
+        verbose: Enable detailed logging of prompts and outputs.
         **engine_kwargs: Additional arguments forwarded to inference engine
 
     Returns:
@@ -183,6 +190,7 @@ def scrub(
             and cache_dir is None
             and n_ctx is None
             and n_gpu_layers is None
+            and verbose is None
             and not engine_kwargs
         ):
             inference_engine = get_engine()
@@ -196,6 +204,8 @@ def scrub(
                 engine_kwargs_filtered["n_ctx"] = n_ctx
             if n_gpu_layers is not None:
                 engine_kwargs_filtered["n_gpu_layers"] = n_gpu_layers
+            if verbose is not None:
+                engine_kwargs_filtered["verbose"] = verbose
             engine_kwargs_filtered.update(engine_kwargs)
             inference_engine = LlamaCppEngine(**engine_kwargs_filtered)
 
@@ -232,6 +242,7 @@ def extract(
     cache_dir: Optional[Path] = None,
     n_ctx: Optional[int] = None,
     n_gpu_layers: Optional[int] = None,
+    verbose: Optional[bool] = None,
     **engine_kwargs: Any,
 ) -> Any:
     """
@@ -256,6 +267,7 @@ def extract(
         cache_dir: Optional custom cache directory
         n_ctx: Optional context window size override
         n_gpu_layers: Optional number of GPU layers to use (0 = CPU only)
+        verbose: Enable detailed logging of prompts and outputs.
         **engine_kwargs: Additional arguments forwarded to inference engine
 
     Returns:
@@ -302,6 +314,7 @@ def extract(
         and cache_dir is None
         and n_ctx is None
         and n_gpu_layers is None
+        and verbose is None
         and not engine_kwargs
     ):
         inference_engine = get_engine()
@@ -316,6 +329,8 @@ def extract(
             engine_kwargs_filtered["n_ctx"] = n_ctx
         if n_gpu_layers is not None:
             engine_kwargs_filtered["n_gpu_layers"] = n_gpu_layers
+        if verbose is not None:
+            engine_kwargs_filtered["verbose"] = verbose
         engine_kwargs_filtered.update(engine_kwargs)
         inference_engine = LlamaCppEngine(**engine_kwargs_filtered)
         cache = inference_engine.cache if hasattr(inference_engine, "cache") else None

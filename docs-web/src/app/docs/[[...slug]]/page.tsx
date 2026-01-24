@@ -20,17 +20,17 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
         <PageActions
           markdownUrl={`${page.url}.mdx`}
           githubUrl={`https://github.com/nxank4/loclean/blob/main/docs-web/content/docs/${page.path}`}
-          title={page.data.title}
+          title={page.data.title} 
         />
       </div>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
         <div className="fd-fade-in-up">
-          <MDX
-            components={getMDXComponents({
-              a: createRelativeLink(source, page),
-            })}
-          />
+        <MDX
+          components={getMDXComponents({
+            a: createRelativeLink(source, page),
+          })}
+        />
         </div>
       </DocsBody>
     </DocsPage>

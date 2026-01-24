@@ -1,98 +1,203 @@
 import logging
+import random
 import time
+from typing import List
 
 import polars as pl
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
 
 import loclean
 
-# Setup logging
-logging.basicConfig(level=logging.ERROR)
+# Setup logging to see what's happening
+logging.basicConfig(level=logging.INFO)
+console = Console()
 
 
-def naive_llm_call(text: str) -> None:
-    """Simulates a very fast API or local LLM call (0.1s latency)."""
-    time.sleep(0.1)
+def generate_complex_messy_data(rows: int, unique_patterns: int) -> List[str]:
+    """Generates extremely messy data that would be a nightmare for Regex."""
+    templates = [
+        "Product {id}: weight is {val} {unit} (checked)",
+        "Approx {val}{unit} - [ID:{id}]",
+        "{val} {unit} package",
+        "Weight: {val} {unit}",
+        "Package weighs nearly {val} {unit} - fragile",
+        "ID-{id} | {val}{unit} | Shipment A",
+        "The item is {val} {unit}",
+    ]
+
+    units = [
+        ("kg", 1),
+        ("kilograms", 1),
+        ("kgs", 1),
+        ("kilos", 1),
+        ("g", 0.001),
+        ("grams", 0.001),
+        ("t", 1000),
+        ("tonnes", 1000),
+        ("tons", 1000),
+        ("mg", 0.000001),
+        ("milligrams", 0.000001),
+    ]
+
+    # Mix of numeric and text values
+    values = [
+        str(round(random.uniform(0.1, 500), 2)) for _ in range(unique_patterns // 2)
+    ]
+    values += ["five", "twelve", "half", "zero point five", "ten"]
+
+    patterns = []
+    for _ in range(unique_patterns):
+        tpl = random.choice(templates)
+        val = random.choice(values)
+        unit_name, _ = random.choice(units)
+        patterns.append(
+            tpl.format(id=random.randint(1000, 9999), val=val, unit=unit_name)
+        )
+
+    return (patterns * (rows // len(patterns) + 1))[:rows]
 
 
 def run_benchmark() -> None:
-    # Reduced slightly for quicker iterative testing, but large enough
-    ROWS = 10_000
-    UNIQUE_PATTERNS = 100
+    # SETTINGS FOR A SNAPPY BUT IMPRESSIVE BENCHMARK
+    ROWS = 100_000  # Show massive scale
+    UNIQUE_PATTERNS = 30  # Keep unique items low so it finishes fast
 
-    print(f"BENCHMARKING: Cleaning {ROWS:,} rows")
-    print(f"   (Simulating High-Repetition Data: ~{UNIQUE_PATTERNS} unique patterns)")
+    console.print(
+        Panel(
+            f"[bold white]Loclean Performance Benchmark (Optimized)[/bold white]\n"
+            f"[dim]Scale: {ROWS:,} rows | "
+            f"Unique Messy Patterns: {UNIQUE_PATTERNS}[/dim]",
+            title="[bold magenta]Loclean[/bold magenta]",
+            subtitle="[italic]Vectorized Deduplication Test[/italic]",
+            border_style="bright_blue",
+        )
+    )
 
     # 1. Generate Data
-    base_patterns = [f"{i} kg" for i in range(UNIQUE_PATTERNS)]
-    # Repeat patterns to fill ROWS
-    full_data = (base_patterns * (ROWS // len(base_patterns) + 1))[:ROWS]
-    df = pl.DataFrame({"raw_weight": full_data})
+    with console.status("[bold green]Generating massive messy dataset..."):
+        data = generate_complex_messy_data(ROWS, UNIQUE_PATTERNS)
+        df = pl.DataFrame({"raw_info": data})
 
-    print(f"   Dataset: {df.shape} | Columns: {df.columns}")
+    console.print(f"✅ Dataset ready: [bold]{df.shape}[/bold]")
 
-    # 2. Baseline (Naive) - Extrapolated
-    print("\n1. Estimating 'Naive' Loop (Standard API approach)...")
-    print("    Running simulation on 5 samples (0.1s latency/req)...")
+    # 2. Measurement of Actual LLM Speed
+    console.print(
+        "\n[bold cyan]1. Measuring Baseline LLM Speed "
+        "(Average of 5 samples)...[/bold cyan]"
+    )
+    instruction = (
+        "Extract numeric weight and normalize to 'kg'. "
+        "Strictly follow: 1 ton = 1000kg, 1g = 0.001kg, 1mg = 1e-6kg. "
+        "Text numbers: 'half' = 0.5, 'twelve' = 12. "
+        "If input is 'twelvemg', value is 0.000012."
+    )
 
-    naive_samples = df["raw_weight"].head(5).to_list()
-    start_naive = time.time()
-    for item in naive_samples:
-        naive_llm_call(item)
-    avg_naive_time = (time.time() - start_naive) / 5
-    projected_naive_time = avg_naive_time * ROWS
+    # Take 5 random samples to get a better average
+    sample_df = df.sample(n=5)
+    sample_start = time.time()
+    _ = loclean.clean(sample_df, "raw_info", instruction=instruction)
+    actual_latency = (time.time() - sample_start) / 5
 
-    print(f"    Avg time per item: {avg_naive_time:.4f}s")
-    hours = projected_naive_time / 3600
-    print(f"    Projected Total Time: {projected_naive_time:.2f}s ({hours:.2f} hours)")
+    projected_naive_time = actual_latency * ROWS
+    console.print(
+        f"   Measured Avg Latency: [bold yellow]{actual_latency:.2f}s/row[/bold yellow]"
+    )
+    console.print(
+        f"   Projected Naive Loop: [bold red]{projected_naive_time:,.2f}s[/bold red] "
+        f"({projected_naive_time / 3600:.2f} hours)"
+    )
 
-    # 3. Loclean (First Run)
-    print("\n2. Running Loclean (Run 1: Vectorized + Cached Model)...")
-    print("    Processing full dataset...")
-
-    # Force a unique instruction to ensure we aren't hitting the disk cache
-    # from previous benchmark runs if we want to test "Processing Speed".
-    # BUT, to test "Cache Speedup" we want to run this same thing twice.
-    # To act like a "First Run", we use a unique instruction.
-    run_id = int(time.time())
-    instruction = f"Convert to kg. Run ID {run_id}"
+    # 3. Loclean Run 1 (Deduplicated)
+    console.print(
+        "\n[bold cyan]2. Running Loclean (Run 1: Vectorized + Deduplicated)[/bold cyan]"
+    )
+    # We use a unique instruction to avoid cache for the first measurement
+    benchmark_instruction = f"{instruction} | BenchID:{int(time.time())}"
 
     start_loclean = time.time()
-    _ = loclean.clean(df, "raw_weight", instruction=instruction)
+    result = loclean.clean(
+        df, "raw_info", instruction=benchmark_instruction, batch_size=10
+    )
     actual_loclean_time = time.time() - start_loclean
 
-    print(f"    Actual Time: {actual_loclean_time:.2f}s")
+    console.print(
+        f"   Loclean processed {ROWS:,} rows in: "
+        f"[bold green]{actual_loclean_time:.2f}s[/bold green]"
+    )
 
-    # 4. Loclean (Second Run - Cache Hit)
-    print("\n3. Running Loclean (Run 2: Persistent Cache Hit)...")
-    print("    Re-running same dataset and instruction...")
-
+    # 4. Loclean Run 2 (Cache)
+    console.print(
+        "\n[bold cyan]3. Running Loclean (Run 2: Persistent Cache Hit)[/bold cyan]"
+    )
     start_cache = time.time()
-    _ = loclean.clean(df, "raw_weight", instruction=instruction)
+    _ = loclean.clean(df, "raw_info", instruction=benchmark_instruction)
     actual_cache_time = time.time() - start_cache
 
-    print(f"    Actual Time: {actual_cache_time:.4f}s")
+    console.print(
+        f"   Cache hit finished in: [bold green]{actual_cache_time:.4f}s[/bold green]"
+    )
 
     # 5. Reporting
     vector_speedup = projected_naive_time / actual_loclean_time
-    cache_time = actual_cache_time if actual_cache_time > 0 else 0.001
-    cache_speedup = actual_loclean_time / cache_time
+    cache_total_speedup = projected_naive_time / max(actual_cache_time, 0.0001)
 
-    print("\n" + "=" * 80)
-    metric_header = (
-        f"{'METRIC':<25} | {'NAIVE (Est.)':<15} | "
-        f"{'LOCLEAN (Run 1)':<20} | {'CACHE (Run 2)':<15}"
+    table = Table(
+        title="Performance Summary (Relative to Naive Baseline)",
+        show_header=True,
+        header_style="bold magenta",
     )
-    print(metric_header)
-    print("-" * 80)
-    time_row = (
-        f"{'Time':<25} | {projected_naive_time:<15.2f}s | "
-        f"{actual_loclean_time:<20.2f}s | {actual_cache_time:<15.4f}s"
+    table.add_column("Strategy")
+    table.add_column("Time", justify="right")
+    table.add_column("Throughput", justify="right")
+    table.add_column("Total Speedup", justify="left")
+
+    table.add_row(
+        "Naive Sequential Loop",
+        f"{projected_naive_time:,.2f}s",
+        f"{1 / actual_latency:.2f} rows/s",
+        "Baseline",
     )
-    print(time_row)
-    print("-" * 80)
-    print(f"VECTOR SPEEDUP: {int(vector_speedup)}x faster than naive loop")
-    print(f"CACHE SPEEDUP:  {int(cache_speedup)}x faster than first run")
-    print("=" * 80)
+    table.add_row(
+        "Loclean (Run 1: Vectorized)",
+        f"{actual_loclean_time:.2f}s",
+        f"{ROWS / actual_loclean_time:,.1f} rows/s",
+        f"[bold green]{int(vector_speedup):,}x faster[/bold green]",
+    )
+    table.add_row(
+        "Loclean (Run 2: Cached)",
+        f"{actual_cache_time:.4f}s",
+        f"{ROWS / actual_cache_time:,.1f} rows/s",
+        f"[bold blue]{int(cache_total_speedup):,}x faster[/bold blue]",
+    )
+
+    console.print("\n", table)
+
+    console.print(
+        "\n[bold yellow]Sample of Cleaned Data "
+        "(Normalizing complex text):[/bold yellow]"
+    )
+    console.print(result.select(["raw_info", "clean_value", "clean_unit"]).head(5))
+
+    # 6. Bonus: Debug Demonstration for failures
+    # Find a sample that might be interesting or just any sample
+    sample_to_debug = df.head(1)["raw_info"][0]
+    console.print(
+        "\n[bold red]BONUS: Debugging a sample using new Verbose Mode "
+        "(Forcing Cache Miss)[/bold red]"
+    )
+    console.print(f"Item: [dim]{sample_to_debug}[/dim]")
+
+    # We append a unique suffix to force a cache miss for the demo
+    debug_instruction = f"{benchmark_instruction} [FORCE_DEBUG_MISS_{int(time.time())}]"
+
+    loclean.clean(
+        pl.DataFrame({"raw_info": [sample_to_debug]}),
+        "raw_info",
+        instruction=debug_instruction,
+        verbose=True,
+    )
 
 
 if __name__ == "__main__":

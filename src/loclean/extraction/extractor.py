@@ -53,6 +53,13 @@ class Extractor:
         self.cache = cache
         self.max_retries = max_retries
 
+        # Set logger level based on inference engine verbose flag
+        if hasattr(self.inference_engine, "verbose") and self.inference_engine.verbose:
+            logger.setLevel(logging.DEBUG)
+            logger.debug(
+                "[bold magenta]DEBUG MODE ENABLED FOR EXTRACTOR[/bold magenta]"
+            )
+
     def extract(
         self,
         text: str,
@@ -300,6 +307,10 @@ class Extractor:
                 prompt = self.inference_engine.adapter.format(instruction, text)
                 stop_tokens = self.inference_engine.adapter.get_stop_tokens()
 
+                verbose = getattr(self.inference_engine, "verbose", False)
+                if verbose:
+                    logger.debug(f"[bold blue]EXTRACTION PROMPT:[/bold blue]\n{prompt}")
+
                 output = self.inference_engine.llm.create_completion(
                     prompt=prompt,
                     grammar=grammar,
@@ -323,6 +334,12 @@ class Extractor:
                             choice_text = first_item["choices"][0].get("text")
                             if choice_text is not None:
                                 text_output = str(choice_text).strip()
+
+                if verbose:
+                    logger.debug(
+                        f"[bold green]EXTRACTION RAW OUTPUT:[/bold green]\n"
+                        f"{text_output}"
+                    )
 
                 if text_output is None:
                     logger.warning(

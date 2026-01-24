@@ -12,8 +12,10 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.progress import (
     BarColumn,
+    MofNCompleteColumn,
     Progress,
     SpinnerColumn,
+    TaskProgressColumn,
     TextColumn,
     TimeElapsedColumn,
     TimeRemainingColumn,
@@ -318,9 +320,15 @@ def create_progress(
     return Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        BarColumn(bar_width=None),
+        TaskProgressColumn(),
+        MofNCompleteColumn(),
+        TextColumn("•"),
         TimeElapsedColumn(),
+        TextColumn("•"),
         TimeRemainingColumn(),
         console=console,
+        expand=True,
+        refresh_per_second=10,
+        speed_estimate_period=1.0,  # Make ETA more responsive for few batches
     )

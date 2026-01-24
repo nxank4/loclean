@@ -69,6 +69,13 @@ Advanced structured extraction:
 - Performance optimization
 - Caching demonstrations
 
+### 5. [05-debug-mode.ipynb](./05-debug-mode.ipynb)
+Debugging and detailed logging:
+- Enabling verbose mode
+- Seeing raw LLM prompts and outputs
+- Debugging Pydantic validation issues
+- Global configuration via environment variables
+
 
 ## Requirements
 
