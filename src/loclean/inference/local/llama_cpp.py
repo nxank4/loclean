@@ -92,6 +92,7 @@ class LlamaCppEngine(InferenceEngine):
         cache_dir: Optional[Path] = None,
         n_ctx: int = 4096,
         n_gpu_layers: int = 0,
+        verbose: bool = False,
     ):
         """
         Initialize the LlamaCppEngine.
@@ -103,6 +104,7 @@ class LlamaCppEngine(InferenceEngine):
                        Defaults to ~/.cache/loclean.
             n_ctx: Context window size. Defaults to 4096.
             n_gpu_layers: Number of GPU layers to use (0 = CPU only). Defaults to 0.
+            verbose: Enable detailed logging of prompts and outputs. Defaults to False.
         """
         if cache_dir is None:
             self.cache_dir = Path.home() / ".cache" / "loclean"
@@ -111,6 +113,11 @@ class LlamaCppEngine(InferenceEngine):
 
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.model_name = model_name
+        self.verbose = verbose
+
+        if self.verbose:
+            logger.setLevel(logging.DEBUG)
+            logger.debug("[bold magenta]DEBUG MODE ENABLED[/bold magenta]")
 
         if model_name not in _MODEL_REGISTRY:
             logger.warning(
@@ -137,7 +144,7 @@ class LlamaCppEngine(InferenceEngine):
             model_path=str(self.model_path),
             n_ctx=n_ctx,
             n_gpu_layers=n_gpu_layers,
-            verbose=False,
+            verbose=self.verbose,
         )
         self.grammar = self._get_json_grammar()
 
@@ -231,6 +238,9 @@ class LlamaCppEngine(InferenceEngine):
         for item in misses:
             prompt = self.adapter.format(instruction, item)
 
+            if self.verbose:
+                logger.debug(f"[bold blue]PROMPT:[/bold blue]\n{prompt}")
+
             output: Any = None
             text: Optional[str] = None
             try:
@@ -253,6 +263,9 @@ class LlamaCppEngine(InferenceEngine):
                         first_item = next(iter(output), None)
                         if isinstance(first_item, dict) and "choices" in first_item:
                             text = str(first_item["choices"][0]["text"]).strip()
+
+                if self.verbose:
+                    logger.debug(f"[bold green]RAW OUTPUT:[/bold green]\n{text}")
 
                 if text is None:
                     error_type = "No text extracted"

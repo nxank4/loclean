@@ -56,6 +56,11 @@ class EngineConfig(BaseModel):
         ge=0,
     )
 
+    verbose: bool = Field(
+        default=False,
+        description="Enable detailed logging of prompts, outputs, and processing steps",
+    )
+
     @field_validator("cache_dir", mode="before")
     @classmethod
     def validate_cache_dir(cls, v: str | Path) -> Path:
@@ -123,6 +128,7 @@ def _load_from_env() -> dict[str, Any]:
         "LOCLEAN_CACHE_DIR": "cache_dir",
         "LOCLEAN_N_CTX": "n_ctx",
         "LOCLEAN_N_GPU_LAYERS": "n_gpu_layers",
+        "LOCLEAN_VERBOSE": "verbose",
     }
 
     for env_var, config_key in env_mapping.items():
@@ -134,6 +140,8 @@ def _load_from_env() -> dict[str, Any]:
                     config[config_key] = int(value)
                 except ValueError:
                     continue
+            elif config_key == "verbose":
+                config[config_key] = value.lower() in ("true", "1", "yes", "on")
             elif config_key == "cache_dir":
                 config[config_key] = value
             else:
@@ -149,6 +157,7 @@ def load_config(
     cache_dir: Optional[Path] = None,
     n_ctx: Optional[int] = None,
     n_gpu_layers: Optional[int] = None,
+    verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> EngineConfig:
     """
@@ -167,13 +176,14 @@ def load_config(
         cache_dir: Cache directory (overrides all other sources)
         n_ctx: Context window size (overrides all other sources)
         n_gpu_layers: Number of GPU layers (overrides all other sources)
+        verbose: Enable detailed logging (overrides all other sources)
         **kwargs: Additional configuration parameters
 
     Returns:
         EngineConfig instance with merged configuration
 
     Example:
-        >>> config = load_config(model="gpt-4o", api_key="sk-...")
+        >>> config = load_config(model="gpt-4o", api_key="sk-...", verbose=True)
         >>> config.model
         'gpt-4o'
     """
@@ -194,6 +204,8 @@ def load_config(
         runtime_config["n_ctx"] = n_ctx
     if n_gpu_layers is not None:
         runtime_config["n_gpu_layers"] = n_gpu_layers
+    if verbose is not None:
+        runtime_config["verbose"] = verbose
     runtime_config.update(kwargs)
 
     merged_config = default_config.model_dump()
