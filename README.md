@@ -8,8 +8,8 @@
   </a>
 </p>
 <p align="center">
-  <a href="https://asciinema.org/a/jZxeAmt87cYK1VGQ">
-    <img src="https://asciinema.org/a/jZxeAmt87cYK1VGQ.svg" alt="Loclean Demo">
+  <a href="https://asciinema.org/a/jZxeAmt87cYK1VGQ?autoplay=1&loop=1&speed=1.5&idleTimeLimit=2">
+    <img src="https://asciinema.org/a/jZxeAmt87cYK1VGQ.svg?autoplay=1&loop=1&speed=1.5&idleTimeLimit=2" alt="Loclean Demo">
   </a>
 </p>
 <p align="center">The All-in-One Local AI Data Cleaner.</p>
