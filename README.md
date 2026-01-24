@@ -7,6 +7,11 @@
     </picture>
   </a>
 </p>
+<p align="center">
+  <a href="https://asciinema.org/a/jZxeAmt87cYK1VGQ">
+    <img src="https://asciinema.org/a/jZxeAmt87cYK1VGQ.svg" alt="Loclean Demo">
+  </a>
+</p>
 <p align="center">The All-in-One Local AI Data Cleaner.</p>
 <p align="center">
   <a href="https://pypi.org/project/loclean"><img src="https://img.shields.io/pypi/v/loclean?color=blue&style=flat-square" alt="PyPI"></a>
