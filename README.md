@@ -13,12 +13,20 @@
   </a>
 </p>
 <p align="center">The All-in-One Local AI Data Cleaner.</p>
+
 <p align="center">
-  <a href="https://pypi.org/project/loclean"><img src="https://img.shields.io/pypi/v/loclean?color=blue&style=flat-square" alt="PyPI"></a>
-  <a href="https://pypi.org/project/loclean"><img src="https://img.shields.io/pypi/pyversions/loclean?style=flat-square" alt="Python Versions"></a>
-  <a href="https://github.com/nxank4/loclean/actions/workflows/ci.yml"><img src="https://github.com/nxank4/loclean/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
-  <a href="https://github.com/nxank4/loclean/blob/main/LICENSE"><img src="https://img.shields.io/github/license/nxank4/loclean?style=flat-square" alt="License"></a>
-  <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv"></a>
+  <a href="https://www.producthunt.com/products/loclean?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-loclean" target="_blank" rel="noopener noreferrer"><img alt="Loclean - ⚡️ The All-in-One Local AI Data Cleaning Library | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1067540&amp;theme=light&amp;t=1769264214743"></a>
+</p>
+
+<h3 align="center">
+  <code>pip install loclean</code>
+</h3>
+
+<p align="center">
+  <a href="https://pypi.org/project/loclean"><img src="https://img.shields.io/pypi/v/loclean?style=flat-square&color=3776ab" alt="PyPI"></a>
+  <a href="https://pypi.org/project/loclean"><img src="https://img.shields.io/pypi/pyversions/loclean?style=flat-square&color=3776ab" alt="Python Versions"></a>
+  <a href="https://github.com/nxank4/loclean/blob/main/LICENSE"><img src="https://img.shields.io/pypi/l/loclean?style=flat-square&color=3776ab" alt="License"></a>
+  <a href="https://github.com/nxank4/loclean/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/nxank4/loclean/ci.yml?style=flat-square" alt="CI Status"></a>
   <a href="https://nxank4.github.io/loclean"><img src="https://img.shields.io/badge/docs-loclean-blue?style=flat-square" alt="Documentation"></a>
 </p>
 
