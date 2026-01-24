@@ -166,7 +166,7 @@ def configure_module_logger(
             rich_tracebacks=True,
             markup=True,
             show_level=True,
-            level=level,
+            level=logging.NOTSET,  # Allow logger to control filtering
             omit_repeated_times=False,
             keywords=["model", "cache", "extract", "clean", "scrub"],
         )

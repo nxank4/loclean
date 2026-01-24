@@ -170,6 +170,12 @@ class NarwhalsEngine:
             str(x) for x in col_values if x is not None and str(x).strip() != ""
         ]
 
+        if hasattr(inference_engine, "verbose") and inference_engine.verbose:
+            logger.debug(
+                f"[bold magenta]DEBUG:[/bold magenta] Processing column '{col_name}' "
+                f"with {len(uniques)} unique values."
+            )
+
         if not uniques:
             logger.warning(
                 "No valid unique values found. Returning original DataFrame."
