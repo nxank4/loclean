@@ -92,7 +92,8 @@ Loclean supports multiple SLMs via the model registry:
 - **Source README**: `src/loclean/README.md` - Developer documentation for source code
 - **Tests README**: `tests/README.md` - Testing guidelines and structure
 - **Examples README**: `examples/README.md` - Example notebooks documentation
-- **Contributing Guide**: `CONTRIBUTION.md` - Contribution guidelines
+- **Contributing Guide**: `CONTRIBUTING.md` - Contribution guidelines
+- **Code of Conduct**: `CODE_OF_CONDUCT.md` - Community behavior standards
 - **Online Docs**: https://nxank4.github.io/loclean
 
 ## Development Workflow

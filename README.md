@@ -227,7 +227,7 @@ Check out the **[examples/](examples/)** directory for more details.
 
 We love contributions! Loclean is strictly open-source under the **Apache 2.0 License**.
 
-Please read our **[contributing guide](CONTRIBUTION.md)** for details on how to set up your development environment, run tests, and submit pull requests.
+Please read our **[contributing guide](CONTRIBUTING.md)** for details on how to set up your development environment, run tests, and submit pull requests.
 
 _Built for the data community._
 
