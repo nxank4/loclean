@@ -124,7 +124,7 @@ def scrub(
     input_data: str | IntoFrameT,
     strategies: list[str] | None = None,
     mode: str = "mask",
-    locale: str = "vi_VN",
+    locale: str = "en_US",
     *,
     target_col: str | None = None,
     model_name: Optional[str] = None,
@@ -152,7 +152,7 @@ def scrub(
                             "address", "ip_address"
         mode: "mask" (replace with [TYPE]) or "fake" (replace with fake data).
               Default: "mask"
-        locale: Faker locale for fake data generation (default: "vi_VN").
+        locale: Faker locale for fake data generation (default: "en_US").
                 Only used when mode="fake"
         target_col: Column name for DataFrame input (required for DataFrame)
         model_name: Optional model identifier for LLM detection.

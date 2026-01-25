@@ -13,12 +13,12 @@ from loclean.privacy.schemas import PIIEntity
 class FakeDataGenerator:
     """Generator for fake PII data using Faker library."""
 
-    def __init__(self, locale: str = "vi_VN") -> None:
+    def __init__(self, locale: str = "en_US") -> None:
         """
         Initialize fake data generator.
 
         Args:
-            locale: Faker locale (e.g., "vi_VN", "en_US"). Defaults to "vi_VN".
+            locale: Faker locale (e.g., "en_US", "vi_VN"). Defaults to "en_US".
 
         Raises:
             ImportError: If faker library is not installed
