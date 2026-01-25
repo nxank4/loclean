@@ -89,7 +89,7 @@ Modules for detecting and scrubbing personally identifiable information (PII).
 - **`schemas.py`**: Pydantic models for PII entities and detection results.
 
 **Guidelines:**
-- Support multiple locales for PII detection (default: `vi_VN`)
+- Support multiple locales for PII detection (default: `en_US`)
 - Use both regex and LLM detection for comprehensive coverage
 - Implement selective scrubbing strategies
 - Faker integration is optional (requires `loclean[privacy]`)
