@@ -22,7 +22,7 @@ def replace_entities(
     text: str,
     entities: List[PIIEntity],
     mode: str,
-    locale: str = "vi_VN",
+    locale: str = "en_US",
 ) -> str:
     """
     Replace entities in text with masks or fake data.
@@ -63,7 +63,7 @@ def scrub_string(
     text: str,
     strategies: List[str],
     mode: str = "mask",
-    locale: str = "vi_VN",
+    locale: str = "en_US",
     inference_engine: Optional["InferenceEngine"] = None,
     **kwargs: Any,
 ) -> str:
@@ -74,7 +74,7 @@ def scrub_string(
         text: Input text to scrub
         strategies: List of PII types to detect (e.g., ["person", "phone", "email"])
         mode: "mask" (replace with [TYPE]) or "fake" (replace with fake data)
-        locale: Faker locale for fake data generation (default: "vi_VN")
+        locale: Faker locale for fake data generation (default: "en_US")
         inference_engine: Optional inference engine for LLM detection.
                          If None, LLM strategies will be skipped.
         **kwargs: Additional arguments (unused, for API compatibility)
@@ -102,7 +102,7 @@ def scrub_dataframe(
     target_col: str,
     strategies: List[str],
     mode: str = "mask",
-    locale: str = "vi_VN",
+    locale: str = "en_US",
     inference_engine: Optional["InferenceEngine"] = None,
     **kwargs: Any,
 ) -> IntoFrameT:
@@ -114,7 +114,7 @@ def scrub_dataframe(
         target_col: Name of the column to scrub
         strategies: List of PII types to detect
         mode: "mask" (replace with [TYPE]) or "fake" (replace with fake data)
-        locale: Faker locale for fake data generation (default: "vi_VN")
+        locale: Faker locale for fake data generation (default: "en_US")
         inference_engine: Optional inference engine for LLM detection.
                          If None, LLM strategies will be skipped.
         **kwargs: Additional arguments (unused, for API compatibility)
