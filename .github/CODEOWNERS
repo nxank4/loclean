@@ -1,19 +1,109 @@
+# CODEOWNERS file for Loclean
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
 # Default owner for all files
 * @nxank4
 
-# Core package - critical business logic
-src/loclean/ @nxank4
+# ============================================================================
+# Core Source Code - Critical Business Logic
+# ============================================================================
 
-# Inference engine - core AI/LLM integration
+# Public API - changes require careful review
+src/loclean/__init__.py @nxank4
+src/loclean/_version.py @nxank4
+
+# Caching system
+src/loclean/cache.py @nxank4
+
+# CLI - user-facing commands
+src/loclean/cli/ @nxank4
+
+# Engine - backend-agnostic dataframe operations
+src/loclean/engine/ @nxank4
+
+# Extraction - structured data extraction with Pydantic
+src/loclean/extraction/ @nxank4
+
+# Inference - LLM inference engine (most critical)
 src/loclean/inference/ @nxank4
+src/loclean/inference/local/ @nxank4
 
-# GitHub Actions workflows - CI/CD configuration
-.github/workflows/ @nxank4
+# Privacy - PII detection and scrubbing
+src/loclean/privacy/ @nxank4
 
-# Project configuration files
+# Resources - static files (grammars, templates)
+src/loclean/resources/ @nxank4
+
+# Utils - utility functions
+src/loclean/utils/ @nxank4
+
+# ============================================================================
+# Tests - Quality Assurance
+# ============================================================================
+
+# Unit tests
+tests/unit/ @nxank4
+
+# Scenario tests - end-to-end and UX
+tests/scenarios/ @nxank4
+
+# Integration tests
+tests/integration/ @nxank4
+
+# Test configuration
+tests/conftest.py @nxank4
+tests/README.md @nxank4
+
+# ============================================================================
+# Documentation
+# ============================================================================
+
+# Main documentation
+README.md @nxank4
+CONTRIBUTION.md @nxank4
+SECURITY.md @nxank4
+
+# Source code documentation
+src/loclean/README.md @nxank4
+
+# Examples and tutorials
+examples/ @nxank4
+examples/README.md @nxank4
+
+# Web documentation
+docs-web/ @nxank4
+
+# ============================================================================
+# Configuration and Build Files
+# ============================================================================
+
+# Project configuration
 pyproject.toml @nxank4
 uv.lock @nxank4
 
-# Documentation
-README.md @nxank4
-docs/ @nxank4
+# GitHub workflows - CI/CD
+.github/workflows/ @nxank4
+
+# GitHub templates
+.github/ISSUE_TEMPLATE/ @nxank4
+.github/PULL_REQUEST_TEMPLATE/ @nxank4
+
+# ============================================================================
+# Development Tools and Rules
+# ============================================================================
+
+# Agent rules for AI assistants
+.agent/ @nxank4
+
+# VS Code settings
+.vscode/ @nxank4
+
+# ============================================================================
+# Assets and Resources
+# ============================================================================
+
+# Project assets (logos, images)
+assets/ @nxank4
+
+# License
+LICENSE @nxank4

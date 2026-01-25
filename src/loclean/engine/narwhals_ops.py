@@ -153,7 +153,6 @@ class NarwhalsEngine:
             raise ValueError(f"Column '{col_name}' not found in DataFrame")
 
         # Cast to String before unique() to ensure consistent types for join later.
-        # This prevents type mismatches (e.g., Int64 vs String) when joining results.
         unique_df_native = (
             df.select(nw.col(col_name).cast(nw.String)).unique().to_native()
         )
