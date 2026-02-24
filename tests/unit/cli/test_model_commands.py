@@ -2,6 +2,7 @@
 
 import io
 import sys
+from typing import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -18,7 +19,7 @@ def mock_console() -> Console:
 
 
 @pytest.fixture
-def mock_ollama() -> MagicMock:
+def mock_ollama() -> Generator[MagicMock, None, None]:
     """Create and inject a mock ollama module."""
     mock = MagicMock()
     with patch.dict(sys.modules, {"ollama": mock}):
