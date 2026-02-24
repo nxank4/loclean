@@ -10,6 +10,7 @@ environment variables to enable Langfuse tracking.
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from rich.console import Console
 from rich.table import Table
@@ -38,7 +39,7 @@ def _build_cases() -> list[TestCase]:
     ]
 
 
-def _get_tracker():  # type: ignore[no-untyped-def]
+def _get_tracker() -> Any:
     """Try to build a LangfuseTracker if credentials are available."""
     if os.getenv("LANGFUSE_PUBLIC_KEY"):
         try:
