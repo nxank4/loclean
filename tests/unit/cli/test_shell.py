@@ -1,6 +1,7 @@
 """Tests for loclean.cli.shell module."""
 
 import io
+import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -17,6 +18,8 @@ from loclean.cli.shell import (
     parse_schema,
     render,
 )
+
+shell_mod = sys.modules["loclean.cli.shell"]
 
 
 def _make_console() -> Console:
@@ -134,20 +137,22 @@ class TestHandleCommand:
 class TestExecute:
     """Tests for execute routing."""
 
-    @patch("loclean.cli.shell.loclean")
-    def test_clean_mode(self, mock_loclean: MagicMock) -> None:
+    def test_clean_mode(self) -> None:
+        mock_loclean = MagicMock()
         mock_loclean.clean.return_value = "cleaned"
         state = ShellState(mode=MODE_CLEAN)
-        result = execute("5kg", state)
+        with patch.object(shell_mod, "loclean", mock_loclean):
+            result = execute("5kg", state)
         mock_loclean.clean.assert_called_once()
         assert result == "cleaned"
 
-    @patch("loclean.cli.shell.loclean")
-    def test_extract_mode(self, mock_loclean: MagicMock) -> None:
+    def test_extract_mode(self) -> None:
+        mock_loclean = MagicMock()
         mock_loclean.extract.return_value = {"name": "shirt"}
         state = ShellState(mode=MODE_EXTRACT)
         state.schema = parse_schema(["name:str"])
-        result = execute("red shirt", state)
+        with patch.object(shell_mod, "loclean", mock_loclean):
+            result = execute("red shirt", state)
         mock_loclean.extract.assert_called_once()
         assert result == {"name": "shirt"}
 
@@ -156,19 +161,21 @@ class TestExecute:
         with pytest.raises(ValueError, match="No schema defined"):
             execute("some text", state)
 
-    @patch("loclean.cli.shell.loclean")
-    def test_scrub_mode(self, mock_loclean: MagicMock) -> None:
+    def test_scrub_mode(self) -> None:
+        mock_loclean = MagicMock()
         mock_loclean.scrub.return_value = "Contact [PERSON] at [EMAIL]"
         state = ShellState(mode=MODE_SCRUB)
-        result = execute("Contact John at john@example.com", state)
+        with patch.object(shell_mod, "loclean", mock_loclean):
+            result = execute("Contact John at john@example.com", state)
         mock_loclean.scrub.assert_called_once()
         assert "[PERSON]" in result
 
-    @patch("loclean.cli.shell.loclean")
-    def test_model_override_forwarded(self, mock_loclean: MagicMock) -> None:
+    def test_model_override_forwarded(self) -> None:
+        mock_loclean = MagicMock()
         mock_loclean.clean.return_value = "result"
         state = ShellState(mode=MODE_CLEAN, model="llama3")
-        execute("test", state)
+        with patch.object(shell_mod, "loclean", mock_loclean):
+            execute("test", state)
         _, kwargs = mock_loclean.clean.call_args
         assert kwargs["model"] == "llama3"
 

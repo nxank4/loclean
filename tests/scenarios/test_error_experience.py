@@ -42,17 +42,20 @@ def test_error_empty_dataframe() -> None:
     )
 
 
-@patch("loclean.cli.shell.loclean")
-def test_shell_connection_error_shows_help(mock_lc: MagicMock) -> None:
+def test_shell_connection_error_shows_help() -> None:
     """Verify the shell renders a helpful message on ConnectionError."""
+    import sys
 
     from loclean.cli.shell import MODE_CLEAN, ShellState, execute
 
+    shell_mod = sys.modules["loclean.cli.shell"]
+    mock_lc = MagicMock()
     mock_lc.clean.side_effect = ConnectionError("daemon unreachable")
     state = ShellState(mode=MODE_CLEAN)
 
-    with pytest.raises(ConnectionError, match="daemon unreachable"):
-        execute("5kg", state)
+    with patch.object(shell_mod, "loclean", mock_lc):
+        with pytest.raises(ConnectionError, match="daemon unreachable"):
+            execute("5kg", state)
 
 
 def test_extract_missing_schema_error() -> None:
