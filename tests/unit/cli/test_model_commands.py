@@ -1,164 +1,153 @@
 """Test cases for CLI model commands."""
 
-from pathlib import Path
-from unittest.mock import Mock, patch
+import io
+import sys
+from unittest.mock import MagicMock, patch
 
 import pytest
-from click.exceptions import Exit
+import typer
 from rich.console import Console
 
-from loclean.cli.model_commands import check_status, download_model, list_models
+from loclean.cli.model_commands import check_connection, pull_model
 
 
 @pytest.fixture
 def mock_console() -> Console:
     """Create a mock console for testing."""
-    import io
-
     return Console(file=io.StringIO(), force_terminal=False)
 
 
 @pytest.fixture
-def temp_cache_dir(tmp_path: Path) -> Path:
-    """Create a temporary cache directory."""
-    cache_dir = tmp_path / "cache"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    return cache_dir
+def mock_ollama() -> MagicMock:
+    """Create and inject a mock ollama module."""
+    mock = MagicMock()
+    with patch.dict(sys.modules, {"ollama": mock}):
+        yield mock
 
 
-@patch("loclean.cli.model_commands.get_model_registry")
-def test_list_models(mock_registry: Mock, mock_console: Console) -> None:
-    """Test list_models command."""
-    mock_registry.return_value = {
-        "phi-3-mini": {
-            "repo": "microsoft/Phi-3-mini-4k-instruct-gguf",
-            "filename": "Phi-3-mini-4k-instruct-q4.gguf",
-            "size_mb": 2400,
-            "description": "Microsoft Phi-3 Mini",
-        },
-        "tinyllama": {
-            "repo": "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF",
-            "filename": "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
-            "size_mb": 800,
-            "description": "TinyLlama 1.1B",
-        },
-    }
-    list_models(console=mock_console)
-    mock_registry.assert_called_once()
+class TestCheckConnection:
+    """Test cases for check_connection command."""
+
+    @patch("loclean.cli.model_commands.ensure_daemon")
+    def test_successful_connection(
+        self, mock_daemon: MagicMock, mock_ollama: MagicMock, mock_console: Console
+    ) -> None:
+        mock_client = MagicMock()
+        mock_client.list.return_value = {
+            "models": [
+                {
+                    "name": "phi3:latest",
+                    "size": 2_400_000_000,
+                    "modified_at": "2024-01-01T00:00:00Z",
+                },
+            ]
+        }
+        mock_ollama.Client.return_value = mock_client
+
+        check_connection(console=mock_console)
+
+        mock_daemon.assert_called_once()
+        mock_ollama.Client.assert_called_once_with(host="http://localhost:11434")
+        mock_client.list.assert_called_once()
+
+    @patch("loclean.cli.model_commands.ensure_daemon")
+    def test_daemon_not_found_exits(
+        self, mock_daemon: MagicMock, mock_console: Console
+    ) -> None:
+        mock_daemon.side_effect = FileNotFoundError("ollama not found")
+
+        with pytest.raises(typer.Exit):
+            check_connection(console=mock_console)
+
+    @patch("loclean.cli.model_commands.ensure_daemon")
+    def test_daemon_connection_error_exits(
+        self, mock_daemon: MagicMock, mock_console: Console
+    ) -> None:
+        mock_daemon.side_effect = ConnectionError("timeout")
+
+        with pytest.raises(typer.Exit):
+            check_connection(console=mock_console)
+
+    @patch("loclean.cli.model_commands.ensure_daemon")
+    def test_custom_host(
+        self, mock_daemon: MagicMock, mock_ollama: MagicMock, mock_console: Console
+    ) -> None:
+        mock_client = MagicMock()
+        mock_client.list.return_value = {"models": []}
+        mock_ollama.Client.return_value = mock_client
+
+        check_connection(host="http://custom:8080", console=mock_console)
+
+        mock_daemon.assert_called_once_with("http://custom:8080")
+        mock_ollama.Client.assert_called_once_with(host="http://custom:8080")
+
+    @patch("loclean.cli.model_commands.ensure_daemon")
+    def test_no_models_available(
+        self, mock_daemon: MagicMock, mock_ollama: MagicMock, mock_console: Console
+    ) -> None:
+        mock_client = MagicMock()
+        mock_client.list.return_value = {"models": []}
+        mock_ollama.Client.return_value = mock_client
+
+        check_connection(console=mock_console)
+
+        mock_client.list.assert_called_once()
 
 
-@patch("loclean.cli.model_commands.get_model_registry")
-@patch("loclean.cli.model_commands.Path.home")
-def test_check_status(
-    mock_home: Mock,
-    mock_registry: Mock,
-    mock_console: Console,
-    temp_cache_dir: Path,
-) -> None:
-    """Test check_status command."""
-    mock_home.return_value = temp_cache_dir.parent
-    cache_dir = temp_cache_dir / ".cache" / "loclean"
-    cache_dir.mkdir(parents=True, exist_ok=True)
+class TestPullModel:
+    """Test cases for pull_model command."""
 
-    # Create a mock downloaded model
-    model_file = cache_dir / "Phi-3-mini-4k-instruct-q4.gguf"
-    model_file.write_bytes(b"fake model")
+    @patch("loclean.cli.model_commands.ensure_model")
+    @patch("loclean.cli.model_commands.ensure_daemon")
+    def test_successful_pull(
+        self,
+        mock_daemon: MagicMock,
+        mock_ensure: MagicMock,
+        mock_ollama: MagicMock,
+        mock_console: Console,
+    ) -> None:
+        mock_ollama.Client.return_value = MagicMock()
 
-    mock_registry.return_value = {
-        "phi-3-mini": {
-            "repo": "microsoft/Phi-3-mini-4k-instruct-gguf",
-            "filename": "Phi-3-mini-4k-instruct-q4.gguf",
-            "size_mb": 2400,
-            "description": "Microsoft Phi-3 Mini",
-        },
-        "tinyllama": {
-            "repo": "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF",
-            "filename": "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
-            "size_mb": 800,
-            "description": "TinyLlama 1.1B",
-        },
-    }
+        pull_model("phi3", console=mock_console)
 
-    check_status(console=mock_console)
-    mock_registry.assert_called_once()
+        mock_daemon.assert_called_once()
+        mock_ensure.assert_called_once()
 
+    @patch("loclean.cli.model_commands.ensure_daemon")
+    def test_pull_daemon_missing_exits(
+        self, mock_daemon: MagicMock, mock_console: Console
+    ) -> None:
+        mock_daemon.side_effect = FileNotFoundError("not found")
 
-@patch("loclean.cli.model_commands.download_model_func")
-@patch("loclean.cli.model_commands.get_model_registry")
-def test_download_model_success(
-    mock_registry: Mock,
-    mock_download: Mock,
-    mock_console: Console,
-    temp_cache_dir: Path,
-) -> None:
-    """Test successful model download."""
-    mock_registry.return_value = {
-        "phi-3-mini": {
-            "repo": "microsoft/Phi-3-mini-4k-instruct-gguf",
-            "filename": "Phi-3-mini-4k-instruct-q4.gguf",
-            "size_mb": 2400,
-            "description": "Microsoft Phi-3 Mini",
-        },
-    }
-    mock_download.return_value = temp_cache_dir / "Phi-3-mini-4k-instruct-q4.gguf"
+        with pytest.raises(typer.Exit):
+            pull_model("phi3", console=mock_console)
 
-    download_model(
-        name="phi-3-mini",
-        cache_dir=None,
-        force=False,
-        console=mock_console,
-    )
+    @patch("loclean.cli.model_commands.ensure_model")
+    @patch("loclean.cli.model_commands.ensure_daemon")
+    def test_pull_runtime_error_exits(
+        self,
+        mock_daemon: MagicMock,
+        mock_ensure: MagicMock,
+        mock_ollama: MagicMock,
+        mock_console: Console,
+    ) -> None:
+        mock_ollama.Client.return_value = MagicMock()
+        mock_ensure.side_effect = RuntimeError("pull failed")
 
-    mock_registry.assert_called_once()
-    mock_download.assert_called_once_with(
-        model_name="phi-3-mini",
-        repo_id="microsoft/Phi-3-mini-4k-instruct-gguf",
-        filename="Phi-3-mini-4k-instruct-q4.gguf",
-        cache_dir=None,
-        force=False,
-        show_progress=True,
-    )
+        with pytest.raises(typer.Exit):
+            pull_model("bad-model", console=mock_console)
 
+    @patch("loclean.cli.model_commands.ensure_model")
+    @patch("loclean.cli.model_commands.ensure_daemon")
+    def test_pull_custom_host(
+        self,
+        mock_daemon: MagicMock,
+        mock_ensure: MagicMock,
+        mock_ollama: MagicMock,
+        mock_console: Console,
+    ) -> None:
+        mock_ollama.Client.return_value = MagicMock()
 
-@patch("loclean.cli.model_commands.get_model_registry")
-def test_download_model_not_found(mock_registry: Mock, mock_console: Console) -> None:
-    """Test download_model with invalid model name."""
-    mock_registry.return_value = {
-        "phi-3-mini": {
-            "repo": "microsoft/Phi-3-mini-4k-instruct-gguf",
-            "filename": "Phi-3-mini-4k-instruct-q4.gguf",
-        },
-    }
+        pull_model("phi3", host="http://custom:8080", console=mock_console)
 
-    with pytest.raises(Exit):
-        download_model(
-            name="invalid-model",
-            cache_dir=None,
-            force=False,
-            console=mock_console,
-        )
-
-
-@patch("loclean.cli.model_commands.download_model_func")
-@patch("loclean.cli.model_commands.get_model_registry")
-def test_download_model_error(
-    mock_registry: Mock,
-    mock_download: Mock,
-    mock_console: Console,
-) -> None:
-    """Test download_model with download error."""
-    mock_registry.return_value = {
-        "phi-3-mini": {
-            "repo": "microsoft/Phi-3-mini-4k-instruct-gguf",
-            "filename": "Phi-3-mini-4k-instruct-q4.gguf",
-        },
-    }
-    mock_download.side_effect = Exception("Download failed")
-
-    with pytest.raises(Exit):
-        download_model(
-            name="phi-3-mini",
-            cache_dir=None,
-            force=False,
-            console=mock_console,
-        )
+        mock_daemon.assert_called_once_with("http://custom:8080")
