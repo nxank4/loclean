@@ -125,9 +125,7 @@ class LLMDetector:
                     f"Text: {item}"
                 )
 
-                raw = self.inference_engine.generate(
-                    prompt, schema=PIIDetectionResult
-                )
+                raw = self.inference_engine.generate(prompt, schema=PIIDetectionResult)
                 data = json.loads(raw)
                 results.append(PIIDetectionResult(**data))
 

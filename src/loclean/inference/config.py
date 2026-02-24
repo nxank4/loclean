@@ -44,8 +44,7 @@ class EngineConfig(BaseModel):
     verbose: bool = Field(
         default=False,
         description=(
-            "Enable detailed logging of prompts, outputs, "
-            "and processing steps"
+            "Enable detailed logging of prompts, outputs, and processing steps"
         ),
     )
 

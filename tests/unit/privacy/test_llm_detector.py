@@ -65,9 +65,7 @@ class TestDetectBatch:
 
         mock_inference_engine.generate.return_value = json.dumps(
             {
-                "entities": [
-                    {"type": "person", "value": "John", "start": 0, "end": 4}
-                ],
+                "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
                 "reasoning": "Found person name",
             }
         )
@@ -119,9 +117,7 @@ class TestDetectBatch:
 
         mock_inference_engine.generate.return_value = json.dumps(
             {
-                "entities": [
-                    {"type": "person", "value": "John", "start": 0, "end": 4}
-                ],
+                "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
                 "reasoning": "Found person",
             }
         )
@@ -158,9 +154,7 @@ class TestDetectBatch:
 
         mock_inference_engine.generate.return_value = json.dumps(
             {
-                "entities": [
-                    {"type": "person", "value": "John", "start": 0, "end": 4}
-                ],
+                "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
                 "reasoning": "Detected",
             }
         )
@@ -268,9 +262,7 @@ class TestDetectBatch:
 
         mock_inference_engine.generate.return_value = json.dumps(
             {
-                "entities": [
-                    {"type": "person", "value": "John", "start": 0, "end": 4}
-                ],
+                "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
                 "reasoning": "Detected",
             }
         )
@@ -291,9 +283,7 @@ class TestDetectWithLLM:
 
         mock_inference_engine.generate.return_value = json.dumps(
             {
-                "entities": [
-                    {"type": "person", "value": "John", "start": 0, "end": 4}
-                ],
+                "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
                 "reasoning": "Found person",
             }
         )
@@ -353,9 +343,7 @@ class TestDetectWithLLM:
 
         mock_inference_engine.generate.return_value = json.dumps(
             {
-                "entities": [
-                    {"type": "person", "value": "John", "start": 0, "end": 4}
-                ],
+                "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
                 "reasoning": "Found",
             }
         )

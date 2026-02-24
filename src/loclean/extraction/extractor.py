@@ -267,8 +267,7 @@ class Extractor:
 
             if not raw_output:
                 logger.warning(
-                    f"[yellow]⚠[/yellow] Empty response for "
-                    f"[dim]'{text[:50]}...'[/dim]"
+                    f"[yellow]⚠[/yellow] Empty response for [dim]'{text[:50]}...'[/dim]"
                 )
                 return self._retry_extraction(text, schema, instruction, retry_count)
 

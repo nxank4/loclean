@@ -40,7 +40,6 @@ def test_error_empty_dataframe() -> None:
 def test_shell_connection_error_shows_help(mock_lc: MagicMock) -> None:
     """Verify the shell renders a helpful message on ConnectionError."""
 
-
     from loclean.cli.shell import MODE_CLEAN, ShellState, execute
 
     mock_lc.clean.side_effect = ConnectionError("daemon unreachable")

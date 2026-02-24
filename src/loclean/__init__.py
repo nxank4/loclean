@@ -113,15 +113,12 @@ class Loclean:
 
         if not issubclass(schema, BaseModel):
             raise ValueError(
-                f"Schema must be a Pydantic BaseModel subclass, "
-                f"got {type(schema)}"
+                f"Schema must be a Pydantic BaseModel subclass, got {type(schema)}"
             )
 
         from loclean.extraction.extractor import Extractor
 
-        extractor = Extractor(
-            inference_engine=self.engine, max_retries=max_retries
-        )
+        extractor = Extractor(inference_engine=self.engine, max_retries=max_retries)
         return extractor.extract(text, schema, instruction)
 
 
@@ -228,12 +225,7 @@ def scrub(
 
     inference_engine = None
     if needs_llm:
-        if (
-            model is None
-            and host is None
-            and verbose is None
-            and not engine_kwargs
-        ):
+        if model is None and host is None and verbose is None and not engine_kwargs:
             inference_engine = get_engine()
         else:
             kwargs_filtered: dict[str, Any] = {}
@@ -305,20 +297,14 @@ def extract(
 
     if not issubclass(schema, BaseModel):
         raise ValueError(
-            f"Schema must be a Pydantic BaseModel subclass, "
-            f"got {type(schema)}"
+            f"Schema must be a Pydantic BaseModel subclass, got {type(schema)}"
         )
 
     from loclean.cache import LocleanCache
     from loclean.extraction.extract_dataframe import extract_dataframe
     from loclean.extraction.extractor import Extractor
 
-    if (
-        model is None
-        and host is None
-        and verbose is None
-        and not engine_kwargs
-    ):
+    if model is None and host is None and verbose is None and not engine_kwargs:
         inference_engine = get_engine()
     else:
         kwargs_filtered: dict[str, Any] = {}
