@@ -282,8 +282,11 @@ class TestClean:
 class TestScrub:
     """Test cases for scrub function."""
 
+    @patch("loclean.get_engine")
     @patch("loclean.privacy.scrub.scrub_string")
-    def test_with_string_input(self, mock_scrub_string: Mock) -> None:
+    def test_with_string_input(
+        self, mock_scrub_string: Mock, mock_get_engine: Mock
+    ) -> None:
         """scrub() works with string input."""
         mock_scrub_string.return_value = "Contact [PERSON] at [PHONE]"
 
@@ -309,8 +312,11 @@ class TestScrub:
         assert isinstance(result, pl.DataFrame)
         mock_scrub_df.assert_called_once()
 
+    @patch("loclean.get_engine")
     @patch("loclean.privacy.scrub.scrub_string")
-    def test_with_default_strategies(self, mock_scrub_string: Mock) -> None:
+    def test_with_default_strategies(
+        self, mock_scrub_string: Mock, mock_get_engine: Mock
+    ) -> None:
         """scrub() defaults to ["person", "phone", "email"]."""
         mock_scrub_string.return_value = "Scrubbed"
 
@@ -330,8 +336,11 @@ class TestScrub:
         call_args = mock_scrub_string.call_args[0]
         assert call_args[1] == ["email", "credit_card"]
 
+    @patch("loclean.get_engine")
     @patch("loclean.privacy.scrub.scrub_string")
-    def test_with_mask_mode(self, mock_scrub_string: Mock) -> None:
+    def test_with_mask_mode(
+        self, mock_scrub_string: Mock, mock_get_engine: Mock
+    ) -> None:
         """scrub() passes mode='mask'."""
         mock_scrub_string.return_value = "[PERSON]"
 
@@ -340,8 +349,11 @@ class TestScrub:
         call_args = mock_scrub_string.call_args[0]
         assert call_args[2] == "mask"
 
+    @patch("loclean.get_engine")
     @patch("loclean.privacy.scrub.scrub_string")
-    def test_with_fake_mode(self, mock_scrub_string: Mock) -> None:
+    def test_with_fake_mode(
+        self, mock_scrub_string: Mock, mock_get_engine: Mock
+    ) -> None:
         """scrub() passes mode='fake'."""
         mock_scrub_string.return_value = "Jane Smith"
 
@@ -350,8 +362,11 @@ class TestScrub:
         call_args = mock_scrub_string.call_args[0]
         assert call_args[2] == "fake"
 
+    @patch("loclean.get_engine")
     @patch("loclean.privacy.scrub.scrub_string")
-    def test_with_locale_parameter(self, mock_scrub_string: Mock) -> None:
+    def test_with_locale_parameter(
+        self, mock_scrub_string: Mock, mock_get_engine: Mock
+    ) -> None:
         """scrub() passes locale through."""
         mock_scrub_string.return_value = "Scrubbed"
 
@@ -521,8 +536,9 @@ class TestExtract:
 
         mock_engine_class.assert_called_once()
 
+    @patch("loclean.get_engine")
     def test_valueerror_when_target_col_missing_for_dataframe(
-        self, sample_polars_df: pl.DataFrame
+        self, mock_get_engine: Mock, sample_polars_df: pl.DataFrame
     ) -> None:
         """extract() raises ValueError when target_col missing for DataFrame."""
         with pytest.raises(ValueError, match="target_col required for DataFrame input"):

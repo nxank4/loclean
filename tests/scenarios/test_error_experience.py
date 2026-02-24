@@ -26,7 +26,13 @@ def test_error_empty_dataframe() -> None:
     """Verify behavior on empty dataframe."""
     df = pl.DataFrame({"a": []}, schema={"a": pl.String})
 
-    with patch("loclean.engine.narwhals_ops.logger") as mock_logger:
+    mock_engine = MagicMock()
+    mock_engine.clean_batch.return_value = {}
+
+    with (
+        patch("loclean.get_engine", return_value=mock_engine),
+        patch("loclean.engine.narwhals_ops.logger") as mock_logger,
+    ):
         result = loclean.clean(df, "a")
 
     assert result.shape[0] == 0

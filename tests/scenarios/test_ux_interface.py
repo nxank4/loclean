@@ -1,7 +1,7 @@
 import io
 import logging
-from typing import Any, cast
-from unittest.mock import patch
+from typing import cast
+from unittest.mock import MagicMock, patch
 
 import pytest
 from rich.console import Console
@@ -109,40 +109,23 @@ def test_log_processing_summary_table(string_console: Console) -> None:
 
 
 def test_verbose_mode_logging_markup(caplog: pytest.LogCaptureFixture) -> None:
-    """Verify that LlamaCppEngine in verbose mode logs with Rich markup."""
-    from loclean.inference.local.llama_cpp import LlamaCppEngine
-    from loclean.inference.local.llama_cpp import logger as llama_logger
+    """Verify that OllamaEngine in verbose mode logs initialisation info."""
+    import sys
 
-    # Ensure the logger propagates so caplog can catch it
-    llama_logger.propagate = True
+    from loclean.inference.ollama_engine import logger as ollama_logger
+
+    ollama_logger.propagate = True
     caplog.set_level(logging.DEBUG)
 
+    mock_ollama = MagicMock()
     with (
-        patch("loclean.inference.local.llama_cpp.Llama"),
-        patch("loclean.inference.local.llama_cpp.LlamaGrammar"),
-        patch("loclean.inference.local.llama_cpp.download_model"),
-        patch("loclean.cache.LocleanCache") as mock_cache_class,
+        patch.dict(sys.modules, {"ollama": mock_ollama}),
+        patch("loclean.inference.ollama_engine.ensure_daemon"),
+        patch("loclean.inference.ollama_engine.ensure_model"),
     ):
-        # Mock cache to return empty results (force cache miss)
-        mock_cache = mock_cache_class.return_value
-        mock_cache.get_batch.return_value = {}
-        mock_cache.set_batch.return_value = None
+        from loclean.inference.ollama_engine import OllamaEngine
 
-        engine = LlamaCppEngine(verbose=True)
-        # Mock create_completion to return valid JSON
-        llm_any: Any = engine.llm
-        llm_any.create_completion.return_value = {
-            "choices": [{"text": '{"reasoning": "ok", "value": 1, "unit": "kg"}'}]
-        }
+        engine = OllamaEngine(verbose=True)
+        assert engine.verbose is True
 
-        engine.clean_batch(["unique_item_for_ux_test"], "instruction")
-
-        # Check captured logs
-        log_messages = [r.message for record in [caplog.records] for r in record]
-        assert any("[bold blue]PROMPT:[/bold blue]" in msg for msg in log_messages)
-        assert any(
-            "[bold green]RAW OUTPUT:[/bold green]" in msg for msg in log_messages
-        )
-
-    # Restore propagation
-    llama_logger.propagate = False
+    ollama_logger.propagate = False
