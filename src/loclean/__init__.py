@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Any, Optional
 
 import narwhals as nw
@@ -6,26 +5,124 @@ from narwhals.typing import IntoFrameT
 
 from loclean._version import __version__
 from loclean.engine.narwhals_ops import NarwhalsEngine
-from loclean.inference.local.llama_cpp import LlamaCppEngine
+from loclean.inference.ollama_engine import OllamaEngine
 
-__all__ = ["__version__", "clean", "get_engine", "scrub", "extract"]
+__all__ = ["__version__", "Loclean", "clean", "get_engine", "scrub", "extract"]
 
-# Global singleton instance
-# Note: This singleton pattern is not thread-safe. Do not call get_engine()
-# from multiple threads simultaneously during initialization.
-_ENGINE_INSTANCE: Optional[LlamaCppEngine] = None
+_ENGINE_INSTANCE: Optional[OllamaEngine] = None
 
 
-def get_engine() -> LlamaCppEngine:
-    """
-    Get or create the global LlamaCppEngine instance.
+def get_engine(
+    model: Optional[str] = None,
+    host: Optional[str] = None,
+    verbose: Optional[bool] = None,
+) -> OllamaEngine:
+    """Get or create the global OllamaEngine instance.
 
-    Note: This function is not thread-safe during first initialization.
+    When called without arguments, returns a singleton instance.
+    When called with overrides, creates a new dedicated instance.
+
+    Args:
+        model: Ollama model tag (e.g. "phi3", "llama3").
+        host: Ollama server URL.
+        verbose: Enable detailed logging.
+
+    Returns:
+        OllamaEngine instance.
     """
     global _ENGINE_INSTANCE
-    if _ENGINE_INSTANCE is None:
-        _ENGINE_INSTANCE = LlamaCppEngine()
-    return _ENGINE_INSTANCE
+
+    if model is None and host is None and verbose is None:
+        if _ENGINE_INSTANCE is None:
+            _ENGINE_INSTANCE = OllamaEngine()
+        return _ENGINE_INSTANCE
+
+    kwargs: dict[str, Any] = {}
+    if model is not None:
+        kwargs["model"] = model
+    if host is not None:
+        kwargs["host"] = host
+    if verbose is not None:
+        kwargs["verbose"] = verbose
+    return OllamaEngine(**kwargs)
+
+
+class Loclean:
+    """Primary user-facing API for structured data extraction via Ollama.
+
+    Connects to a running Ollama instance and uses Pydantic schemas to
+    enforce structured JSON output from LLMs.
+
+    Example::
+
+        from loclean import Loclean
+        from pydantic import BaseModel
+
+        class UserInfo(BaseModel):
+            name: str
+            age: int
+
+        cleaner = Loclean(model="phi3")
+        result = cleaner.extract(
+            "My name is John and I am 30 years old.",
+            UserInfo,
+        )
+        print(result)  # UserInfo(name='John', age=30)
+    """
+
+    def __init__(
+        self,
+        model: str = "phi3",
+        host: str = "http://localhost:11434",
+        verbose: bool = False,
+    ) -> None:
+        """Initialize a Loclean instance.
+
+        Args:
+            model: Ollama model tag (e.g. "phi3", "llama3", "gemma2").
+            host: Ollama server URL.
+            verbose: Enable detailed logging.
+
+        Raises:
+            ConnectionError: If Ollama is not running at *host*.
+        """
+        self.engine = OllamaEngine(model=model, host=host, verbose=verbose)
+
+    def extract(
+        self,
+        text: str,
+        schema: type[Any],
+        instruction: str | None = None,
+        max_retries: int = 3,
+    ) -> Any:
+        """Extract structured data from text using a Pydantic schema.
+
+        Args:
+            text: Input text to extract from.
+            schema: Pydantic BaseModel class defining the output structure.
+            instruction: Optional custom instruction.
+            max_retries: Maximum retry attempts on validation failure.
+
+        Returns:
+            Validated Pydantic model instance.
+
+        Raises:
+            ValueError: If extraction fails after max_retries.
+        """
+        from pydantic import BaseModel
+
+        if not issubclass(schema, BaseModel):
+            raise ValueError(
+                f"Schema must be a Pydantic BaseModel subclass, "
+                f"got {type(schema)}"
+            )
+
+        from loclean.extraction.extractor import Extractor
+
+        extractor = Extractor(
+            inference_engine=self.engine, max_retries=max_retries
+        )
+        return extractor.extract(text, schema, instruction)
 
 
 def clean(
@@ -33,81 +130,52 @@ def clean(
     target_col: str,
     instruction: str = "Extract the numeric value and unit as-is.",
     *,
-    model_name: Optional[str] = None,
-    cache_dir: Optional[Path] = None,
-    n_ctx: Optional[int] = None,
-    n_gpu_layers: Optional[int] = None,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
     verbose: Optional[bool] = None,
     batch_size: int = 50,
     parallel: bool = False,
     max_workers: Optional[int] = None,
     **engine_kwargs: Any,
 ) -> IntoFrameT:
-    """
-    Clean a column in a DataFrame using semantic extraction.
-    Supports pandas, Polars, Modin, cuDF, PyArrow, and other backends via Narwhals.
+    """Clean a column in a DataFrame using semantic extraction.
 
-    This function provides a high-level API while still allowing advanced users
-    to customize the underlying inference engine when needed.
+    Supports pandas, Polars, Modin, cuDF, PyArrow, and other backends
+    via Narwhals.
 
     Args:
-        df: Input DataFrame (pandas, Polars, Modin, cuDF, PyArrow, etc.).
+        df: Input DataFrame.
         target_col: Name of the column to clean.
-        instruction: Instruction to guide the LLM
-            (e.g. 'Extract the numeric value and unit as-is.').
-        model_name: Optional model identifier to override the default model
-            (e.g. 'phi-3-mini', 'qwen2-1.5b'). If not provided, the default
-            model configured in the engine will be used.
-        cache_dir: Optional custom directory for caching model weights.
-            Defaults to ~/.cache/loclean when not provided.
-        n_ctx: Optional context window size override for the underlying model.
-        n_gpu_layers: Optional number of GPU layers to use (0 = CPU only).
-        verbose: Enable detailed logging of prompts and outputs.
-        batch_size: Number of unique values to process per batch. Defaults to 50.
-        parallel: Enable parallel processing using ThreadPoolExecutor.
-                 Defaults to False for backward compatibility.
-        max_workers: Maximum number of worker threads for parallel processing.
-                    If None, auto-detected as min(cpu_count, num_batches).
-                    If 1 or parallel=False, uses sequential processing.
-                    Defaults to None.
-        **engine_kwargs: Additional keyword arguments forwarded to the
-            underlying LlamaCppEngine for advanced configuration.
+        instruction: Instruction to guide the LLM.
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        batch_size: Number of unique values per batch. Defaults to 50.
+        parallel: Enable parallel processing.
+        max_workers: Maximum worker threads for parallel processing.
+        **engine_kwargs: Additional keyword arguments forwarded to
+            OllamaEngine.
 
     Returns:
-        DataFrame with added 'clean_value', 'clean_unit', and 'clean_reasoning'
-        columns. Return type matches input type
-        (pandas -> pandas, Polars -> Polars, etc.)
+        DataFrame with added 'clean_value', 'clean_unit', and
+        'clean_reasoning' columns.
     """
     df_nw = nw.from_native(df)  # type: ignore[type-var]
     if target_col not in df_nw.columns:
         raise ValueError(f"Column '{target_col}' not found in DataFrame")
 
-    # If no engine configuration overrides are provided, reuse the global engine
-    if (
-        model_name is None
-        and cache_dir is None
-        and n_ctx is None
-        and n_gpu_layers is None
-        and verbose is None
-        and not engine_kwargs
-    ):
+    if model is None and host is None and verbose is None and not engine_kwargs:
         engine = get_engine()
     else:
-        # When users provide configuration, create a dedicated engine instance
-        # so that global singleton behavior remains unchanged.
-        engine_kwargs_filtered: dict[str, Any] = {}
-        if model_name is not None:
-            engine_kwargs_filtered["model_name"] = model_name
-        if cache_dir is not None:
-            engine_kwargs_filtered["cache_dir"] = cache_dir
-        if n_ctx is not None:
-            engine_kwargs_filtered["n_ctx"] = n_ctx
-        if n_gpu_layers is not None:
-            engine_kwargs_filtered["n_gpu_layers"] = n_gpu_layers
+        kwargs: dict[str, Any] = {}
+        if model is not None:
+            kwargs["model"] = model
+        if host is not None:
+            kwargs["host"] = host
         if verbose is not None:
-            engine_kwargs_filtered["verbose"] = verbose
-        engine_kwargs_filtered.update(engine_kwargs)
-        engine = LlamaCppEngine(**engine_kwargs_filtered)
+            kwargs["verbose"] = verbose
+        kwargs.update(engine_kwargs)
+        engine = OllamaEngine(**kwargs)
 
     return NarwhalsEngine.process_column(
         df,
@@ -127,87 +195,56 @@ def scrub(
     locale: str = "en_US",
     *,
     target_col: str | None = None,
-    model_name: Optional[str] = None,
-    cache_dir: Optional[Path] = None,
-    n_ctx: Optional[int] = None,
-    n_gpu_layers: Optional[int] = None,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
     verbose: Optional[bool] = None,
     **engine_kwargs: Any,
 ) -> str | IntoFrameT:
-    """
-    Scrub PII from text or DataFrame column.
+    """Scrub PII from text or DataFrame column.
 
-    This function detects and masks or replaces Personally Identifiable Information
-    (PII) such as names, phone numbers, emails, credit cards, and addresses.
-
-    Uses a hybrid approach:
-    - Fast regex detection for structured PII (email, phone, credit_card, ip_address)
-    - LLM-based detection for semantic PII (person names, addresses)
+    Detects and masks or replaces Personally Identifiable Information
+    (PII) such as names, phone numbers, emails, credit cards, and
+    addresses.
 
     Args:
-        input_data: String or DataFrame to scrub
+        input_data: String or DataFrame to scrub.
         strategies: List of PII types to detect.
-                   Default: ["person", "phone", "email"]
-                   Options: "person", "phone", "email", "credit_card",
-                            "address", "ip_address"
-        mode: "mask" (replace with [TYPE]) or "fake" (replace with fake data).
-              Default: "mask"
-        locale: Faker locale for fake data generation (default: "en_US").
-                Only used when mode="fake"
-        target_col: Column name for DataFrame input (required for DataFrame)
-        model_name: Optional model identifier for LLM detection.
-                   If None, uses default model from get_engine()
-        cache_dir: Optional custom directory for caching models and results
-        n_ctx: Optional context window size override
-        n_gpu_layers: Optional number of GPU layers to use (0 = CPU only)
-        verbose: Enable detailed logging of prompts and outputs.
-        **engine_kwargs: Additional arguments forwarded to inference engine
+            Default: ["person", "phone", "email"].
+        mode: "mask" or "fake". Default: "mask".
+        locale: Faker locale for fake data generation.
+        target_col: Column name for DataFrame input.
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Additional arguments forwarded to the engine.
 
     Returns:
-        Scrubbed string or DataFrame (same type as input)
-
-    Examples:
-        >>> import loclean
-        >>> text = "Contact John at 555-1234"
-        >>> loclean.scrub(text, strategies=["person", "phone"])
-        'Contact [PERSON] at [PHONE]'
-
-        >>> loclean.scrub(
-        ...     text, strategies=["person", "phone"], mode="fake", locale="en_US"
-        ... )
-        'Contact Jane Smith at 555-5678'
+        Scrubbed string or DataFrame (same type as input).
     """
     from loclean.privacy.scrub import scrub_dataframe, scrub_string
 
-    # Get inference engine if needed (for LLM strategies)
     strategies_list = strategies or ["person", "phone", "email"]
     needs_llm = any(s in ["person", "address"] for s in strategies_list)
 
     inference_engine = None
     if needs_llm:
         if (
-            model_name is None
-            and cache_dir is None
-            and n_ctx is None
-            and n_gpu_layers is None
+            model is None
+            and host is None
             and verbose is None
             and not engine_kwargs
         ):
             inference_engine = get_engine()
         else:
-            engine_kwargs_filtered: dict[str, Any] = {}
-            if model_name is not None:
-                engine_kwargs_filtered["model_name"] = model_name
-            if cache_dir is not None:
-                engine_kwargs_filtered["cache_dir"] = cache_dir
-            if n_ctx is not None:
-                engine_kwargs_filtered["n_ctx"] = n_ctx
-            if n_gpu_layers is not None:
-                engine_kwargs_filtered["n_gpu_layers"] = n_gpu_layers
+            kwargs_filtered: dict[str, Any] = {}
+            if model is not None:
+                kwargs_filtered["model"] = model
+            if host is not None:
+                kwargs_filtered["host"] = host
             if verbose is not None:
-                engine_kwargs_filtered["verbose"] = verbose
-            engine_kwargs_filtered.update(engine_kwargs)
-            inference_engine = LlamaCppEngine(**engine_kwargs_filtered)
+                kwargs_filtered["verbose"] = verbose
+            kwargs_filtered.update(engine_kwargs)
+            inference_engine = OllamaEngine(**kwargs_filtered)
 
     if isinstance(input_data, str):
         return scrub_string(
@@ -238,113 +275,72 @@ def extract(
     target_col: str | None = None,
     output_type: str = "dict",
     max_retries: int = 3,
-    model_name: Optional[str] = None,
-    cache_dir: Optional[Path] = None,
-    n_ctx: Optional[int] = None,
-    n_gpu_layers: Optional[int] = None,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
     verbose: Optional[bool] = None,
     **engine_kwargs: Any,
 ) -> Any:
-    """
-    Extract structured data from text or DataFrame column using Pydantic schema.
+    """Extract structured data from text or DataFrame column.
 
-    Ensures 100% compliance with the provided Pydantic model through:
-    - Dynamic GBNF grammar generation from Pydantic schemas
-    - JSON repair for malformed outputs
-    - Retry logic with prompt adjustment on validation failures
+    Uses a Pydantic schema to enforce strict JSON output through
+    Ollama's structured output support.
 
     Args:
-        input_data: String or DataFrame to extract from
-        schema: Pydantic BaseModel class defining the output structure
-        instruction: Optional custom instruction. If None, auto-generated from schema
-        target_col: Column name for DataFrame input (required for DataFrame)
-        output_type: Output format for DataFrame ("dict" or "pydantic"). Default: "dict"
-                   - "dict": Structured data (Polars Struct / Pandas dict) for optimal
-                             performance and vectorized operations
-                   - "pydantic": Pydantic model instances (slower, breaks vectorization)
-        max_retries: Maximum retry attempts on validation failure (default: 3)
-        model_name: Optional model identifier override
-        cache_dir: Optional custom cache directory
-        n_ctx: Optional context window size override
-        n_gpu_layers: Optional number of GPU layers to use (0 = CPU only)
-        verbose: Enable detailed logging of prompts and outputs.
-        **engine_kwargs: Additional arguments forwarded to inference engine
+        input_data: String or DataFrame to extract from.
+        schema: Pydantic BaseModel class defining the output structure.
+        instruction: Optional custom instruction.
+        target_col: Column name for DataFrame input.
+        output_type: Output format for DataFrame ("dict" or "pydantic").
+        max_retries: Maximum retry attempts on validation failure.
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Additional arguments forwarded to the engine.
 
     Returns:
-        For string input: Validated Pydantic model instance
-        For DataFrame input: DataFrame with added column `{target_col}_extracted`
-
-    Raises:
-        ValueError: If target_col is not provided for DataFrame input or
-            schema is invalid
-        ValidationError: If extraction fails after max_retries attempts
-
-    Examples:
-        >>> from pydantic import BaseModel
-        >>> import loclean
-        >>> class Product(BaseModel):
-        ...     name: str
-        ...     price: int
-        ...     color: str
-        >>> # Extract from text
-        >>> item = loclean.extract("Selling red t-shirt for 50k", schema=Product)
-        >>> print(item.name, item.price, item.color)
-        't-shirt' 50000 'red'
-        >>> # Extract from DataFrame (default: structured dict for performance)
-        >>> import polars as pl
-        >>> df = pl.DataFrame({"description": ["Selling red t-shirt for 50k"]})
-        >>> result = loclean.extract(df, schema=Product, target_col="description")
-        >>> # Query with Polars Struct
-        >>> result.filter(pl.col("description_extracted").struct.field("price") > 50000)
+        For string input: Validated Pydantic model instance.
+        For DataFrame input: DataFrame with added extraction column.
     """
     from pydantic import BaseModel
 
     if not issubclass(schema, BaseModel):
         raise ValueError(
-            f"Schema must be a Pydantic BaseModel subclass, got {type(schema)}"
+            f"Schema must be a Pydantic BaseModel subclass, "
+            f"got {type(schema)}"
         )
 
     from loclean.cache import LocleanCache
     from loclean.extraction.extract_dataframe import extract_dataframe
     from loclean.extraction.extractor import Extractor
 
-    # Get or create inference engine
     if (
-        model_name is None
-        and cache_dir is None
-        and n_ctx is None
-        and n_gpu_layers is None
+        model is None
+        and host is None
         and verbose is None
         and not engine_kwargs
     ):
         inference_engine = get_engine()
-        cache = inference_engine.cache if hasattr(inference_engine, "cache") else None
     else:
-        engine_kwargs_filtered: dict[str, Any] = {}
-        if model_name is not None:
-            engine_kwargs_filtered["model_name"] = model_name
-        if cache_dir is not None:
-            engine_kwargs_filtered["cache_dir"] = cache_dir
-        if n_ctx is not None:
-            engine_kwargs_filtered["n_ctx"] = n_ctx
-        if n_gpu_layers is not None:
-            engine_kwargs_filtered["n_gpu_layers"] = n_gpu_layers
+        kwargs_filtered: dict[str, Any] = {}
+        if model is not None:
+            kwargs_filtered["model"] = model
+        if host is not None:
+            kwargs_filtered["host"] = host
         if verbose is not None:
-            engine_kwargs_filtered["verbose"] = verbose
-        engine_kwargs_filtered.update(engine_kwargs)
-        inference_engine = LlamaCppEngine(**engine_kwargs_filtered)
-        cache = inference_engine.cache if hasattr(inference_engine, "cache") else None
-        if cache is None and cache_dir:
-            cache = LocleanCache(cache_dir=cache_dir)
+            kwargs_filtered["verbose"] = verbose
+        kwargs_filtered.update(engine_kwargs)
+        inference_engine = OllamaEngine(**kwargs_filtered)
+
+    cache = LocleanCache()
 
     if isinstance(input_data, str):
-        # String extraction
         extractor = Extractor(
-            inference_engine=inference_engine, cache=cache, max_retries=max_retries
+            inference_engine=inference_engine,
+            cache=cache,
+            max_retries=max_retries,
         )
         return extractor.extract(input_data, schema, instruction)
     else:
-        # DataFrame extraction
         if target_col is None:
             raise ValueError("target_col required for DataFrame input")
         return extract_dataframe(
