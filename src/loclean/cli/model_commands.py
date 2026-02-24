@@ -1,143 +1,121 @@
 """Implementation of model CLI commands.
 
-This module contains the actual implementation of download, list, and status commands
-with rich progress bars, tables, and error handling.
+This module provides commands for checking the Ollama connection,
+listing available models, and pulling new models.
 """
 
-from pathlib import Path
 from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from loclean.inference.local.downloader import download_model as download_model_func
-from loclean.inference.local.llama_cpp import get_model_registry
+from loclean.inference.daemon import ensure_daemon
+from loclean.inference.model_manager import ensure_model
 
 console = Console()
 
 
-def download_model(
-    name: str,
-    cache_dir: Optional[str] = None,
-    force: bool = False,
+def check_connection(
+    host: str = "http://localhost:11434",
     console: Optional[Console] = None,
 ) -> None:
-    """
-    Download a model from HuggingFace Hub.
+    """Check connection to Ollama and list available models.
+
+    Automatically starts the daemon if the host is local and
+    the server is not yet running.
 
     Args:
-        name: Model name to download.
-        cache_dir: Optional custom cache directory.
-        force: Force re-download even if exists.
+        host: Ollama server URL.
         console: Rich console instance for output.
     """
     if console is None:
         console = Console()
 
-    registry = get_model_registry()
-
-    if name not in registry:
-        console.print(f"[red]Error:[/red] Model '{name}' not found in registry.")
-        console.print("\nAvailable models:")
-        list_models(console=console)
-        raise typer.Exit(code=1)
-
-    model_info = registry[name]
-    repo_id = model_info["repo"]
-    filename = model_info["filename"]
-    size_mb = model_info.get("size_mb", 0)
-    description = model_info.get("description", "")
-
-    cache_path = Path(cache_dir) if cache_dir else None
-
-    console.print(f"[bold]Downloading model:[/bold] {name}")
-    if description:
-        console.print(f"[dim]Description:[/dim] {description}")
-    if size_mb:
-        console.print(f"[dim]Size:[/dim] ~{size_mb} MB")
+    console.print(f"[bold]Checking Ollama at:[/bold] {host}")
 
     try:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
-            task = progress.add_task("Downloading...", total=None)
-            path = download_model_func(
-                model_name=name,
-                repo_id=repo_id,
-                filename=filename,
-                cache_dir=cache_path,
-                force=force,
-                show_progress=True,
-            )
-            progress.update(task, completed=True)
-
-        console.print(f"[green]✓[/green] Successfully downloaded to: {path}")
-    except Exception as e:
-        console.print(f"[red]✗[/red] Download failed: {e}")
+        ensure_daemon(host)
+    except FileNotFoundError as e:
+        console.print(f"[red]✗[/red] {e}")
+        raise typer.Exit(code=1) from e
+    except ConnectionError as e:
+        console.print(f"[red]✗[/red] {e}")
         raise typer.Exit(code=1) from e
 
+    try:
+        import ollama as _ollama  # type: ignore[import-untyped]
 
-def list_models(console: Optional[Console] = None) -> None:
-    """
-    List all available models in the registry.
+        client = _ollama.Client(host=host)
+        models_response = client.list()
+    except Exception as e:
+        console.print(f"[red]✗[/red] Could not query Ollama: {e}")
+        raise typer.Exit(code=1) from e
 
-    Args:
-        console: Rich console instance for output.
-    """
-    if console is None:
-        console = Console()
+    console.print("[green]✓[/green] Connected to Ollama successfully!\n")
 
-    registry = get_model_registry()
+    models = models_response.get("models", [])
+    if not models:
+        console.print("[dim]No models found. Pull one with:[/dim]")
+        console.print("  loclean model pull phi3")
+        return
 
-    table = Table(title="Available Models", show_header=True, header_style="bold")
+    table = Table(
+        title="Available Ollama Models",
+        show_header=True,
+        header_style="bold",
+    )
     table.add_column("Name", style="cyan", no_wrap=True)
     table.add_column("Size", style="magenta")
-    table.add_column("Description", style="green")
+    table.add_column("Modified", style="green")
 
-    for name, info in sorted(registry.items()):
-        size_mb = info.get("size_mb", 0)
-        size_str = f"~{size_mb} MB" if size_mb else "Unknown"
-        description = info.get("description", "No description")
-        table.add_row(name, size_str, description)
+    for model in models:
+        name = model.get("name", "unknown")
+        size_bytes = model.get("size", 0)
+        size_str = f"{size_bytes / (1024 * 1024):.0f} MB" if size_bytes else "Unknown"
+        modified = model.get("modified_at", "Unknown")
+        if isinstance(modified, str) and len(modified) > 19:
+            modified = modified[:19]
+        table.add_row(name, size_str, str(modified))
 
     console.print(table)
 
 
-def check_status(console: Optional[Console] = None) -> None:
-    """
-    Check download status of all models.
+def pull_model(
+    model_name: str,
+    host: str = "http://localhost:11434",
+    console: Optional[Console] = None,
+) -> None:
+    """Pull a model from the Ollama registry with progress feedback.
+
+    Automatically starts the daemon if the host is local and
+    the server is not yet running.
 
     Args:
+        model_name: Ollama model tag to pull (e.g. "phi3", "llama3").
+        host: Ollama server URL.
         console: Rich console instance for output.
     """
     if console is None:
         console = Console()
 
-    registry = get_model_registry()
-    cache_dir = Path.home() / ".cache" / "loclean"
+    try:
+        ensure_daemon(host)
+    except FileNotFoundError as e:
+        console.print(f"[red]✗[/red] {e}")
+        raise typer.Exit(code=1) from e
+    except ConnectionError as e:
+        console.print(f"[red]✗[/red] {e}")
+        raise typer.Exit(code=1) from e
 
-    table = Table(title="Model Download Status", show_header=True, header_style="bold")
-    table.add_column("Name", style="cyan", no_wrap=True)
-    table.add_column("Status", style="magenta")
-    table.add_column("Path", style="green")
+    try:
+        import ollama as _ollama  # type: ignore[import-untyped]
 
-    for name, info in sorted(registry.items()):
-        filename = info["filename"]
-        local_path = cache_dir / filename
-
-        if local_path.exists():
-            size_mb = local_path.stat().st_size / (1024 * 1024)
-            status = f"[green]✓ Downloaded[/green] ({size_mb:.1f} MB)"
-            path_str = str(local_path)
-        else:
-            status = "[red]✗ Not downloaded[/red]"
-            path_str = "N/A"
-
-        table.add_row(name, status, path_str)
-
-    console.print(table)
-    console.print(f"\n[dim]Cache directory:[/dim] {cache_dir}")
+        client = _ollama.Client(host=host)
+        ensure_model(client, model_name, console=console)
+    except RuntimeError as e:
+        console.print(f"[red]✗[/red] {e}")
+        raise typer.Exit(code=1) from e
+    except Exception as e:
+        console.print(f"[red]✗[/red] Failed to pull model: {e}")
+        raise typer.Exit(code=1) from e

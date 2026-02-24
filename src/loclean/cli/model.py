@@ -1,12 +1,12 @@
 """Model management CLI commands.
 
-This module provides subcommands for model operations: download, list, and status.
+This module provides subcommands for Ollama model operations.
 """
 
 import typer
 from rich.console import Console
 
-from loclean.cli.model_commands import check_status, download_model, list_models
+from loclean.cli.model_commands import check_connection, pull_model
 
 app = typer.Typer(
     name="model",
@@ -17,22 +17,21 @@ console = Console()
 
 
 @app.command()
-def download(
-    name: str = typer.Option(..., "--name", "-n", help="Model name to download"),
-    cache_dir: str = typer.Option(None, "--cache-dir", help="Custom cache directory"),
-    force: bool = typer.Option(False, "--force", help="Force re-download"),
+def status(
+    host: str = typer.Option(
+        "http://localhost:11434", "--host", help="Ollama server URL"
+    ),
 ) -> None:
-    """Download a model from HuggingFace Hub."""
-    download_model(name=name, cache_dir=cache_dir, force=force, console=console)
+    """Check Ollama connection and list available models."""
+    check_connection(host=host, console=console)
 
 
 @app.command()
-def list() -> None:
-    """List all available models in the registry."""
-    list_models(console=console)
-
-
-@app.command()
-def status() -> None:
-    """Check download status of all models."""
-    check_status(console=console)
+def pull(
+    name: str = typer.Argument(..., help="Model tag to pull (e.g. phi3, llama3)"),
+    host: str = typer.Option(
+        "http://localhost:11434", "--host", help="Ollama server URL"
+    ),
+) -> None:
+    """Pull a model from the Ollama registry."""
+    pull_model(model_name=name, host=host, console=console)
