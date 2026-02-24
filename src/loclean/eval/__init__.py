@@ -6,8 +6,13 @@ outputs against ground-truth expectations.
 """
 
 from loclean.eval.evaluator import Evaluator
-from loclean.eval.metrics import (BaseMetric, ExactMatch, PartialJSONMatch,
-                                  PIIMaskingRecall, get_metric)
+from loclean.eval.metrics import (
+    BaseMetric,
+    ExactMatch,
+    PartialJSONMatch,
+    PIIMaskingRecall,
+    get_metric,
+)
 from loclean.eval.schemas import EvalResult, EvalSummary, TestCase
 
 __all__ = [
