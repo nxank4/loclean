@@ -1,3 +1,10 @@
+"""Loclean performance benchmark.
+
+Demonstrates the speedup from vectorized deduplication and persistent
+caching on a large-scale synthetic dataset.  Ollama is started and the
+model is pulled automatically if needed — no manual setup required.
+"""
+
 import logging
 import random
 import time
@@ -10,13 +17,12 @@ from rich.table import Table
 
 import loclean
 
-# Setup logging to see what's happening
 logging.basicConfig(level=logging.INFO)
 console = Console()
 
 
 def generate_complex_messy_data(rows: int, unique_patterns: int) -> List[str]:
-    """Generates extremely messy data that would be a nightmare for Regex."""
+    """Generate extremely messy weight data that would be painful for regex."""
     templates = [
         "Product {id}: weight is {val} {unit} (checked)",
         "Approx {val}{unit} - [ID:{id}]",
@@ -41,7 +47,6 @@ def generate_complex_messy_data(rows: int, unique_patterns: int) -> List[str]:
         ("milligrams", 0.000001),
     ]
 
-    # Mix of numeric and text values
     values = [
         str(round(random.uniform(0.1, 500), 2)) for _ in range(unique_patterns // 2)
     ]
@@ -60,13 +65,12 @@ def generate_complex_messy_data(rows: int, unique_patterns: int) -> List[str]:
 
 
 def run_benchmark() -> None:
-    # SETTINGS FOR A SNAPPY BUT IMPRESSIVE BENCHMARK
-    ROWS = 100_000  # Show massive scale
-    UNIQUE_PATTERNS = 30  # Keep unique items low so it finishes fast
+    ROWS = 100_000
+    UNIQUE_PATTERNS = 30
 
     console.print(
         Panel(
-            f"[bold white]Loclean Performance Benchmark (Optimized)[/bold white]\n"
+            f"[bold white]Loclean Performance Benchmark[/bold white]\n"
             f"[dim]Scale: {ROWS:,} rows | "
             f"Unique Messy Patterns: {UNIQUE_PATTERNS}[/dim]",
             title="[bold magenta]Loclean[/bold magenta]",
@@ -75,14 +79,14 @@ def run_benchmark() -> None:
         )
     )
 
-    # 1. Generate Data
+    # 1. Generate data
     with console.status("[bold green]Generating massive messy dataset..."):
         data = generate_complex_messy_data(ROWS, UNIQUE_PATTERNS)
         df = pl.DataFrame({"raw_info": data})
 
     console.print(f"✅ Dataset ready: [bold]{df.shape}[/bold]")
 
-    # 2. Measurement of Actual LLM Speed
+    # 2. Baseline LLM latency (average of 5 samples)
     console.print(
         "\n[bold cyan]1. Measuring Baseline LLM Speed "
         "(Average of 5 samples)...[/bold cyan]"
@@ -94,7 +98,6 @@ def run_benchmark() -> None:
         "If input is 'twelvemg', value is 0.000012."
     )
 
-    # Take 5 random samples to get a better average
     sample_df = df.sample(n=5)
     sample_start = time.time()
     _ = loclean.clean(sample_df, "raw_info", instruction=instruction)
@@ -109,11 +112,10 @@ def run_benchmark() -> None:
         f"({projected_naive_time / 3600:.2f} hours)"
     )
 
-    # 3. Loclean Run 1 (Deduplicated)
+    # 3. Loclean Run 1 — deduplicated
     console.print(
         "\n[bold cyan]2. Running Loclean (Run 1: Vectorized + Deduplicated)[/bold cyan]"
     )
-    # We use a unique instruction to avoid cache for the first measurement
     benchmark_instruction = f"{instruction} | BenchID:{int(time.time())}"
 
     start_loclean = time.time()
@@ -127,7 +129,7 @@ def run_benchmark() -> None:
         f"[bold green]{actual_loclean_time:.2f}s[/bold green]"
     )
 
-    # 4. Loclean Run 2 (Cache)
+    # 4. Loclean Run 2 — cache hit
     console.print(
         "\n[bold cyan]3. Running Loclean (Run 2: Persistent Cache Hit)[/bold cyan]"
     )
@@ -139,7 +141,7 @@ def run_benchmark() -> None:
         f"   Cache hit finished in: [bold green]{actual_cache_time:.4f}s[/bold green]"
     )
 
-    # 5. Reporting
+    # 5. Report
     vector_speedup = projected_naive_time / actual_loclean_time
     cache_total_speedup = projected_naive_time / max(actual_cache_time, 0.0001)
 
@@ -180,16 +182,14 @@ def run_benchmark() -> None:
     )
     console.print(result.select(["raw_info", "clean_value", "clean_unit"]).head(5))
 
-    # 6. Bonus: Debug Demonstration for failures
-    # Find a sample that might be interesting or just any sample
+    # 6. Verbose debug demo
     sample_to_debug = df.head(1)["raw_info"][0]
     console.print(
-        "\n[bold red]BONUS: Debugging a sample using new Verbose Mode "
+        "\n[bold red]BONUS: Debugging a sample using Verbose Mode "
         "(Forcing Cache Miss)[/bold red]"
     )
     console.print(f"Item: [dim]{sample_to_debug}[/dim]")
 
-    # We append a unique suffix to force a cache miss for the demo
     debug_instruction = f"{benchmark_instruction} [FORCE_DEBUG_MISS_{int(time.time())}]"
 
     loclean.clean(

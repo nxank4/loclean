@@ -54,32 +54,11 @@ class TestAppInitialization:
         # Typer outputs errors, check that command failed
         assert result.exit_code == 2  # Typer exit code for unknown command
 
-    def test_model_list_command_routing(self, runner: CliRunner) -> None:
-        """Test that model list command is accessible through main app."""
-        with patch("loclean.cli.model.list_models") as mock_list:
-            mock_list.return_value = None
-            result = runner.invoke(app, ["model", "list"])
-
-            assert result.exit_code == 0
-            mock_list.assert_called_once()
-
-    def test_model_download_command_routing(self, runner: CliRunner) -> None:
-        """Test that model download command is accessible through main app."""
-        with patch("loclean.cli.model.download_model") as mock_download:
-            from typer import Exit
-
-            mock_download.side_effect = Exit(code=1)
-            result = runner.invoke(app, ["model", "download", "--name", "test"])
-
-            # Should exit with error code when model not found
-            assert result.exit_code == 1
-            mock_download.assert_called_once()
-
     def test_model_status_command_routing(self, runner: CliRunner) -> None:
         """Test that model status command is accessible through main app."""
-        with patch("loclean.cli.model.check_status") as mock_status:
-            mock_status.return_value = None
+        with patch("loclean.cli.model.check_connection") as mock_check:
+            mock_check.return_value = None
             result = runner.invoke(app, ["model", "status"])
 
             assert result.exit_code == 0
-            mock_status.assert_called_once()
+            mock_check.assert_called_once()

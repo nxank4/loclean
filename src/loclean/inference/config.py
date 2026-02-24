@@ -9,28 +9,31 @@ priority order (highest to lowest):
 """
 
 import os
-from pathlib import Path
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 class EngineConfig(BaseModel):
-    """
-    Configuration model for inference engines.
+    """Configuration model for inference engines.
 
-    Validates paths, API keys, and model parameters with hierarchical
+    Validates API keys and model parameters with hierarchical
     configuration support.
     """
 
-    engine: Literal["llama-cpp", "openai", "anthropic", "gemini"] = Field(
-        default="llama-cpp",
+    engine: Literal["ollama", "openai", "anthropic", "gemini"] = Field(
+        default="ollama",
         description="Inference engine backend to use",
     )
 
     model: str = Field(
-        default="phi-3-mini",
-        description="Model identifier (GGUF path or cloud model ID)",
+        default="phi3",
+        description="Model identifier (Ollama tag or cloud model ID)",
+    )
+
+    host: str = Field(
+        default="http://localhost:11434",
+        description="Ollama server URL",
     )
 
     api_key: Optional[str] = Field(
@@ -38,39 +41,12 @@ class EngineConfig(BaseModel):
         description="API key for cloud inference providers",
     )
 
-    cache_dir: Path = Field(
-        default_factory=lambda: Path.home() / ".cache" / "loclean",
-        description="Directory for caching models and inference results",
-    )
-
-    n_ctx: int = Field(
-        default=4096,
-        description="Context window size for Llama.cpp models",
-        ge=512,
-        le=32768,
-    )
-
-    n_gpu_layers: int = Field(
-        default=0,
-        description="Number of GPU layers to use (0 = CPU only)",
-        ge=0,
-    )
-
     verbose: bool = Field(
         default=False,
-        description="Enable detailed logging of prompts, outputs, and processing steps",
+        description=(
+            "Enable detailed logging of prompts, outputs, and processing steps"
+        ),
     )
-
-    @field_validator("cache_dir", mode="before")
-    @classmethod
-    def validate_cache_dir(cls, v: str | Path) -> Path:
-        """Convert cache_dir to Path and ensure it exists."""
-        if isinstance(v, str):
-            path = Path(v)
-        else:
-            path = v
-        path.mkdir(parents=True, exist_ok=True)
-        return path
 
     model_config = {
         "extra": "forbid",
@@ -78,8 +54,7 @@ class EngineConfig(BaseModel):
 
 
 def _load_from_pyproject_toml() -> dict[str, Any]:
-    """
-    Load configuration from [tool.loclean] section in pyproject.toml.
+    """Load configuration from [tool.loclean] section in pyproject.toml.
 
     Returns:
         Dictionary with config values, or empty dict if not found.
@@ -90,10 +65,10 @@ def _load_from_pyproject_toml() -> dict[str, Any]:
         try:
             import tomli as tomllib  # noqa: F401
         except ImportError:
-            # tomli not available, return empty dict
             return {}
 
-    # Try to find pyproject.toml in current directory or parent directories
+    from pathlib import Path
+
     current_dir = Path.cwd()
     for path in [current_dir] + list(current_dir.parents):
         pyproject_path = path / "pyproject.toml"
@@ -105,45 +80,37 @@ def _load_from_pyproject_toml() -> dict[str, Any]:
                         result: dict[str, Any] = dict(data["tool"]["loclean"])
                         return result
             except Exception:
-                # If reading fails, continue searching
                 continue
 
     return {}
 
 
 def _load_from_env() -> dict[str, Any]:
-    """
-    Load configuration from environment variables (prefixed with LOCLEAN_).
+    """Load configuration from environment variables (prefixed with LOCLEAN_).
 
     Returns:
         Dictionary with config values from environment.
     """
     config: dict[str, Any] = {}
 
-    # Map environment variables to config keys
     env_mapping = {
         "LOCLEAN_ENGINE": "engine",
         "LOCLEAN_MODEL": "model",
+        "LOCLEAN_HOST": "host",
         "LOCLEAN_API_KEY": "api_key",
-        "LOCLEAN_CACHE_DIR": "cache_dir",
-        "LOCLEAN_N_CTX": "n_ctx",
-        "LOCLEAN_N_GPU_LAYERS": "n_gpu_layers",
         "LOCLEAN_VERBOSE": "verbose",
     }
 
     for env_var, config_key in env_mapping.items():
         value = os.getenv(env_var)
         if value is not None:
-            # Convert string values to appropriate types
-            if config_key == "n_ctx" or config_key == "n_gpu_layers":
-                try:
-                    config[config_key] = int(value)
-                except ValueError:
-                    continue
-            elif config_key == "verbose":
-                config[config_key] = value.lower() in ("true", "1", "yes", "on")
-            elif config_key == "cache_dir":
-                config[config_key] = value
+            if config_key == "verbose":
+                config[config_key] = value.lower() in (
+                    "true",
+                    "1",
+                    "yes",
+                    "on",
+                )
             else:
                 config[config_key] = value
 
@@ -153,15 +120,12 @@ def _load_from_env() -> dict[str, Any]:
 def load_config(
     engine: Optional[str] = None,
     model: Optional[str] = None,
+    host: Optional[str] = None,
     api_key: Optional[str] = None,
-    cache_dir: Optional[Path] = None,
-    n_ctx: Optional[int] = None,
-    n_gpu_layers: Optional[int] = None,
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> EngineConfig:
-    """
-    Load configuration with hierarchical priority: Param > Env > Config File > Default.
+    """Load configuration with hierarchical priority.
 
     Priority order (highest to lowest):
     1. Runtime Parameters (passed to this function)
@@ -170,22 +134,15 @@ def load_config(
     4. Defaults (hardcoded in EngineConfig)
 
     Args:
-        engine: Engine backend name (overrides all other sources)
-        model: Model identifier (overrides all other sources)
-        api_key: API key (overrides all other sources)
-        cache_dir: Cache directory (overrides all other sources)
-        n_ctx: Context window size (overrides all other sources)
-        n_gpu_layers: Number of GPU layers (overrides all other sources)
-        verbose: Enable detailed logging (overrides all other sources)
-        **kwargs: Additional configuration parameters
+        engine: Engine backend name.
+        model: Model identifier.
+        host: Ollama server URL.
+        api_key: API key for cloud providers.
+        verbose: Enable detailed logging.
+        **kwargs: Additional configuration parameters.
 
     Returns:
-        EngineConfig instance with merged configuration
-
-    Example:
-        >>> config = load_config(model="gpt-4o", api_key="sk-...", verbose=True)
-        >>> config.model
-        'gpt-4o'
+        EngineConfig instance with merged configuration.
     """
     default_config = EngineConfig()
     file_config = _load_from_pyproject_toml()
@@ -196,14 +153,10 @@ def load_config(
         runtime_config["engine"] = engine
     if model is not None:
         runtime_config["model"] = model
+    if host is not None:
+        runtime_config["host"] = host
     if api_key is not None:
         runtime_config["api_key"] = api_key
-    if cache_dir is not None:
-        runtime_config["cache_dir"] = cache_dir
-    if n_ctx is not None:
-        runtime_config["n_ctx"] = n_ctx
-    if n_gpu_layers is not None:
-        runtime_config["n_gpu_layers"] = n_gpu_layers
     if verbose is not None:
         runtime_config["verbose"] = verbose
     runtime_config.update(kwargs)

@@ -13,6 +13,26 @@ We **strongly recommend** using Jupyter notebooks to run these examples:
 
 ## Getting Started
 
+### Prerequisites
+
+Loclean uses **Ollama** for local inference. Install it once:
+
+```bash
+# Linux / WSL
+curl -fsSL https://ollama.com/install.sh | sh
+
+# macOS
+brew install ollama
+
+# All platforms → https://ollama.com/download
+```
+
+> **Note:** You do not need to manually start the daemon or pull models.
+> Loclean handles both automatically on first use:
+>
+> 1. **Auto-start** — if the Ollama daemon is not running, Loclean launches it for you.
+> 2. **Auto-pull** — if the requested model is missing, Loclean downloads it with a progress bar.
+
 ### Option 1: Jupyter notebook (recommended)
 
 ```bash
@@ -92,7 +112,7 @@ This directory contains:
 ## Requirements
 
 ```bash
-# Install Loclean
+# Install Loclean (Ollama daemon is started automatically)
 pip install loclean
 
 # For privacy scrubbing with fake data replacement
@@ -103,6 +123,19 @@ pip install jupyter
 
 # Optional: For better performance
 pip install polars pandas
+```
+
+## Model Management
+
+Loclean auto-pulls models on first use. You can also manage models explicitly via the CLI:
+
+```bash
+# Check daemon status and list local models
+loclean model status
+
+# Pull a specific model ahead of time
+loclean model pull phi3
+loclean model pull llama3
 ```
 
 ## Running Examples
@@ -116,9 +149,9 @@ pip install polars pandas
 
 - **First time?** Start with `01-quick-start.ipynb`
 - **Need help?** Check the [full documentation](https://nxank4.github.io/loclean)
-- **Model download**: First run will download the model (one-time, ~2GB). Loclean supports multiple models including Phi-3, Qwen, Gemma, DeepSeek, TinyLlama, and LFM2.5. See the [main README](../README.md#available-models) for the full list.
+- **Model auto-pull**: First run auto-downloads the default model (one-time, ~2 GB). Change models with `loclean.clean(..., model="llama3")` or set `LOCLEAN_MODEL=llama3`.
 - **Caching**: Results are cached, so re-running cells is fast
-- **Errors?** Check that you have the required dependencies installed
+- **Errors?** Check that you have Ollama installed (`ollama --version`) and the required Python dependencies
 
 ## Documentation
 

@@ -12,12 +12,8 @@ from loclean.privacy.llm_detector import LLMDetector
 
 @pytest.fixture
 def mock_inference_engine() -> MagicMock:
-    """Create a mock inference engine with LLM access."""
+    """Create a mock inference engine with generate method."""
     engine = MagicMock()
-    engine.llm = MagicMock()
-    engine.adapter = MagicMock()
-    engine.adapter.format.return_value = "formatted prompt"
-    engine.adapter.get_stop_tokens.return_value = ["</s>", "\n"]
     return engine
 
 
@@ -57,25 +53,6 @@ class TestLLMDetectorInitialization:
         assert detector.cache is not None
         assert isinstance(detector.cache, LocleanCache)
 
-    @patch("loclean.privacy.llm_detector.load_template")
-    @patch("loclean.utils.resources.load_grammar")
-    def test_grammar_and_template_loading(
-        self,
-        mock_load_grammar: Mock,
-        mock_load_template: Mock,
-        mock_inference_engine: MagicMock,
-    ) -> None:
-        """Test grammar and template loading."""
-        mock_load_grammar.return_value = "grammar content"
-        mock_load_template.return_value = "template content"
-
-        detector = LLMDetector(inference_engine=mock_inference_engine)
-
-        mock_load_grammar.assert_called_once_with("pii_detection.gbnf")
-        mock_load_template.assert_called_once_with("pii_detection.j2")
-        assert detector.grammar_str == "grammar content"
-        assert detector.template_str == "template content"
-
 
 class TestDetectBatch:
     """Test cases for detect_batch method."""
@@ -86,27 +63,12 @@ class TestDetectBatch:
         """Test detection with LLM strategies (person)."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        # Mock LLM output
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {
-                            "entities": [
-                                {
-                                    "type": "person",
-                                    "value": "John",
-                                    "start": 0,
-                                    "end": 4,
-                                }
-                            ],
-                            "reasoning": "Found person name",
-                        }
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps(
+            {
+                "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
+                "reasoning": "Found person name",
+            }
+        )
 
         results = detector.detect_batch(["Contact John"], ["person"])
 
@@ -120,26 +82,14 @@ class TestDetectBatch:
         """Test detection with LLM strategies (address)."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {
-                            "entities": [
-                                {
-                                    "type": "address",
-                                    "value": "123 Main St",
-                                    "start": 0,
-                                    "end": 11,
-                                }
-                            ],
-                            "reasoning": "Found address",
-                        }
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps(
+            {
+                "entities": [
+                    {"type": "address", "value": "123 Main St", "start": 0, "end": 11}
+                ],
+                "reasoning": "Found address",
+            }
+        )
 
         results = detector.detect_batch(["123 Main St"], ["address"])
 
@@ -157,7 +107,7 @@ class TestDetectBatch:
 
         assert len(results) == 1
         assert len(results[0].entities) == 0
-        mock_inference_engine.llm.create_completion.assert_not_called()
+        mock_inference_engine.generate.assert_not_called()
 
     def test_detection_with_mixed_strategies(
         self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
@@ -165,30 +115,15 @@ class TestDetectBatch:
         """Test detection with mixed strategies."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {
-                            "entities": [
-                                {
-                                    "type": "person",
-                                    "value": "John",
-                                    "start": 0,
-                                    "end": 4,
-                                }
-                            ],
-                            "reasoning": "Found person",
-                        }
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps(
+            {
+                "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
+                "reasoning": "Found person",
+            }
+        )
 
         results = detector.detect_batch(["Contact John"], ["person", "email"])
 
-        # Should only process person (LLM strategy), not email
         assert len(results) == 1
 
     def test_cache_hit_scenario_all_items_cached(
@@ -197,7 +132,6 @@ class TestDetectBatch:
         """Test cache hit scenario (all items cached)."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        # Pre-populate cache
         cached_data = {
             "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
             "reasoning": "Cached result",
@@ -210,7 +144,7 @@ class TestDetectBatch:
 
         assert len(results) == 1
         assert results[0].reasoning == "Cached result"
-        mock_inference_engine.llm.create_completion.assert_not_called()
+        mock_inference_engine.generate.assert_not_called()
 
     def test_cache_miss_scenario_all_items_need_inference(
         self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
@@ -218,31 +152,17 @@ class TestDetectBatch:
         """Test cache miss scenario (all items need inference)."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {
-                            "entities": [
-                                {
-                                    "type": "person",
-                                    "value": "John",
-                                    "start": 0,
-                                    "end": 4,
-                                }
-                            ],
-                            "reasoning": "Detected",
-                        }
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps(
+            {
+                "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
+                "reasoning": "Detected",
+            }
+        )
 
         results = detector.detect_batch(["Contact John"], ["person"])
 
         assert len(results) == 1
-        mock_inference_engine.llm.create_completion.assert_called()
+        mock_inference_engine.generate.assert_called()
 
     def test_partial_cache_hits(
         self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
@@ -250,7 +170,6 @@ class TestDetectBatch:
         """Test partial cache hits."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        # Cache one item
         cached_data = {
             "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
             "reasoning": "Cached",
@@ -259,55 +178,21 @@ class TestDetectBatch:
             ["Contact John"], "Detect person", {"Contact John": cached_data}
         )
 
-        # Mock LLM for second item
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {
-                            "entities": [
-                                {
-                                    "type": "person",
-                                    "value": "Alice",
-                                    "start": 0,
-                                    "end": 5,
-                                }
-                            ],
-                            "reasoning": "Detected",
-                        }
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps(
+            {
+                "entities": [
+                    {"type": "person", "value": "Alice", "start": 0, "end": 5}
+                ],
+                "reasoning": "Detected",
+            }
+        )
 
         results = detector.detect_batch(["Contact John", "Contact Alice"], ["person"])
 
         assert len(results) == 2
         assert results[0].reasoning == "Cached"
         assert results[1].reasoning == "Detected"
-        # Should only call LLM once (for Alice)
-        assert mock_inference_engine.llm.create_completion.call_count == 1
-
-    def test_cache_result_parsing_valid_json(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test cache result parsing (valid JSON)."""
-        detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
-
-        cached_data = {
-            "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
-            "reasoning": "Valid cached",
-        }
-        mock_cache.set_batch(
-            ["Contact John"], "Detect person", {"Contact John": cached_data}
-        )
-
-        results = detector.detect_batch(["Contact John"], ["person"])
-
-        assert len(results) == 1
-        assert results[0].reasoning == "Valid cached"
-        assert len(results[0].entities) == 1
+        assert mock_inference_engine.generate.call_count == 1
 
     def test_cache_result_parsing_invalid_json_fallback_to_empty(
         self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
@@ -315,7 +200,6 @@ class TestDetectBatch:
         """Test cache result parsing (invalid JSON - fallback to empty)."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        # Set invalid cached data
         mock_cache.set_batch(
             ["Contact John"], "Detect person", {"Contact John": {"invalid": "data"}}
         )
@@ -331,47 +215,24 @@ class TestDetectBatch:
         """Test batch processing with multiple items."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_outputs = [
-            {
-                "choices": [
-                    {
-                        "text": json.dumps(
-                            {
-                                "entities": [
-                                    {
-                                        "type": "person",
-                                        "value": "John",
-                                        "start": 0,
-                                        "end": 4,
-                                    }
-                                ],
-                                "reasoning": "Found John",
-                            }
-                        )
-                    }
-                ]
-            },
-            {
-                "choices": [
-                    {
-                        "text": json.dumps(
-                            {
-                                "entities": [
-                                    {
-                                        "type": "person",
-                                        "value": "Alice",
-                                        "start": 0,
-                                        "end": 5,
-                                    }
-                                ],
-                                "reasoning": "Found Alice",
-                            }
-                        )
-                    }
-                ]
-            },
+        mock_inference_engine.generate.side_effect = [
+            json.dumps(
+                {
+                    "entities": [
+                        {"type": "person", "value": "John", "start": 0, "end": 4}
+                    ],
+                    "reasoning": "Found John",
+                }
+            ),
+            json.dumps(
+                {
+                    "entities": [
+                        {"type": "person", "value": "Alice", "start": 0, "end": 5}
+                    ],
+                    "reasoning": "Found Alice",
+                }
+            ),
         ]
-        mock_inference_engine.llm.create_completion.side_effect = mock_outputs
 
         results = detector.detect_batch(["Contact John", "Contact Alice"], ["person"])
 
@@ -399,26 +260,12 @@ class TestDetectBatch:
         """Test Rich cache statistics logging."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {
-                            "entities": [
-                                {
-                                    "type": "person",
-                                    "value": "John",
-                                    "start": 0,
-                                    "end": 4,
-                                }
-                            ],
-                            "reasoning": "Detected",
-                        }
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps(
+            {
+                "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
+                "reasoning": "Detected",
+            }
+        )
 
         detector.detect_batch(["Contact John"], ["person"])
 
@@ -434,26 +281,12 @@ class TestDetectWithLLM:
         """Test LLM detection with valid output."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {
-                            "entities": [
-                                {
-                                    "type": "person",
-                                    "value": "John",
-                                    "start": 0,
-                                    "end": 4,
-                                }
-                            ],
-                            "reasoning": "Found person",
-                        }
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps(
+            {
+                "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
+                "reasoning": "Found person",
+            }
+        )
 
         results = detector._detect_with_llm(["Contact John"], ["person"])
 
@@ -467,8 +300,7 @@ class TestDetectWithLLM:
         """Test LLM detection with JSON decode error."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {"choices": [{"text": "invalid json"}]}
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = "invalid json"
 
         results = detector._detect_with_llm(["Contact John"], ["person"])
 
@@ -481,9 +313,7 @@ class TestDetectWithLLM:
         """Test LLM detection with inference exception."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_inference_engine.llm.create_completion.side_effect = Exception(
-            "Inference failed"
-        )
+        mock_inference_engine.generate.side_effect = Exception("Inference failed")
 
         results = detector._detect_with_llm(["Contact John"], ["person"])
 
@@ -496,197 +326,29 @@ class TestDetectWithLLM:
         """Test LLM detection with empty output."""
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {"choices": [{"text": ""}]}
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = ""
 
         results = detector._detect_with_llm(["Contact John"], ["person"])
 
         assert len(results) == 1
         assert len(results[0].entities) == 0
 
-    def test_llm_detection_with_dict_output_format(
+    def test_generate_called_with_piidetectionresult_schema(
         self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
     ) -> None:
-        """Test LLM detection with dict output format."""
+        """Test generate is called with PIIDetectionResult schema."""
+        from loclean.privacy.schemas import PIIDetectionResult
+
         detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {
-                            "entities": [
-                                {
-                                    "type": "person",
-                                    "value": "John",
-                                    "start": 0,
-                                    "end": 4,
-                                }
-                            ],
-                            "reasoning": "Found",
-                        }
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
-
-        results = detector._detect_with_llm(["Contact John"], ["person"])
-
-        assert len(results) == 1
-        assert len(results[0].entities) == 1
-
-    def test_llm_detection_with_iterator_output_format(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test LLM detection with iterator output format."""
-        detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
-
-        # Simulate iterator output
-        mock_output = iter(
-            [
-                {
-                    "choices": [
-                        {
-                            "text": json.dumps(
-                                {
-                                    "entities": [
-                                        {
-                                            "type": "person",
-                                            "value": "John",
-                                            "start": 0,
-                                            "end": 4,
-                                        }
-                                    ],
-                                    "reasoning": "Found",
-                                }
-                            )
-                        }
-                    ]
-                }
-            ]
+        mock_inference_engine.generate.return_value = json.dumps(
+            {
+                "entities": [{"type": "person", "value": "John", "start": 0, "end": 4}],
+                "reasoning": "Found",
+            }
         )
-        mock_inference_engine.llm.create_completion.return_value = mock_output
-
-        results = detector._detect_with_llm(["Contact John"], ["person"])
-
-        assert len(results) == 1
-        assert len(results[0].entities) == 1
-
-    def test_fallback_when_inference_engine_lacks_llm_access(
-        self, mock_cache: LocleanCache
-    ) -> None:
-        """Test fallback when inference engine lacks LLM access."""
-        # Create engine without llm attribute
-        engine = MagicMock()
-        del engine.llm
-
-        detector = LLMDetector(inference_engine=engine, cache=mock_cache)
-
-        results = detector._detect_with_llm(["Contact John"], ["person"])
-
-        assert len(results) == 1
-        assert len(results[0].entities) == 0
-
-    @patch("llama_cpp.LlamaGrammar")
-    def test_grammar_generation_from_piidetectionresult_schema(
-        self,
-        mock_grammar: Mock,
-        mock_inference_engine: MagicMock,
-        mock_cache: LocleanCache,
-    ) -> None:
-        """Test grammar generation from PIIDetectionResult schema."""
-        detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
-
-        mock_grammar_instance = MagicMock()
-        mock_grammar.from_json_schema.return_value = mock_grammar_instance
-
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {
-                            "entities": [
-                                {
-                                    "type": "person",
-                                    "value": "John",
-                                    "start": 0,
-                                    "end": 4,
-                                }
-                            ],
-                            "reasoning": "Found",
-                        }
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
 
         detector._detect_with_llm(["Contact John"], ["person"])
 
-        mock_grammar.from_json_schema.assert_called_once()
-
-    def test_prompt_formatting_with_adapter(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test prompt formatting with adapter."""
-        detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
-
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {
-                            "entities": [
-                                {
-                                    "type": "person",
-                                    "value": "John",
-                                    "start": 0,
-                                    "end": 4,
-                                }
-                            ],
-                            "reasoning": "Found",
-                        }
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
-
-        detector._detect_with_llm(["Contact John"], ["person"])
-
-        mock_inference_engine.adapter.format.assert_called()
-        mock_inference_engine.adapter.get_stop_tokens.assert_called()
-
-    def test_stop_tokens_usage(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test stop tokens usage."""
-        detector = LLMDetector(inference_engine=mock_inference_engine, cache=mock_cache)
-
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {
-                            "entities": [
-                                {
-                                    "type": "person",
-                                    "value": "John",
-                                    "start": 0,
-                                    "end": 4,
-                                }
-                            ],
-                            "reasoning": "Found",
-                        }
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
-
-        detector._detect_with_llm(["Contact John"], ["person"])
-
-        call_kwargs = mock_inference_engine.llm.create_completion.call_args[1]
-        assert "stop" in call_kwargs
-        assert call_kwargs["stop"] == ["</s>", "\n"]
+        call_kwargs = mock_inference_engine.generate.call_args[1]
+        assert call_kwargs["schema"] is PIIDetectionResult

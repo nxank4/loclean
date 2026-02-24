@@ -27,12 +27,8 @@ class SimpleSchema(BaseModel):
 
 @pytest.fixture
 def mock_inference_engine() -> MagicMock:
-    """Create a mock inference engine with LLM access."""
+    """Create a mock inference engine with generate method."""
     engine = MagicMock()
-    engine.llm = MagicMock()
-    engine.adapter = MagicMock()
-    engine.adapter.format.return_value = "formatted prompt"
-    engine.adapter.get_stop_tokens.return_value = ["</s>"]
     engine.verbose = False
     return engine
 
@@ -78,14 +74,6 @@ class TestExtractorInitialization:
 
         assert extractor.max_retries == 5
 
-    def test_verbose_mode_from_inference_engine(
-        self, mock_inference_engine: MagicMock
-    ) -> None:
-        """Test verbose mode from inference engine."""
-        mock_inference_engine.verbose = True
-
-        Extractor(inference_engine=mock_inference_engine)
-
 
 class TestExtract:
     """Test cases for extract method."""
@@ -96,16 +84,9 @@ class TestExtract:
         """Test successful extraction with valid schema."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {"name": "t-shirt", "price": 50000, "color": "red"}
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps(
+            {"name": "t-shirt", "price": 50000, "color": "red"}
+        )
 
         result = extractor.extract("Selling red t-shirt for 50k", Product)
 
@@ -120,9 +101,7 @@ class TestExtract:
         """Test extraction with cache hit."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        # Pre-populate cache
         cached_data = {"name": "t-shirt", "price": 50000, "color": "red"}
-        # Get the actual instruction that will be used
         instruction = extractor._build_instruction(Product, None)
         cache_key = extractor._get_cache_key(
             "Selling red t-shirt for 50k", Product, instruction
@@ -137,7 +116,7 @@ class TestExtract:
 
         assert isinstance(result, Product)
         assert result.name == "t-shirt"
-        mock_inference_engine.llm.create_completion.assert_not_called()
+        mock_inference_engine.generate.assert_not_called()
 
     def test_extraction_with_cache_miss(
         self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
@@ -145,21 +124,14 @@ class TestExtract:
         """Test extraction with cache miss."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {"name": "t-shirt", "price": 50000, "color": "red"}
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps(
+            {"name": "t-shirt", "price": 50000, "color": "red"}
+        )
 
         result = extractor.extract("Selling red t-shirt for 50k", Product)
 
         assert isinstance(result, Product)
-        mock_inference_engine.llm.create_completion.assert_called()
+        mock_inference_engine.generate.assert_called()
 
     def test_extraction_with_custom_instruction(
         self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
@@ -167,49 +139,17 @@ class TestExtract:
         """Test extraction with custom instruction."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {"name": "t-shirt", "price": 50000, "color": "red"}
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps(
+            {"name": "t-shirt", "price": 50000, "color": "red"}
+        )
 
         result = extractor.extract(
             "Selling red t-shirt for 50k", Product, instruction="Extract product info"
         )
 
         assert isinstance(result, Product)
-        # Verify custom instruction was used
-        mock_inference_engine.adapter.format.assert_called()
-        call_args = mock_inference_engine.adapter.format.call_args[0]
-        assert "Extract product info" in call_args[0]
-
-    def test_extraction_with_auto_generated_instruction(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test extraction with auto-generated instruction."""
-        extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
-
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {"name": "t-shirt", "price": 50000, "color": "red"}
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
-
-        result = extractor.extract(
-            "Selling red t-shirt for 50k", Product, instruction=None
-        )
-
-        assert isinstance(result, Product)
+        call_args = mock_inference_engine.generate.call_args
+        assert "Extract product info" in call_args[0][0]
 
     def test_extraction_with_invalid_schema_not_basemodel(
         self, mock_inference_engine: MagicMock
@@ -231,13 +171,7 @@ class TestExtract:
             inference_engine=mock_inference_engine, cache=mock_cache, max_retries=2
         )
 
-        # Mock invalid output that will fail validation
-        mock_output = {
-            "choices": [
-                {"text": json.dumps({"invalid": "data"})}  # Missing required fields
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps({"invalid": "data"})
 
         with pytest.raises(ValueError, match="Failed to extract"):
             extractor.extract("test", Product)
@@ -248,13 +182,9 @@ class TestExtract:
         """Test extraction with JSON repair needed."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        # Malformed JSON with trailing comma
-        mock_output = {
-            "choices": [
-                {"text": '{"name": "t-shirt", "price": 50000, "color": "red",}'}
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = (
+            '{"name": "t-shirt", "price": 50000, "color": "red",}'
+        )
 
         result = extractor.extract("Selling red t-shirt for 50k", Product)
 
@@ -269,25 +199,15 @@ class TestExtract:
             inference_engine=mock_inference_engine, cache=mock_cache, max_retries=3
         )
 
-        # First call: invalid output, second call: valid output
-        mock_outputs = [
-            {"choices": [{"text": json.dumps({"name": "t-shirt"})}]},  # Missing fields
-            {
-                "choices": [
-                    {
-                        "text": json.dumps(
-                            {"name": "t-shirt", "price": 50000, "color": "red"}
-                        )
-                    }
-                ]
-            },
+        mock_inference_engine.generate.side_effect = [
+            json.dumps({"name": "t-shirt"}),  # Missing fields
+            json.dumps({"name": "t-shirt", "price": 50000, "color": "red"}),
         ]
-        mock_inference_engine.llm.create_completion.side_effect = mock_outputs
 
         result = extractor.extract("Selling red t-shirt for 50k", Product)
 
         assert isinstance(result, Product)
-        assert mock_inference_engine.llm.create_completion.call_count == 2
+        assert mock_inference_engine.generate.call_count == 2
 
 
 class TestExtractBatch:
@@ -299,27 +219,10 @@ class TestExtractBatch:
         """Test batch extraction with multiple items."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_outputs = [
-            {
-                "choices": [
-                    {
-                        "text": json.dumps(
-                            {"name": "t-shirt", "price": 50000, "color": "red"}
-                        )
-                    }
-                ]
-            },
-            {
-                "choices": [
-                    {
-                        "text": json.dumps(
-                            {"name": "jeans", "price": 80000, "color": "blue"}
-                        )
-                    }
-                ]
-            },
+        mock_inference_engine.generate.side_effect = [
+            json.dumps({"name": "t-shirt", "price": 50000, "color": "red"}),
+            json.dumps({"name": "jeans", "price": 80000, "color": "blue"}),
         ]
-        mock_inference_engine.llm.create_completion.side_effect = mock_outputs
 
         results = extractor.extract_batch(
             ["Selling red t-shirt for 50k", "Selling blue jeans for 80k"], Product
@@ -335,10 +238,8 @@ class TestExtractBatch:
         """Test batch extraction with cache hits."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        # Pre-populate cache with the actual instruction that will be used
         instruction = extractor._build_instruction(Product, None)
         cached_data = {"name": "t-shirt", "price": 50000, "color": "red"}
-        # extract_batch uses empty string for text in cache key
         cache_key = extractor._get_cache_key("", Product, instruction)
         mock_cache.set_batch(
             ["Selling red t-shirt for 50k"],
@@ -350,29 +251,7 @@ class TestExtractBatch:
 
         assert len(results) == 1
         assert results["Selling red t-shirt for 50k"] is not None
-        mock_inference_engine.llm.create_completion.assert_not_called()
-
-    def test_batch_extraction_with_cache_misses(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test batch extraction with cache misses."""
-        extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
-
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {"name": "t-shirt", "price": 50000, "color": "red"}
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
-
-        results = extractor.extract_batch(["Selling red t-shirt for 50k"], Product)
-
-        assert len(results) == 1
-        mock_inference_engine.llm.create_completion.assert_called()
+        mock_inference_engine.generate.assert_not_called()
 
     def test_batch_extraction_with_mixed_results(
         self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
@@ -382,21 +261,10 @@ class TestExtractBatch:
             inference_engine=mock_inference_engine, cache=mock_cache, max_retries=1
         )
 
-        mock_outputs = [
-            {
-                "choices": [
-                    {
-                        "text": json.dumps(
-                            {"name": "t-shirt", "price": 50000, "color": "red"}
-                        )
-                    }
-                ]
-            },
-            {
-                "choices": [{"text": json.dumps({"invalid": "data"})}]
-            },  # Will fail validation
+        mock_inference_engine.generate.side_effect = [
+            json.dumps({"name": "t-shirt", "price": 50000, "color": "red"}),
+            json.dumps({"invalid": "data"}),
         ]
-        mock_inference_engine.llm.create_completion.side_effect = mock_outputs
 
         results = extractor.extract_batch(
             ["Selling red t-shirt for 50k", "Invalid text"], Product
@@ -405,23 +273,6 @@ class TestExtractBatch:
         assert len(results) == 2
         assert results["Selling red t-shirt for 50k"] is not None
         assert results["Invalid text"] is None
-
-    def test_batch_extraction_with_all_failures(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test batch extraction with all failures."""
-        extractor = Extractor(
-            inference_engine=mock_inference_engine, cache=mock_cache, max_retries=1
-        )
-
-        mock_output = {"choices": [{"text": json.dumps({"invalid": "data"})}]}
-        mock_inference_engine.llm.create_completion.return_value = mock_output
-
-        results = extractor.extract_batch(["Invalid text 1", "Invalid text 2"], Product)
-
-        assert len(results) == 2
-        assert results["Invalid text 1"] is None
-        assert results["Invalid text 2"] is None
 
     def test_batch_extraction_with_empty_list(
         self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
@@ -443,16 +294,9 @@ class TestExtractBatch:
         """Test Rich processing summary logging."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {
-            "choices": [
-                {
-                    "text": json.dumps(
-                        {"name": "t-shirt", "price": 50000, "color": "red"}
-                    )
-                }
-            ]
-        }
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps(
+            {"name": "t-shirt", "price": 50000, "color": "red"}
+        )
 
         extractor.extract_batch(["Selling red t-shirt for 50k"], Product)
 
@@ -470,10 +314,7 @@ class TestExtractBatch:
             inference_engine=mock_inference_engine, cache=mock_cache, max_retries=0
         )
 
-        # Mock _extract_with_retry to raise ValidationError directly
         from typing import Any
-
-        from pydantic import ValidationError
 
         def mock_extract(*args: object, **kwargs: object) -> None:
             errors: list[dict[str, Any]] = [
@@ -481,50 +322,11 @@ class TestExtractBatch:
             ]
             raise ValidationError.from_exception_data("Product", errors)  # type: ignore[arg-type]
 
-        mock_inference_engine.llm.create_completion.return_value = {
-            "choices": [{"text": json.dumps({"invalid": "data"})}]
-        }
-
         with patch.object(extractor, "_extract_with_retry", side_effect=mock_extract):
-            # Create 4 items that will all fail with ValidationError
             items = [f"Invalid text {i}" for i in range(4)]
             extractor.extract_batch(items, Product)
 
-        # Error summary is only logged when len(errors) > 3
-        # ValidationError exceptions should be caught and added to errors list
         mock_log_errors.assert_called_once()
-
-    def test_cache_storage_for_successful_results_only(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test cache storage for successful results only."""
-        extractor = Extractor(
-            inference_engine=mock_inference_engine, cache=mock_cache, max_retries=1
-        )
-
-        mock_outputs = [
-            {
-                "choices": [
-                    {
-                        "text": json.dumps(
-                            {"name": "t-shirt", "price": 50000, "color": "red"}
-                        )
-                    }
-                ]
-            },
-            {"choices": [{"text": json.dumps({"invalid": "data"})}]},
-        ]
-        mock_inference_engine.llm.create_completion.side_effect = mock_outputs
-
-        extractor.extract_batch(
-            ["Selling red t-shirt for 50k", "Invalid text"], Product
-        )
-
-        # Only successful result should be cached
-        instruction = extractor._build_instruction(Product, None)
-        cache_key = extractor._get_cache_key("", Product, instruction)
-        # Note: cache may not have the item if extraction failed validation
-        mock_cache.get_batch(["Selling red t-shirt for 50k"], cache_key)
 
 
 class TestExtractWithRetry:
@@ -536,8 +338,7 @@ class TestExtractWithRetry:
         """Test successful extraction on first attempt."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {"choices": [{"text": json.dumps({"value": "test"})}]}
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps({"value": "test"})
 
         result = extractor._extract_with_retry("test", SimpleSchema, "Extract value", 0)
 
@@ -552,16 +353,15 @@ class TestExtractWithRetry:
             inference_engine=mock_inference_engine, cache=mock_cache, max_retries=2
         )
 
-        mock_outputs = [
-            {"choices": [{"text": json.dumps({"invalid": "data"})}]},  # First: invalid
-            {"choices": [{"text": json.dumps({"value": "test"})}]},  # Second: valid
+        mock_inference_engine.generate.side_effect = [
+            json.dumps({"invalid": "data"}),
+            json.dumps({"value": "test"}),
         ]
-        mock_inference_engine.llm.create_completion.side_effect = mock_outputs
 
         result = extractor._extract_with_retry("test", SimpleSchema, "Extract value", 0)
 
         assert isinstance(result, SimpleSchema)
-        assert mock_inference_engine.llm.create_completion.call_count == 2
+        assert mock_inference_engine.generate.call_count == 2
 
     def test_max_retries_exceeded_returns_none(
         self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
@@ -571,91 +371,24 @@ class TestExtractWithRetry:
             inference_engine=mock_inference_engine, cache=mock_cache, max_retries=2
         )
 
-        mock_output = {"choices": [{"text": json.dumps({"invalid": "data"})}]}
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps({"invalid": "data"})
 
         result = extractor._extract_with_retry("test", SimpleSchema, "Extract value", 2)
 
         assert result is None
 
-    @patch("loclean.extraction.extractor.get_grammar_from_schema")
-    def test_grammar_generation_from_schema(
-        self,
-        mock_get_grammar: Mock,
-        mock_inference_engine: MagicMock,
-        mock_cache: LocleanCache,
+    def test_generate_called_with_schema(
+        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
     ) -> None:
-        """Test grammar generation from schema."""
+        """Test that generate is called with the schema parameter."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_grammar = MagicMock()
-        mock_get_grammar.return_value = mock_grammar
-
-        mock_output = {"choices": [{"text": json.dumps({"value": "test"})}]}
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps({"value": "test"})
 
         extractor._extract_with_retry("test", SimpleSchema, "Extract value", 0)
 
-        mock_get_grammar.assert_called_once_with(SimpleSchema)
-
-    def test_prompt_formatting_with_adapter(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test prompt formatting with adapter."""
-        extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
-
-        mock_output = {"choices": [{"text": json.dumps({"value": "test"})}]}
-        mock_inference_engine.llm.create_completion.return_value = mock_output
-
-        extractor._extract_with_retry("test", SimpleSchema, "Extract value", 0)
-
-        mock_inference_engine.adapter.format.assert_called()
-        call_args = mock_inference_engine.adapter.format.call_args[0]
-        assert call_args[0] == "Extract value"
-        assert call_args[1] == "test"
-
-    def test_llm_output_parsing_dict_format(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test LLM output parsing (dict format)."""
-        extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
-
-        mock_output = {"choices": [{"text": json.dumps({"value": "test"})}]}
-        mock_inference_engine.llm.create_completion.return_value = mock_output
-
-        result = extractor._extract_with_retry("test", SimpleSchema, "Extract value", 0)
-
-        assert isinstance(result, SimpleSchema)
-
-    def test_llm_output_parsing_iterator_format(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test LLM output parsing (iterator format)."""
-        extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
-
-        # Simulate iterator output
-        mock_output = iter([{"choices": [{"text": json.dumps({"value": "test"})}]}])
-        mock_inference_engine.llm.create_completion.return_value = mock_output
-
-        result = extractor._extract_with_retry("test", SimpleSchema, "Extract value", 0)
-
-        assert isinstance(result, SimpleSchema)
-
-    def test_fallback_to_clean_batch_when_no_direct_llm_access(
-        self, mock_cache: LocleanCache
-    ) -> None:
-        """Test fallback to clean_batch when no direct LLM access."""
-        # Create engine without llm attribute
-        engine = MagicMock()
-        del engine.llm
-        engine.clean_batch.return_value = {"test": {"value": "test"}}
-
-        extractor = Extractor(inference_engine=engine, cache=mock_cache)
-
-        result = extractor._extract_with_retry("test", SimpleSchema, "Extract value", 0)
-
-        assert isinstance(result, SimpleSchema)
-        engine.clean_batch.assert_called_once()
+        call_args = mock_inference_engine.generate.call_args
+        assert call_args[1]["schema"] is SimpleSchema
 
     def test_exception_handling_during_extraction(
         self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
@@ -665,11 +398,10 @@ class TestExtractWithRetry:
             inference_engine=mock_inference_engine, cache=mock_cache, max_retries=2
         )
 
-        mock_inference_engine.llm.create_completion.side_effect = Exception("LLM error")
+        mock_inference_engine.generate.side_effect = Exception("LLM error")
 
         result = extractor._extract_with_retry("test", SimpleSchema, "Extract value", 0)
 
-        # Should retry and eventually return None after max retries
         assert result is None
 
 
@@ -695,8 +427,6 @@ class TestParseAndValidate:
         """Test parsing JSON dict (already parsed)."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        # _parse_and_validate accepts str but internally handles dict
-        # This tests the dict handling path
         result = extractor._parse_and_validate(
             {"value": "test"},  # type: ignore[arg-type]
             SimpleSchema,
@@ -764,24 +494,6 @@ class TestParseAndValidate:
                     "invalid json", SimpleSchema, "test", "Extract", 0
                 )
 
-    def test_typeerror_handling_non_string_input(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test TypeError handling (non-string input)."""
-        extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
-
-        # Pass dict directly (should work)
-        # _parse_and_validate accepts str but internally handles dict
-        result = extractor._parse_and_validate(
-            {"value": "test"},  # type: ignore[arg-type]
-            SimpleSchema,
-            "test",
-            "Extract",
-            0,
-        )
-
-        assert isinstance(result, SimpleSchema)
-
 
 class TestBuildInstruction:
     """Test cases for _build_instruction method."""
@@ -814,7 +526,6 @@ class TestBuildInstruction:
         instruction = extractor._build_instruction(Product, None)
 
         assert "Extract structured information" in instruction
-        # Should include schema information
         assert (
             "Product" in instruction or "name" in instruction or "price" in instruction
         )
@@ -866,15 +577,13 @@ class TestRetryExtraction:
         """Test retry with adjusted prompt."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {"choices": [{"text": json.dumps({"value": "test"})}]}
-        mock_inference_engine.llm.create_completion.return_value = mock_output
+        mock_inference_engine.generate.return_value = json.dumps({"value": "test"})
 
         result = extractor._retry_extraction("test", SimpleSchema, "Extract", 0)
 
         assert isinstance(result, SimpleSchema)
-        # Verify adjusted instruction was used
-        call_args = mock_inference_engine.adapter.format.call_args[0]
-        assert "IMPORTANT" in call_args[0] or "strictly match" in call_args[0]
+        call_args = mock_inference_engine.generate.call_args[0][0]
+        assert "IMPORTANT" in call_args or "strictly match" in call_args
 
     def test_retry_count_increment(
         self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
@@ -882,10 +591,6 @@ class TestRetryExtraction:
         """Test retry count increment."""
         extractor = Extractor(inference_engine=mock_inference_engine, cache=mock_cache)
 
-        mock_output = {"choices": [{"text": json.dumps({"value": "test"})}]}
-        mock_inference_engine.llm.create_completion.return_value = mock_output
-
-        # Mock _extract_with_retry to track retry_count
         with patch.object(extractor, "_extract_with_retry") as mock_retry:
             mock_retry.return_value = SimpleSchema(value="test")
             extractor._retry_extraction("test", SimpleSchema, "Extract", 0)
@@ -893,17 +598,3 @@ class TestRetryExtraction:
             mock_retry.assert_called_once()
             call_args = mock_retry.call_args[0]
             assert call_args[3] == 1  # retry_count should be incremented
-
-    def test_max_retries_check(
-        self, mock_inference_engine: MagicMock, mock_cache: LocleanCache
-    ) -> None:
-        """Test max retries check."""
-        extractor = Extractor(
-            inference_engine=mock_inference_engine, cache=mock_cache, max_retries=2
-        )
-
-        # When retry_count >= max_retries, _extract_with_retry should return None
-        mock_output = {"choices": [{"text": json.dumps({"invalid": "data"})}]}
-        mock_inference_engine.llm.create_completion.return_value = mock_output
-
-        extractor._retry_extraction("test", SimpleSchema, "Extract", 2)
