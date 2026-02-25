@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -314,8 +315,6 @@ class TestExtractBatch:
             inference_engine=mock_inference_engine, cache=mock_cache, max_retries=0
         )
 
-        from typing import Any
-
         def mock_extract(*args: object, **kwargs: object) -> None:
             errors: list[dict[str, Any]] = [
                 {"type": "missing", "loc": ("name",), "msg": "Field required"}
@@ -598,3 +597,217 @@ class TestRetryExtraction:
             mock_retry.assert_called_once()
             call_args = mock_retry.call_args[0]
             assert call_args[3] == 1  # retry_count should be incremented
+
+
+class TestCompile:
+    """Test cases for the generative compilation path."""
+
+    VALID_FUNCTION_CODE = (
+        'def extract_data(text: str) -> dict:\n    return {"value": text.strip()}\n'
+    )
+
+    PRODUCT_FUNCTION_CODE = (
+        "import re\n"
+        "def extract_data(text: str) -> dict:\n"
+        "    name = text.split()[0] if text else ''\n"
+        "    price = 0\n"
+        "    for w in text.split():\n"
+        "        if w.isdigit():\n"
+        "            price = int(w)\n"
+        "            break\n"
+        "    return {'name': name, 'price': price, 'color': 'unknown'}\n"
+    )
+
+    def test_compile_success_on_first_attempt(
+        self, mock_inference_engine: MagicMock
+    ) -> None:
+        """Test successful compilation on first try."""
+        mock_inference_engine.generate.return_value = self.VALID_FUNCTION_CODE
+        extractor = Extractor(inference_engine=mock_inference_engine)
+
+        fn = extractor.compile(SimpleSchema, ["hello", "world"])
+
+        assert callable(fn)
+        result = fn("hello")
+        assert isinstance(result, dict)
+        assert result["value"] == "hello"
+        assert mock_inference_engine.generate.call_count == 1
+
+    def test_compile_with_custom_instruction(
+        self, mock_inference_engine: MagicMock
+    ) -> None:
+        """Test that custom instruction is prepended to prompt."""
+        mock_inference_engine.generate.return_value = self.VALID_FUNCTION_CODE
+        extractor = Extractor(inference_engine=mock_inference_engine)
+
+        extractor.compile(SimpleSchema, ["hello"], instruction="Focus on log lines")
+
+        prompt_arg = mock_inference_engine.generate.call_args[0][0]
+        assert "Focus on log lines" in prompt_arg
+
+    def test_compile_repair_on_failure(self, mock_inference_engine: MagicMock) -> None:
+        """Test heuristic repair loop after initial failure."""
+        broken_code = "def extract_data(text):\n    return text.missing_attr\n"
+
+        mock_inference_engine.generate.side_effect = [
+            broken_code,
+            self.VALID_FUNCTION_CODE,
+        ]
+        extractor = Extractor(inference_engine=mock_inference_engine)
+
+        fn = extractor.compile(SimpleSchema, ["hello"])
+
+        assert callable(fn)
+        assert mock_inference_engine.generate.call_count == 2
+
+    def test_compile_raises_after_max_retries(
+        self, mock_inference_engine: MagicMock
+    ) -> None:
+        """Test ValueError after all repair attempts are exhausted."""
+        broken_code = "def extract_data(text):\n    raise RuntimeError('boom')\n"
+        mock_inference_engine.generate.return_value = broken_code
+
+        extractor = Extractor(inference_engine=mock_inference_engine)
+
+        with pytest.raises(ValueError, match="Failed to compile"):
+            extractor.compile(SimpleSchema, ["test"], max_repair_attempts=2)
+
+    def test_compile_rejects_non_basemodel_schema(
+        self, mock_inference_engine: MagicMock
+    ) -> None:
+        """Test that a non-BaseModel schema raises ValueError."""
+        extractor = Extractor(inference_engine=mock_inference_engine)
+
+        class NotAModel:
+            pass
+
+        with pytest.raises(ValueError, match="Pydantic BaseModel"):
+            extractor.compile(NotAModel, ["x"])  # type: ignore[arg-type]
+
+    def test_compile_strips_markdown_fences(
+        self, mock_inference_engine: MagicMock
+    ) -> None:
+        """Test that markdown code fences are stripped from generated code."""
+        fenced = f"```python\n{self.VALID_FUNCTION_CODE}\n```"
+        mock_inference_engine.generate.return_value = fenced
+        extractor = Extractor(inference_engine=mock_inference_engine)
+
+        fn = extractor.compile(SimpleSchema, ["test"])
+
+        assert callable(fn)
+        assert fn("test")["value"] == "test"
+
+    def test_compile_detects_non_dict_return(
+        self, mock_inference_engine: MagicMock
+    ) -> None:
+        """Test that a function returning non-dict triggers repair."""
+        returns_string = 'def extract_data(text: str) -> dict:\n    return "oops"\n'
+
+        mock_inference_engine.generate.side_effect = [
+            returns_string,
+            self.VALID_FUNCTION_CODE,
+        ]
+        extractor = Extractor(inference_engine=mock_inference_engine)
+
+        fn = extractor.compile(SimpleSchema, ["hi"])
+
+        assert callable(fn)
+        assert mock_inference_engine.generate.call_count == 2
+
+    def test_compile_detects_missing_extract_data(
+        self, mock_inference_engine: MagicMock
+    ) -> None:
+        """Test that code without extract_data function triggers repair."""
+        wrong_name = 'def parse(text: str) -> dict:\n    return {"value": text}\n'
+
+        mock_inference_engine.generate.side_effect = [
+            wrong_name,
+            self.VALID_FUNCTION_CODE,
+        ]
+        extractor = Extractor(inference_engine=mock_inference_engine)
+
+        fn = extractor.compile(SimpleSchema, ["hi"])
+
+        assert callable(fn)
+        assert mock_inference_engine.generate.call_count == 2
+
+    def test_compile_with_product_schema(
+        self, mock_inference_engine: MagicMock
+    ) -> None:
+        """Test compilation with a multi-field schema."""
+        mock_inference_engine.generate.return_value = self.PRODUCT_FUNCTION_CODE
+        extractor = Extractor(inference_engine=mock_inference_engine)
+
+        fn = extractor.compile(Product, ["Shirt 50000", "Jeans 80000"])
+
+        result = fn("Shirt 50000")
+        assert "name" in result
+        assert "price" in result
+        assert "color" in result
+
+
+class TestStripCodeFences:
+    """Test cases for _strip_code_fences static method."""
+
+    def test_strips_python_fences(self) -> None:
+        assert Extractor._strip_code_fences("```python\ncode\n```") == "code"
+
+    def test_strips_bare_fences(self) -> None:
+        assert Extractor._strip_code_fences("```\ncode\n```") == "code"
+
+    def test_noop_on_clean_code(self) -> None:
+        code = "def f():\n    pass"
+        assert Extractor._strip_code_fences(code) == code
+
+    def test_handles_extra_whitespace(self) -> None:
+        assert Extractor._strip_code_fences("  ```python\ncode\n```  ") == "code"
+
+
+class TestTryLoadAndVerify:
+    """Test cases for _try_load_and_verify."""
+
+    def test_valid_code_passes(self, mock_inference_engine: MagicMock) -> None:
+        extractor = Extractor(inference_engine=mock_inference_engine)
+        code = 'def extract_data(text):\n    return {"value": text}\n'
+
+        fn, error = extractor._try_load_and_verify(code, ["hello"])
+
+        assert fn is not None
+        assert error is None
+        assert fn("hello") == {"value": "hello"}
+
+    def test_syntax_error_detected(self, mock_inference_engine: MagicMock) -> None:
+        extractor = Extractor(inference_engine=mock_inference_engine)
+
+        fn, error = extractor._try_load_and_verify("def (broken", ["x"])
+
+        assert fn is None
+        assert error is not None
+        assert "SyntaxError" in error
+
+    def test_runtime_error_detected(self, mock_inference_engine: MagicMock) -> None:
+        extractor = Extractor(inference_engine=mock_inference_engine)
+        code = "def extract_data(text):\n    return 1 / 0\n"
+
+        fn, error = extractor._try_load_and_verify(code, ["x"])
+
+        assert fn is None
+        assert "ZeroDivisionError" in (error or "")
+
+    def test_non_dict_return_detected(self, mock_inference_engine: MagicMock) -> None:
+        extractor = Extractor(inference_engine=mock_inference_engine)
+        code = 'def extract_data(text):\n    return "not a dict"\n'
+
+        fn, error = extractor._try_load_and_verify(code, ["x"])
+
+        assert fn is None
+        assert "expected dict" in (error or "")
+
+    def test_missing_function_detected(self, mock_inference_engine: MagicMock) -> None:
+        extractor = Extractor(inference_engine=mock_inference_engine)
+        code = "x = 42\n"
+
+        fn, error = extractor._try_load_and_verify(code, ["x"])
+
+        assert fn is None
+        assert "extract_data" in (error or "")

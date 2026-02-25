@@ -7,7 +7,16 @@ from loclean._version import __version__
 from loclean.engine.narwhals_ops import NarwhalsEngine
 from loclean.inference.ollama_engine import OllamaEngine
 
-__all__ = ["__version__", "Loclean", "clean", "get_engine", "scrub", "extract"]
+__all__ = [
+    "__version__",
+    "Loclean",
+    "clean",
+    "extract",
+    "extract_compiled",
+    "get_engine",
+    "optimize_instruction",
+    "scrub",
+]
 
 _ENGINE_INSTANCE: Optional[OllamaEngine] = None
 
@@ -339,3 +348,140 @@ def extract(
             cache=cache,
             max_retries=max_retries,
         )
+
+
+def extract_compiled(
+    df: IntoFrameT,
+    target_col: str,
+    schema: type[Any],
+    instruction: str | None = None,
+    *,
+    max_retries: int = 3,
+    sample_size: int = 50,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
+    verbose: Optional[bool] = None,
+    **engine_kwargs: Any,
+) -> IntoFrameT:
+    """Extract structured data from a DataFrame column using generative compilation.
+
+    Synthesises a pure-Python extraction function via the local Ollama engine,
+    verifies it against a diverse sample, then maps it natively across the
+    column — no per-row LLM calls required.
+
+    Args:
+        df: Input DataFrame (pandas, Polars, etc.).
+        target_col: Column to extract from.
+        schema: Pydantic BaseModel class defining the output structure.
+        instruction: Optional domain hint forwarded to code generation.
+        max_retries: Repair budget for the verification loop.
+        sample_size: Number of diverse rows to sample (default 50).
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Additional arguments forwarded to OllamaEngine.
+
+    Returns:
+        DataFrame with an added ``{target_col}_extracted`` column.
+    """
+    from pydantic import BaseModel as _BM
+
+    if not issubclass(schema, _BM):
+        raise ValueError(
+            f"Schema must be a Pydantic BaseModel subclass, got {type(schema)}"
+        )
+
+    from loclean.extraction.extract_dataframe import extract_dataframe_compiled
+
+    if model is None and host is None and verbose is None and not engine_kwargs:
+        inference_engine = get_engine()
+    else:
+        kwargs_filtered: dict[str, Any] = {}
+        if model is not None:
+            kwargs_filtered["model"] = model
+        if host is not None:
+            kwargs_filtered["host"] = host
+        if verbose is not None:
+            kwargs_filtered["verbose"] = verbose
+        kwargs_filtered.update(engine_kwargs)
+        inference_engine = OllamaEngine(**kwargs_filtered)
+
+    return extract_dataframe_compiled(
+        df,
+        target_col,
+        schema,
+        instruction,
+        inference_engine=inference_engine,
+        max_retries=max_retries,
+        sample_size=sample_size,
+    )
+
+
+def optimize_instruction(
+    df: IntoFrameT,
+    target_col: str,
+    schema: type[Any],
+    baseline_instruction: str | None = None,
+    *,
+    sample_size: int = 20,
+    max_retries: int = 3,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
+    verbose: Optional[bool] = None,
+    **engine_kwargs: Any,
+) -> str:
+    """Optimize an extraction instruction using a reward-driven feedback loop.
+
+    Generates structural prompt variations via the local Ollama engine,
+    evaluates each against a validation sample from *target_col*, and
+    returns the instruction that achieves the highest field-level F1 score.
+
+    Args:
+        df: Input DataFrame (pandas, Polars, etc.).
+        target_col: Column containing the text to extract from.
+        schema: Pydantic BaseModel class defining the target structure.
+        baseline_instruction: Starting instruction. When ``None`` a
+            default is built from *schema*.
+        sample_size: Number of validation rows to sample.
+        max_retries: Retry budget for extraction.
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Additional arguments forwarded to OllamaEngine.
+
+    Returns:
+        The instruction string with the highest reward.
+    """
+    from pydantic import BaseModel as _BM
+
+    if not issubclass(schema, _BM):
+        raise ValueError(
+            f"Schema must be a Pydantic BaseModel subclass, got {type(schema)}"
+        )
+
+    from loclean.extraction.optimizer import InstructionOptimizer
+
+    if model is None and host is None and verbose is None and not engine_kwargs:
+        inference_engine = get_engine()
+    else:
+        kwargs_filtered: dict[str, Any] = {}
+        if model is not None:
+            kwargs_filtered["model"] = model
+        if host is not None:
+            kwargs_filtered["host"] = host
+        if verbose is not None:
+            kwargs_filtered["verbose"] = verbose
+        kwargs_filtered.update(engine_kwargs)
+        inference_engine = OllamaEngine(**kwargs_filtered)
+
+    optimizer = InstructionOptimizer(
+        inference_engine=inference_engine,
+        max_retries=max_retries,
+    )
+    return optimizer.optimize(
+        df,
+        target_col,
+        schema,
+        baseline_instruction=baseline_instruction,
+        sample_size=sample_size,
+    )
