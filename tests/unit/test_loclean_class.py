@@ -47,7 +47,7 @@ SAMPLE_DF = pl.DataFrame({"a": [1, 2], "b": [3, 4]})
 
 class TestLocleanWrappers:
     @pytest.fixture
-    def client(self) -> MagicMock:
+    def client(self) -> loclean.Loclean:
         with patch("loclean.OllamaEngine") as mock_cls:
             engine = MagicMock()
             engine.verbose = False
@@ -57,7 +57,9 @@ class TestLocleanWrappers:
             return inst
 
     @patch("loclean.NarwhalsEngine.process_column")
-    def test_clean_delegates(self, mock_proc: MagicMock, client: MagicMock) -> None:
+    def test_clean_delegates(
+        self, mock_proc: MagicMock, client: loclean.Loclean
+    ) -> None:
         mock_proc.return_value = SAMPLE_DF
         client.clean(SAMPLE_DF, "a")
         mock_proc.assert_called_once()
@@ -66,14 +68,16 @@ class TestLocleanWrappers:
 
     @patch("loclean.extraction.resolver.EntityResolver.resolve")
     def test_resolve_entities_delegates(
-        self, mock_resolve: MagicMock, client: MagicMock
+        self, mock_resolve: MagicMock, client: loclean.Loclean
     ) -> None:
         mock_resolve.return_value = SAMPLE_DF
         client.resolve_entities(SAMPLE_DF, "a")
         mock_resolve.assert_called_once()
 
     @patch("loclean.extraction.oversampler.SemanticOversampler.oversample")
-    def test_oversample_delegates(self, mock_os: MagicMock, client: MagicMock) -> None:
+    def test_oversample_delegates(
+        self, mock_os: MagicMock, client: loclean.Loclean
+    ) -> None:
         mock_os.return_value = SAMPLE_DF
         from pydantic import BaseModel
 
@@ -85,14 +89,16 @@ class TestLocleanWrappers:
         mock_os.assert_called_once()
 
     @patch("loclean.extraction.shredder.RelationalShredder.shred")
-    def test_shred_delegates(self, mock_shred: MagicMock, client: MagicMock) -> None:
+    def test_shred_delegates(
+        self, mock_shred: MagicMock, client: loclean.Loclean
+    ) -> None:
         mock_shred.return_value = {"t1": SAMPLE_DF}
         client.shred_to_relations(SAMPLE_DF, "a")
         mock_shred.assert_called_once()
 
     @patch("loclean.extraction.feature_discovery.FeatureDiscovery.discover")
     def test_discover_features_delegates(
-        self, mock_disc: MagicMock, client: MagicMock
+        self, mock_disc: MagicMock, client: loclean.Loclean
     ) -> None:
         mock_disc.return_value = SAMPLE_DF
         client.discover_features(SAMPLE_DF, "a")
@@ -100,7 +106,7 @@ class TestLocleanWrappers:
 
     @patch("loclean.validation.quality_gate.QualityGate.evaluate")
     def test_validate_quality_delegates(
-        self, mock_eval: MagicMock, client: MagicMock
+        self, mock_eval: MagicMock, client: loclean.Loclean
     ) -> None:
         mock_eval.return_value = {"total_rows": 2, "passed_rows": 2}
         client.validate_quality(SAMPLE_DF, ["rule1"])
