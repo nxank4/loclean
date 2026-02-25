@@ -11,11 +11,16 @@ __all__ = [
     "__version__",
     "Loclean",
     "clean",
+    "discover_features",
     "extract",
     "extract_compiled",
     "get_engine",
     "optimize_instruction",
+    "oversample",
+    "resolve_entities",
     "scrub",
+    "shred_to_relations",
+    "validate_quality",
 ]
 
 _ENGINE_INSTANCE: Optional[OllamaEngine] = None
@@ -56,11 +61,48 @@ def get_engine(
     return OllamaEngine(**kwargs)
 
 
+def _resolve_engine(
+    model: Optional[str] = None,
+    host: Optional[str] = None,
+    verbose: Optional[bool] = None,
+    **engine_kwargs: Any,
+) -> OllamaEngine:
+    """Return a shared or custom OllamaEngine instance.
+
+    When all arguments are ``None`` and there are no extra kwargs,
+    returns the process-wide singleton.  Otherwise builds a fresh
+    client with the supplied overrides.
+
+    Args:
+        model: Ollama model tag.
+        host: Ollama server URL.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Forwarded to ``OllamaEngine``.
+
+    Returns:
+        OllamaEngine instance.
+    """
+    if model is None and host is None and verbose is None and not engine_kwargs:
+        return get_engine()
+
+    kwargs: dict[str, Any] = {}
+    if model is not None:
+        kwargs["model"] = model
+    if host is not None:
+        kwargs["host"] = host
+    if verbose is not None:
+        kwargs["verbose"] = verbose
+    kwargs.update(engine_kwargs)
+    return OllamaEngine(**kwargs)
+
+
 class Loclean:
     """Primary user-facing API for structured data extraction via Ollama.
 
     Connects to a running Ollama instance and uses Pydantic schemas to
-    enforce structured JSON output from LLMs.
+    enforce structured JSON output from LLMs.  A single ``OllamaEngine``
+    instance is shared across every wrapper method, preventing redundant
+    network sockets and reducing memory overhead.
 
     Example::
 
@@ -97,6 +139,10 @@ class Loclean:
         """
         self.engine = OllamaEngine(model=model, host=host, verbose=verbose)
 
+    # ------------------------------------------------------------------
+    # Core extraction
+    # ------------------------------------------------------------------
+
     def extract(
         self,
         text: str,
@@ -129,6 +175,179 @@ class Loclean:
 
         extractor = Extractor(inference_engine=self.engine, max_retries=max_retries)
         return extractor.extract(text, schema, instruction)
+
+    # ------------------------------------------------------------------
+    # Advanced capabilities
+    # ------------------------------------------------------------------
+
+    def clean(
+        self,
+        df: IntoFrameT,
+        target_col: str,
+        instruction: str = "Extract the numeric value and unit as-is.",
+        *,
+        batch_size: int = 50,
+        parallel: bool = False,
+        max_workers: Optional[int] = None,
+    ) -> IntoFrameT:
+        """Clean a column in a DataFrame using semantic extraction.
+
+        Args:
+            df: Input DataFrame.
+            target_col: Column to clean.
+            instruction: Instruction to guide the LLM.
+            batch_size: Unique values per batch.
+            parallel: Enable parallel processing.
+            max_workers: Worker threads for parallel processing.
+
+        Returns:
+            DataFrame with added cleaning columns.
+        """
+        return NarwhalsEngine.process_column(
+            df,
+            target_col,
+            self.engine,
+            instruction,
+            batch_size=batch_size,
+            parallel=parallel,
+            max_workers=max_workers,
+        )
+
+    def resolve_entities(
+        self,
+        df: IntoFrameT,
+        target_col: str,
+        *,
+        threshold: float = 0.8,
+    ) -> IntoFrameT:
+        """Canonicalize a messy string column via entity resolution.
+
+        Args:
+            df: Input DataFrame.
+            target_col: Column with messy string values.
+            threshold: Semantic-distance threshold ε in ``(0, 1]``.
+
+        Returns:
+            DataFrame with an added ``{target_col}_canonical`` column.
+        """
+        from loclean.extraction.resolver import EntityResolver
+
+        resolver = EntityResolver(inference_engine=self.engine, threshold=threshold)
+        return resolver.resolve(df, target_col)
+
+    def oversample(
+        self,
+        df: IntoFrameT,
+        target_col: str,
+        target_value: Any,
+        n: int,
+        schema: type,
+        *,
+        batch_size: int = 10,
+    ) -> IntoFrameT:
+        """Generate synthetic minority-class records.
+
+        Args:
+            df: Input DataFrame.
+            target_col: Column identifying the class label.
+            target_value: Minority class value.
+            n: Number of synthetic records.
+            schema: Pydantic model defining record structure.
+            batch_size: Records per LLM batch.
+
+        Returns:
+            DataFrame with synthetic records appended.
+        """
+        from loclean.extraction.oversampler import SemanticOversampler
+
+        sampler = SemanticOversampler(
+            inference_engine=self.engine, batch_size=batch_size
+        )
+        return sampler.oversample(df, target_col, target_value, n, schema)
+
+    def shred_to_relations(
+        self,
+        df: IntoFrameT,
+        target_col: str,
+        *,
+        sample_size: int = 30,
+        max_retries: int = 3,
+    ) -> dict[str, Any]:
+        """Shred a log column into relational DataFrames.
+
+        Args:
+            df: Input DataFrame.
+            target_col: Column with unstructured log text.
+            sample_size: Entries to sample for inference.
+            max_retries: Repair budget for code generation.
+
+        Returns:
+            Dict mapping table names to native DataFrames.
+        """
+        from loclean.extraction.shredder import RelationalShredder
+
+        shredder = RelationalShredder(
+            inference_engine=self.engine,
+            sample_size=sample_size,
+            max_retries=max_retries,
+        )
+        return shredder.shred(df, target_col)
+
+    def discover_features(
+        self,
+        df: IntoFrameT,
+        target_col: str,
+        *,
+        n_features: int = 5,
+        max_retries: int = 3,
+    ) -> IntoFrameT:
+        """Discover and apply feature crosses.
+
+        Args:
+            df: Input DataFrame.
+            target_col: Target variable column.
+            n_features: Number of features to propose.
+            max_retries: Repair budget for code generation.
+
+        Returns:
+            DataFrame augmented with new feature columns.
+        """
+        from loclean.extraction.feature_discovery import FeatureDiscovery
+
+        discoverer = FeatureDiscovery(
+            inference_engine=self.engine,
+            n_features=n_features,
+            max_retries=max_retries,
+        )
+        return discoverer.discover(df, target_col)
+
+    def validate_quality(
+        self,
+        df: IntoFrameT,
+        rules: list[str],
+        *,
+        batch_size: int = 20,
+        sample_size: int = 100,
+    ) -> dict[str, Any]:
+        """Evaluate data quality against natural-language rules.
+
+        Args:
+            df: Input DataFrame.
+            rules: Natural-language constraint strings.
+            batch_size: Rows per processing batch.
+            sample_size: Maximum rows to evaluate.
+
+        Returns:
+            Dict with compliance report.
+        """
+        from loclean.validation.quality_gate import QualityGate
+
+        gate = QualityGate(
+            inference_engine=self.engine,
+            batch_size=batch_size,
+            sample_size=sample_size,
+        )
+        return gate.evaluate(df, rules)
 
 
 def clean(
@@ -170,18 +389,7 @@ def clean(
     if target_col not in df_nw.columns:
         raise ValueError(f"Column '{target_col}' not found in DataFrame")
 
-    if model is None and host is None and verbose is None and not engine_kwargs:
-        engine = get_engine()
-    else:
-        kwargs: dict[str, Any] = {}
-        if model is not None:
-            kwargs["model"] = model
-        if host is not None:
-            kwargs["host"] = host
-        if verbose is not None:
-            kwargs["verbose"] = verbose
-        kwargs.update(engine_kwargs)
-        engine = OllamaEngine(**kwargs)
+    engine = _resolve_engine(model, host, verbose, **engine_kwargs)
 
     return NarwhalsEngine.process_column(
         df,
@@ -234,18 +442,7 @@ def scrub(
 
     inference_engine = None
     if needs_llm:
-        if model is None and host is None and verbose is None and not engine_kwargs:
-            inference_engine = get_engine()
-        else:
-            kwargs_filtered: dict[str, Any] = {}
-            if model is not None:
-                kwargs_filtered["model"] = model
-            if host is not None:
-                kwargs_filtered["host"] = host
-            if verbose is not None:
-                kwargs_filtered["verbose"] = verbose
-            kwargs_filtered.update(engine_kwargs)
-            inference_engine = OllamaEngine(**kwargs_filtered)
+        inference_engine = _resolve_engine(model, host, verbose, **engine_kwargs)
 
     if isinstance(input_data, str):
         return scrub_string(
@@ -313,18 +510,7 @@ def extract(
     from loclean.extraction.extract_dataframe import extract_dataframe
     from loclean.extraction.extractor import Extractor
 
-    if model is None and host is None and verbose is None and not engine_kwargs:
-        inference_engine = get_engine()
-    else:
-        kwargs_filtered: dict[str, Any] = {}
-        if model is not None:
-            kwargs_filtered["model"] = model
-        if host is not None:
-            kwargs_filtered["host"] = host
-        if verbose is not None:
-            kwargs_filtered["verbose"] = verbose
-        kwargs_filtered.update(engine_kwargs)
-        inference_engine = OllamaEngine(**kwargs_filtered)
+    inference_engine = _resolve_engine(model, host, verbose, **engine_kwargs)
 
     cache = LocleanCache()
 
@@ -393,18 +579,7 @@ def extract_compiled(
 
     from loclean.extraction.extract_dataframe import extract_dataframe_compiled
 
-    if model is None and host is None and verbose is None and not engine_kwargs:
-        inference_engine = get_engine()
-    else:
-        kwargs_filtered: dict[str, Any] = {}
-        if model is not None:
-            kwargs_filtered["model"] = model
-        if host is not None:
-            kwargs_filtered["host"] = host
-        if verbose is not None:
-            kwargs_filtered["verbose"] = verbose
-        kwargs_filtered.update(engine_kwargs)
-        inference_engine = OllamaEngine(**kwargs_filtered)
+    inference_engine = _resolve_engine(model, host, verbose, **engine_kwargs)
 
     return extract_dataframe_compiled(
         df,
@@ -461,18 +636,7 @@ def optimize_instruction(
 
     from loclean.extraction.optimizer import InstructionOptimizer
 
-    if model is None and host is None and verbose is None and not engine_kwargs:
-        inference_engine = get_engine()
-    else:
-        kwargs_filtered: dict[str, Any] = {}
-        if model is not None:
-            kwargs_filtered["model"] = model
-        if host is not None:
-            kwargs_filtered["host"] = host
-        if verbose is not None:
-            kwargs_filtered["verbose"] = verbose
-        kwargs_filtered.update(engine_kwargs)
-        inference_engine = OllamaEngine(**kwargs_filtered)
+    inference_engine = _resolve_engine(model, host, verbose, **engine_kwargs)
 
     optimizer = InstructionOptimizer(
         inference_engine=inference_engine,
@@ -485,3 +649,207 @@ def optimize_instruction(
         baseline_instruction=baseline_instruction,
         sample_size=sample_size,
     )
+
+
+def resolve_entities(
+    df: IntoFrameT,
+    target_col: str,
+    *,
+    threshold: float = 0.8,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
+    verbose: Optional[bool] = None,
+    **engine_kwargs: Any,
+) -> IntoFrameT:
+    """Canonicalize a messy string column via semantic entity resolution.
+
+    Groups similar string variations under a single authoritative label
+    using the local Ollama engine.  A new ``{target_col}_canonical``
+    column is appended to the returned DataFrame.
+
+    Args:
+        df: Input DataFrame (pandas, Polars, etc.).
+        target_col: Column containing messy string values.
+        threshold: Semantic-distance threshold ε in ``(0, 1]``.
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Additional arguments forwarded to OllamaEngine.
+
+    Returns:
+        DataFrame with an added ``{target_col}_canonical`` column.
+    """
+    from loclean.extraction.resolver import EntityResolver
+
+    inference_engine = _resolve_engine(model, host, verbose, **engine_kwargs)
+
+    resolver = EntityResolver(
+        inference_engine=inference_engine,
+        threshold=threshold,
+    )
+    return resolver.resolve(df, target_col)
+
+
+def validate_quality(
+    df: IntoFrameT,
+    rules: list[str],
+    *,
+    batch_size: int = 20,
+    sample_size: int = 100,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
+    verbose: Optional[bool] = None,
+    **engine_kwargs: Any,
+) -> dict[str, Any]:
+    """Evaluate data quality against natural-language rules.
+
+    Checks sampled rows for compliance and returns a structured
+    report with compliance rate and per-failure reasoning.
+
+    Args:
+        df: Input DataFrame (pandas, Polars, etc.).
+        rules: Natural-language constraint strings.
+        batch_size: Rows per processing batch.
+        sample_size: Maximum rows to evaluate.
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Additional arguments forwarded to OllamaEngine.
+
+    Returns:
+        Dictionary with ``total_rows``, ``passed_rows``,
+        ``compliance_rate``, and ``failures``.
+    """
+    from loclean.validation.quality_gate import QualityGate
+
+    inference_engine = _resolve_engine(model, host, verbose, **engine_kwargs)
+
+    gate = QualityGate(
+        inference_engine=inference_engine,
+        batch_size=batch_size,
+        sample_size=sample_size,
+    )
+    return gate.evaluate(df, rules)
+
+
+def oversample(
+    df: IntoFrameT,
+    target_col: str,
+    target_value: Any,
+    n: int,
+    schema: type,
+    *,
+    batch_size: int = 10,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
+    verbose: Optional[bool] = None,
+    **engine_kwargs: Any,
+) -> IntoFrameT:
+    """Generate synthetic minority-class records and append them.
+
+    Args:
+        df: Input DataFrame (pandas, Polars, etc.).
+        target_col: Column identifying the class label.
+        target_value: Value of the minority class to oversample.
+        n: Number of synthetic records to generate.
+        schema: Pydantic model defining the record structure.
+        batch_size: Records per LLM generation batch.
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Additional arguments forwarded to OllamaEngine.
+
+    Returns:
+        DataFrame with synthetic records appended.
+    """
+    from loclean.extraction.oversampler import SemanticOversampler
+
+    inference_engine = _resolve_engine(model, host, verbose, **engine_kwargs)
+
+    sampler = SemanticOversampler(
+        inference_engine=inference_engine,
+        batch_size=batch_size,
+    )
+    return sampler.oversample(df, target_col, target_value, n, schema)
+
+
+def shred_to_relations(
+    df: IntoFrameT,
+    target_col: str,
+    *,
+    sample_size: int = 30,
+    max_retries: int = 3,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
+    verbose: Optional[bool] = None,
+    **engine_kwargs: Any,
+) -> dict[str, Any]:
+    """Shred an unstructured log column into relational DataFrames.
+
+    Uses the Ollama engine to infer a relational schema, generate
+    a parsing function, and separate the column into multiple tables.
+
+    Args:
+        df: Input DataFrame (pandas, Polars, etc.).
+        target_col: Column containing unstructured log text.
+        sample_size: Number of entries to sample for inference.
+        max_retries: Repair budget for code generation.
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Additional arguments forwarded to OllamaEngine.
+
+    Returns:
+        Dictionary mapping table names to native DataFrames.
+    """
+    from loclean.extraction.shredder import RelationalShredder
+
+    inference_engine = _resolve_engine(model, host, verbose, **engine_kwargs)
+
+    shredder = RelationalShredder(
+        inference_engine=inference_engine,
+        sample_size=sample_size,
+        max_retries=max_retries,
+    )
+    return shredder.shred(df, target_col)
+
+
+def discover_features(
+    df: IntoFrameT,
+    target_col: str,
+    *,
+    n_features: int = 5,
+    max_retries: int = 3,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
+    verbose: Optional[bool] = None,
+    **engine_kwargs: Any,
+) -> IntoFrameT:
+    """Discover and apply feature crosses to a DataFrame.
+
+    Uses the Ollama engine to propose mathematical transformations
+    that maximise mutual information with the target variable.
+
+    Args:
+        df: Input DataFrame (pandas, Polars, etc.).
+        target_col: Column name of the target variable.
+        n_features: Number of new features to propose.
+        max_retries: Repair budget for code generation.
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Additional arguments forwarded to OllamaEngine.
+
+    Returns:
+        DataFrame augmented with new feature columns.
+    """
+    from loclean.extraction.feature_discovery import FeatureDiscovery
+
+    inference_engine = _resolve_engine(model, host, verbose, **engine_kwargs)
+
+    discoverer = FeatureDiscovery(
+        inference_engine=inference_engine,
+        n_features=n_features,
+        max_retries=max_retries,
+    )
+    return discoverer.discover(df, target_col)
