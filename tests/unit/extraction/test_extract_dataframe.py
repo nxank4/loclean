@@ -1,14 +1,19 @@
-"""Test cases for extract_dataframe function."""
+"""Test cases for extract_dataframe and extract_dataframe_compiled functions."""
 
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import narwhals as nw
 import pandas as pd
 import polars as pl
 import pytest
 from pydantic import BaseModel
 
-from loclean.extraction.extract_dataframe import extract_dataframe
+from loclean.extraction.extract_dataframe import (
+    _sample_diverse_rows,
+    extract_dataframe,
+    extract_dataframe_compiled,
+)
 from loclean.extraction.extractor import Extractor
 
 
@@ -192,3 +197,157 @@ def test_schema_types(mock_extractor: Any) -> None:
     assert val["is_valid"] is True
     assert val["score"] == 9.5
     assert val["tags"] == ["a", "b"]
+
+
+# ------------------------------------------------------------------
+# Semantic Sampling
+# ------------------------------------------------------------------
+
+
+class TestSampleDiverseRows:
+    """Test cases for _sample_diverse_rows."""
+
+    def test_returns_all_when_under_n(self) -> None:
+        df = pl.DataFrame({"col": ["a", "bb", "ccc"]})
+        df_nw = nw.from_native(df)
+        result = _sample_diverse_rows(df_nw, "col", n=50)
+        assert set(result) == {"a", "bb", "ccc"}
+
+    def test_returns_exactly_n_when_over(self) -> None:
+        values = [f"val_{i:03d}" for i in range(200)]
+        df = pl.DataFrame({"col": values})
+        df_nw = nw.from_native(df)
+        result = _sample_diverse_rows(df_nw, "col", n=50)
+        assert len(result) == 50
+
+    def test_filters_none_and_empty(self) -> None:
+        df = pl.DataFrame({"col": [None, "", "  ", "valid"]})
+        df_nw = nw.from_native(df)
+        result = _sample_diverse_rows(df_nw, "col", n=50)
+        assert result == ["valid"]
+
+    def test_length_stratified_ordering(self) -> None:
+        """Sampled values should be sorted by length (short → long)."""
+        values = ["a", "bb", "ccc", "dddd", "eeeee", "ffffff"]
+        df = pl.DataFrame({"col": values})
+        df_nw = nw.from_native(df)
+        result = _sample_diverse_rows(df_nw, "col", n=3)
+        lengths = [len(v) for v in result]
+        assert lengths == sorted(lengths)
+
+
+# ------------------------------------------------------------------
+# Compiled DataFrame Extraction
+# ------------------------------------------------------------------
+
+
+class TestExtractDataframeCompiled:
+    """Test cases for extract_dataframe_compiled."""
+
+    @staticmethod
+    def _make_extract_fn() -> Any:
+        """Return a dummy extract function that mimics compiled output."""
+
+        def extract_data(text: str) -> dict[str, Any]:
+            return {"name": f"Clean {text}", "price": 100}
+
+        return extract_data
+
+    def test_polars_compiled_extraction(self) -> None:
+        """Test compiled path with Polars backend."""
+        df = pl.DataFrame({"raw": ["item1", "item2"]})
+
+        mock_extractor = MagicMock(spec=Extractor)
+        mock_extractor.compile.return_value = self._make_extract_fn()
+
+        result = extract_dataframe_compiled(
+            df, "raw", Product, extractor=mock_extractor
+        )
+
+        assert "raw_extracted" in result.columns
+        row = result.filter(pl.col("raw") == "item1").row(0, named=True)
+        assert row["raw_extracted"]["name"] == "Clean item1"
+        assert row["raw_extracted"]["price"] == 100
+
+    def test_pandas_compiled_extraction(self) -> None:
+        """Test compiled path with pandas backend."""
+        df = pd.DataFrame({"raw": ["item1"]})
+
+        mock_extractor = MagicMock(spec=Extractor)
+        mock_extractor.compile.return_value = self._make_extract_fn()
+
+        result = extract_dataframe_compiled(
+            df, "raw", Product, extractor=mock_extractor
+        )
+
+        assert "raw_extracted" in result.columns
+        val = result["raw_extracted"].iloc[0]
+        assert isinstance(val, dict)
+        assert val["name"] == "Clean item1"
+
+    def test_missing_column_raises(self) -> None:
+        """Test that a missing column raises ValueError."""
+        df = pl.DataFrame({"a": [1]})
+        mock_extractor = MagicMock(spec=Extractor)
+
+        with pytest.raises(ValueError, match="Column 'b' not found"):
+            extract_dataframe_compiled(df, "b", Product, extractor=mock_extractor)
+
+    def test_empty_values_returns_original(self) -> None:
+        """Test that only-empty column returns original DataFrame."""
+        df = pl.DataFrame({"raw": [None, "", "  "]})
+        mock_extractor = MagicMock(spec=Extractor)
+
+        result = extract_dataframe_compiled(
+            df, "raw", Product, extractor=mock_extractor
+        )
+
+        mock_extractor.compile.assert_not_called()
+        assert "raw_extracted" not in result.columns
+
+    def test_auto_creates_extractor_from_engine(self) -> None:
+        """Test extractor auto-creation when inference_engine is provided."""
+        mock_engine = MagicMock()
+        df = pl.DataFrame({"raw": ["val"]})
+
+        with patch("loclean.extraction.extract_dataframe.Extractor") as MockCls:
+            instance = MockCls.return_value
+            instance.compile.return_value = self._make_extract_fn()
+
+            extract_dataframe_compiled(df, "raw", Product, inference_engine=mock_engine)
+
+            MockCls.assert_called_once()
+            instance.compile.assert_called_once()
+
+    def test_raises_without_extractor_or_engine(self) -> None:
+        """Test ValueError when neither extractor nor engine provided."""
+        df = pl.DataFrame({"raw": ["val"]})
+
+        with pytest.raises(ValueError, match="Either extractor or inference_engine"):
+            extract_dataframe_compiled(df, "raw", Product)
+
+    def test_compiled_fn_failure_produces_none(self) -> None:
+        """Test that per-row failures in the compiled fn yield None."""
+        df = pl.DataFrame({"raw": ["good", "bad"]})
+
+        call_count = 0
+
+        def flaky_fn(text: str) -> dict[str, Any]:
+            nonlocal call_count
+            call_count += 1
+            if text == "bad":
+                raise RuntimeError("boom")
+            return {"name": text, "price": 1}
+
+        mock_extractor = MagicMock(spec=Extractor)
+        mock_extractor.compile.return_value = flaky_fn
+
+        result = extract_dataframe_compiled(
+            df, "raw", Product, extractor=mock_extractor
+        )
+
+        good_row = result.filter(pl.col("raw") == "good").row(0, named=True)
+        bad_row = result.filter(pl.col("raw") == "bad").row(0, named=True)
+
+        assert good_row["raw_extracted"]["name"] == "good"
+        assert bad_row["raw_extracted"] is None
