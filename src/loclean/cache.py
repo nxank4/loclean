@@ -51,6 +51,13 @@ class LocleanCache:
                 last_access TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS code_cache (
+                hash_key TEXT PRIMARY KEY,
+                source_code TEXT NOT NULL,
+                last_access TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
         self.conn.commit()
 
     def _hash(self, text: str, instruction: str) -> str:
@@ -148,6 +155,52 @@ class LocleanCache:
             self.conn.commit()
         except Exception as e:
             logger.error(f"Error writing to cache: {e}")
+
+    def get_code(self, key: str) -> Optional[str]:
+        """Retrieve cached source code by hash key.
+
+        Args:
+            key: SHA256 hash key.
+
+        Returns:
+            Source code string if found, ``None`` on miss.
+        """
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT source_code FROM code_cache WHERE hash_key = ?",
+                (key,),
+            )
+            row = cursor.fetchone()
+            if row is None:
+                return None
+            cursor.execute(
+                "UPDATE code_cache SET last_access = CURRENT_TIMESTAMP "
+                "WHERE hash_key = ?",
+                (key,),
+            )
+            return row[0]  # type: ignore[no-any-return]
+        except Exception as e:
+            logger.error(f"Error reading code cache: {e}")
+            return None
+
+    def set_code(self, key: str, source: str) -> None:
+        """Store source code in the cache.
+
+        Args:
+            key: SHA256 hash key.
+            source: Python source code string.
+        """
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT OR REPLACE INTO code_cache "
+                "(hash_key, source_code) VALUES (?, ?)",
+                (key, source),
+            )
+            self.conn.commit()
+        except Exception as e:
+            logger.error(f"Error writing code cache: {e}")
 
     def close(self) -> None:
         """Close the database connection."""
