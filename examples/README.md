@@ -140,6 +140,30 @@ Data quality validation with natural-language rules:
 - Compiled extraction for high-performance parsing
 - Log shredding into relational tables → quality gates → PII masking
 
+### 13. [13-trap-pruning.ipynb](./13-trap-pruning.ipynb)
+Trap feature detection and removal:
+- Statistical profiling of numeric columns
+- LLM-verified Gaussian noise detection
+- Before/after column comparison with verdicts
+
+### 14. [14-missingness-recognition.ipynb](./14-missingness-recognition.ipynb)
+Missing Not At Random (MNAR) pattern detection:
+- Detect informative missingness patterns
+- Automatic boolean feature flag encoding
+- Clinical dataset example (income ↔ employment)
+
+### 15. [15-leakage-auditing.ipynb](./15-leakage-auditing.ipynb)
+Target leakage detection and removal:
+- Semantic timeline evaluation per column
+- Domain-aware reasoning (loan approval example)
+- Automatic removal of leaked features
+
+### 16. [16-instruction-optimization.ipynb](./16-instruction-optimization.ipynb)
+Reward-driven prompt optimization:
+- Generates structural instruction variations
+- Scores each against validation sample (field-level F1)
+- Returns the best-performing extraction instruction
+
 ## Standalone Scripts
 
 | Script | Description |
