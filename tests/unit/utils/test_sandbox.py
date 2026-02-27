@@ -41,10 +41,9 @@ class TestCompileSandboxed:
             fn()
 
     def test_import_blocked(self) -> None:
-        source = "def f():\n    return __import__('os')\n"
-        fn = compile_sandboxed(source, "f")
-        with pytest.raises(NameError):
-            fn()
+        source = "import os\ndef f():\n    return os.getcwd()\n"
+        with pytest.raises(ValueError, match="not allowed in the sandbox"):
+            compile_sandboxed(source, "f")
 
     def test_import_statement_blocked(self) -> None:
         source = "import os\ndef f():\n    return os.listdir('.')\n"

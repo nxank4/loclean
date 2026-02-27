@@ -103,21 +103,37 @@ class FeatureDiscovery:
                 return result.to_native()  # type: ignore[no-any-return,return-value]
 
         source = self._propose_features(state)
-        fn = self._compile_function(source)
-
         sample_rows = state["sample_rows"]
-        ok, error = self._verify_function(fn, sample_rows, self.timeout_s)
-        retries = 0
-        while not ok and retries < self.max_retries:
-            source = self._repair_function(source, error, state)
+
+        try:
             fn = self._compile_function(source)
             ok, error = self._verify_function(fn, sample_rows, self.timeout_s)
+        except ValueError as exc:
+            ok, error = False, str(exc)
+
+        retries = 0
+        while not ok and retries < self.max_retries:
             retries += 1
+            logger.warning(
+                f"[yellow]⚠[/yellow] Retrying code generation "
+                f"({retries}/{self.max_retries}): {error}"
+            )
+            source = self._repair_function(source, error, state)
+            try:
+                fn = self._compile_function(source)
+                ok, error = self._verify_function(fn, sample_rows, self.timeout_s)
+            except ValueError as exc:
+                ok, error = False, str(exc)
 
         if not ok:
             logger.warning(
-                f"[yellow]⚠[/yellow] Feature generation failed after "
-                f"{self.max_retries} retries: {error} — returning original DataFrame"
+                f"[yellow]⚠[/yellow] The model could not generate valid Python "
+                f"code after {self.max_retries} retries. This is not a library "
+                f"bug — smaller models (e.g. phi3) sometimes produce syntax "
+                f"errors or invalid logic. Returning the original DataFrame.\n"
+                f"  [dim]Last error: {error}[/dim]\n"
+                f"  [dim]Tip: try a larger model "
+                f"(model='qwen2.5-coder:7b') or increase max_retries.[/dim]"
             )
             return df
 
@@ -199,11 +215,28 @@ class FeatureDiscovery:
             "maximise mutual information I(X_new; Y) with the target.\n\n"
             "Write a pure Python function with this exact signature:\n\n"
             "def generate_features(row: dict) -> dict:\n\n"
-            "The function must:\n"
+            "EXAMPLE (for a different dataset with columns "
+            "'age', 'income', 'debt'):\n\n"
+            "import math\n\n"
+            "def generate_features(row: dict) -> dict:\n"
+            "    result = {}\n"
+            "    try:\n"
+            "        result['debt_to_income'] = "
+            "row['debt'] / row['income'] if row['income'] else None\n"
+            "    except Exception:\n"
+            "        result['debt_to_income'] = None\n"
+            "    try:\n"
+            "        result['log_income'] = "
+            "math.log(row['income']) if row['income'] and "
+            "row['income'] > 0 else None\n"
+            "    except Exception:\n"
+            "        result['log_income'] = None\n"
+            "    return result\n\n"
+            "Now write yours for the dataset above. The function must:\n"
             "- Accept a dict of column_name: value pairs\n"
             f"- Return a dict with exactly {self.n_features} new "
             "key-value pairs (the new feature names and values)\n"
-            "- Use ONLY standard library modules (math, etc.)\n"
+            "- Use ONLY standard library modules (math, statistics, operator)\n"
             "- Wrap each calculation in try/except, defaulting to "
             "None on failure\n"
             "- Use descriptive feature names like 'ratio_a_b' or "
@@ -213,12 +246,7 @@ class FeatureDiscovery:
         )
 
         raw = self.inference_engine.generate(prompt)
-        source = str(raw).strip()
-        if source.startswith("```"):
-            lines = source.split("\n")
-            lines = [line for line in lines if not line.strip().startswith("```")]
-            source = "\n".join(lines)
-        return source
+        return str(raw).strip()
 
     # ------------------------------------------------------------------
     # Compilation
@@ -230,6 +258,10 @@ class FeatureDiscovery:
     ) -> Callable[[dict[str, Any]], dict[str, Any]]:
         """Compile source code in a restricted sandbox.
 
+        Applies deterministic sanitization before compilation to fix
+        common LLM output artifacts (markdown fences, non-ASCII
+        operators, invalid literals, etc.).
+
         Args:
             source: Python source containing ``generate_features``.
 
@@ -240,8 +272,13 @@ class FeatureDiscovery:
             ValueError: If compilation fails or function not found.
         """
         from loclean.utils.sandbox import compile_sandboxed
+        from loclean.utils.source_sanitizer import sanitize_source
 
-        return compile_sandboxed(source, "generate_features", ["math"])
+        return compile_sandboxed(
+            sanitize_source(source),
+            "generate_features",
+            ["math", "statistics", "operator"],
+        )
 
     # ------------------------------------------------------------------
     # Verification
@@ -312,12 +349,7 @@ class FeatureDiscovery:
         )
 
         raw = self.inference_engine.generate(prompt)
-        repaired = str(raw).strip()
-        if repaired.startswith("```"):
-            lines = repaired.split("\n")
-            lines = [line for line in lines if not line.strip().startswith("```")]
-            repaired = "\n".join(lines)
-        return repaired
+        return str(raw).strip()
 
     # ------------------------------------------------------------------
     # Application
