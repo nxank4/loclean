@@ -98,16 +98,63 @@ Debugging and detailed logging:
 - Debugging Pydantic validation issues
 - Global configuration via environment variables
 
+### 6. [06-entity-resolution.ipynb](./06-entity-resolution.ipynb)
+Entity resolution — canonicalize messy string variations:
+- Merge company-name typos, abbreviations, casing
+- Configurable similarity threshold
+- Before/after comparison
+
+### 7. [07-oversampling.ipynb](./07-oversampling.ipynb)
+Semantic oversampling for imbalanced datasets:
+- Pydantic-schema-driven synthetic record generation
+- Minority-class augmentation
+- Class distribution balancing
+
+### 8. [08-log-shredding.ipynb](./08-log-shredding.ipynb)
+Log shredding — parse unstructured logs into relational tables:
+- Mixed log format parsing (auth, API, payment, inventory, ML)
+- Automatic schema inference
+- One column → multiple normalized DataFrames
+
+### 9. [09-feature-discovery.ipynb](./09-feature-discovery.ipynb)
+Automated feature discovery:
+- LLM-proposed mathematical transformations
+- Housing price dataset example
+- Mutual information maximisation with target variable
+
+### 10. [10-quality-validation.ipynb](./10-quality-validation.ipynb)
+Data quality validation with natural-language rules:
+- Plain-English constraint definitions
+- Structured compliance reports
+- Multi-rule evaluation
+
+### 11. [11-kaggle-housing-pipeline.ipynb](./11-kaggle-housing-pipeline.ipynb)
+🏠 **Data Science** — Kaggle-style housing prediction workflow:
+- Clean messy strings → entity resolution → feature discovery
+- Minority-class oversampling → quality validation → PII scrubbing
+- Full pipeline with `qwen2.5-coder:1.5b`
+
+### 12. [12-log-engineering-pipeline.ipynb](./12-log-engineering-pipeline.ipynb)
+🔧 **Data Engineering** — log processing and warehouse loading:
+- Structured extraction with Pydantic schemas
+- Compiled extraction for high-performance parsing
+- Log shredding into relational tables → quality gates → PII masking
+
+## Standalone Scripts
+
+| Script | Description |
+|--------|-------------|
+| [`benchmark.py`](./benchmark.py) | Performance benchmark: vectorized dedup + cache speedup on 100K rows |
+| [`eval_demo.py`](./eval_demo.py) | Evaluation framework demo with optional Langfuse tracking |
+
 ## Directory Structure
 
 This directory contains:
 
-- **`*.ipynb`**: Jupyter notebook files demonstrating specific features. Numbered prefixes indicate recommended reading order.
-- **`benchmark.py`**: Performance benchmarking script for comparing different models and configurations. Run with:
-  ```bash
-  python examples/benchmark.py
-  ```
-- **`README.md`**: This file - documentation and guidelines for examples.
+- **`*.ipynb`**: Jupyter notebooks demonstrating specific features. Numbered prefixes indicate recommended reading order.
+- **`benchmark.py`**: Performance benchmarking script.
+- **`eval_demo.py`**: Evaluation framework demo.
+- **`README.md`**: This file.
 
 ## Requirements
 
