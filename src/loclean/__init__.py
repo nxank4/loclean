@@ -10,6 +10,7 @@ from loclean.inference.ollama_engine import OllamaEngine
 __all__ = [
     "__version__",
     "Loclean",
+    "audit_leakage",
     "clean",
     "discover_features",
     "extract",
@@ -17,6 +18,8 @@ __all__ = [
     "get_engine",
     "optimize_instruction",
     "oversample",
+    "prune_traps",
+    "recognize_missingness",
     "resolve_entities",
     "scrub",
     "shred_to_relations",
@@ -320,6 +323,96 @@ class Loclean:
             max_retries=max_retries,
         )
         return discoverer.discover(df, target_col)
+
+    def prune_traps(
+        self,
+        df: IntoFrameT,
+        target_col: str,
+        *,
+        correlation_threshold: float = 0.05,
+        max_retries: int = 2,
+    ) -> tuple[IntoFrameT, dict[str, Any]]:
+        """Identify and remove trap features.
+
+        Trap features are columns of uncorrelated Gaussian noise
+        that masquerade as valid signals.
+
+        Args:
+            df: Input DataFrame.
+            target_col: Target variable column.
+            correlation_threshold: Absolute correlation below which
+                a column is considered uncorrelated.
+            max_retries: LLM retry budget.
+
+        Returns:
+            Tuple of (pruned DataFrame, summary dict).
+        """
+        from loclean.extraction.trap_pruner import TrapPruner
+
+        pruner = TrapPruner(
+            inference_engine=self.engine,
+            correlation_threshold=correlation_threshold,
+            max_retries=max_retries,
+        )
+        return pruner.prune(df, target_col)
+
+    def recognize_missingness(
+        self,
+        df: IntoFrameT,
+        target_cols: list[str] | None = None,
+        *,
+        sample_size: int = 50,
+        max_retries: int = 3,
+    ) -> tuple[IntoFrameT, dict[str, Any]]:
+        """Detect MNAR patterns and encode as boolean features.
+
+        Args:
+            df: Input DataFrame.
+            target_cols: Columns to analyse (default: all with nulls).
+            sample_size: Max null rows to sample per column.
+            max_retries: LLM retry budget.
+
+        Returns:
+            Tuple of (augmented DataFrame, summary dict).
+        """
+        from loclean.extraction.missingness_recognizer import MissingnessRecognizer
+
+        recognizer = MissingnessRecognizer(
+            inference_engine=self.engine,
+            sample_size=sample_size,
+            max_retries=max_retries,
+        )
+        return recognizer.recognize(df, target_cols)
+
+    def audit_leakage(
+        self,
+        df: IntoFrameT,
+        target_col: str,
+        domain: str = "",
+        *,
+        max_retries: int = 2,
+        sample_n: int = 10,
+    ) -> tuple[IntoFrameT, dict[str, Any]]:
+        """Detect and remove target-leaking features.
+
+        Args:
+            df: Input DataFrame.
+            target_col: Target variable column.
+            domain: Dataset domain description.
+            max_retries: LLM retry budget.
+            sample_n: Sample rows for the prompt.
+
+        Returns:
+            Tuple of (pruned DataFrame, summary dict).
+        """
+        from loclean.extraction.leakage_auditor import TargetLeakageAuditor
+
+        auditor = TargetLeakageAuditor(
+            inference_engine=self.engine,
+            max_retries=max_retries,
+            sample_n=sample_n,
+        )
+        return auditor.audit(df, target_col, domain)
 
     def validate_quality(
         self,
@@ -853,3 +946,133 @@ def discover_features(
         max_retries=max_retries,
     )
     return discoverer.discover(df, target_col)
+
+
+def prune_traps(
+    df: IntoFrameT,
+    target_col: str,
+    *,
+    correlation_threshold: float = 0.05,
+    max_retries: int = 2,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
+    verbose: Optional[bool] = None,
+    **engine_kwargs: Any,
+) -> tuple[IntoFrameT, dict[str, Any]]:
+    """Identify and remove trap features from a DataFrame.
+
+    Trap features are columns of uncorrelated Gaussian noise that
+    masquerade as valid signals.  Detection relies on statistical
+    distributions and target correlations — column names are ignored.
+
+    Args:
+        df: Input DataFrame (pandas, Polars, etc.).
+        target_col: Column name of the prediction target.
+        correlation_threshold: Absolute correlation threshold.
+        max_retries: LLM retry budget.
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Additional arguments forwarded to OllamaEngine.
+
+    Returns:
+        Tuple of ``(pruned_df, summary)`` where *summary* contains
+        ``dropped_columns`` and ``verdicts``.
+    """
+    from loclean.extraction.trap_pruner import TrapPruner
+
+    inference_engine = _resolve_engine(model, host, verbose, **engine_kwargs)
+
+    pruner = TrapPruner(
+        inference_engine=inference_engine,
+        correlation_threshold=correlation_threshold,
+        max_retries=max_retries,
+    )
+    return pruner.prune(df, target_col)
+
+
+def recognize_missingness(
+    df: IntoFrameT,
+    target_cols: list[str] | None = None,
+    *,
+    sample_size: int = 50,
+    max_retries: int = 3,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
+    verbose: Optional[bool] = None,
+    **engine_kwargs: Any,
+) -> tuple[IntoFrameT, dict[str, Any]]:
+    """Detect MNAR patterns and encode as boolean feature flags.
+
+    Identifies Missing Not At Random patterns where the probability
+    of a value being missing depends on other feature values.
+
+    Args:
+        df: Input DataFrame (pandas, Polars, etc.).
+        target_cols: Columns to analyse (default: all with nulls).
+        sample_size: Max null rows to sample per column.
+        max_retries: LLM retry budget.
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Additional arguments forwarded to OllamaEngine.
+
+    Returns:
+        Tuple of ``(augmented_df, summary)`` where *summary* maps
+        each analysed column to its pattern description.
+    """
+    from loclean.extraction.missingness_recognizer import MissingnessRecognizer
+
+    inference_engine = _resolve_engine(model, host, verbose, **engine_kwargs)
+
+    recognizer = MissingnessRecognizer(
+        inference_engine=inference_engine,
+        sample_size=sample_size,
+        max_retries=max_retries,
+    )
+    return recognizer.recognize(df, target_cols)
+
+
+def audit_leakage(
+    df: IntoFrameT,
+    target_col: str,
+    domain: str = "",
+    *,
+    max_retries: int = 2,
+    sample_n: int = 10,
+    model: Optional[str] = None,
+    host: Optional[str] = None,
+    verbose: Optional[bool] = None,
+    **engine_kwargs: Any,
+) -> tuple[IntoFrameT, dict[str, Any]]:
+    """Detect and remove target-leaking features.
+
+    Identifies features that contain information generated after the
+    target event, where P(Y | X_i) ≈ 1.  Uses semantic timeline
+    evaluation via the LLM.
+
+    Args:
+        df: Input DataFrame (pandas, Polars, etc.).
+        target_col: Column name of the prediction target.
+        domain: Brief dataset domain description.
+        max_retries: LLM retry budget.
+        sample_n: Sample rows for the prompt.
+        model: Optional Ollama model tag override.
+        host: Optional Ollama server URL override.
+        verbose: Enable detailed logging.
+        **engine_kwargs: Additional arguments forwarded to OllamaEngine.
+
+    Returns:
+        Tuple of ``(pruned_df, summary)`` with ``dropped_columns``
+        and ``verdicts``.
+    """
+    from loclean.extraction.leakage_auditor import TargetLeakageAuditor
+
+    inference_engine = _resolve_engine(model, host, verbose, **engine_kwargs)
+
+    auditor = TargetLeakageAuditor(
+        inference_engine=inference_engine,
+        max_retries=max_retries,
+        sample_n=sample_n,
+    )
+    return auditor.audit(df, target_col, domain)
