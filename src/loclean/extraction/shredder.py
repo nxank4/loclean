@@ -146,22 +146,40 @@ class RelationalShredder:
                 return self._separate_tables(results, schema, native_ns)
 
         source = self._generate_extractor(schema, samples)
-        extract_fn = self._compile_function(source)
 
-        ok, error = self._verify_function(extract_fn, samples, schema, self.timeout_s)
-        retries = 0
-        while not ok and retries < self.max_retries:
-            source = self._repair_function(source, error, samples)
+        try:
             extract_fn = self._compile_function(source)
             ok, error = self._verify_function(
                 extract_fn, samples, schema, self.timeout_s
             )
+        except ValueError as exc:
+            ok, error = False, str(exc)
+
+        retries = 0
+        while not ok and retries < self.max_retries:
             retries += 1
+            logger.warning(
+                f"[yellow]⚠[/yellow] Retrying code generation "
+                f"({retries}/{self.max_retries}): {error}"
+            )
+            source = self._repair_function(source, error, samples)
+            try:
+                extract_fn = self._compile_function(source)
+                ok, error = self._verify_function(
+                    extract_fn, samples, schema, self.timeout_s
+                )
+            except ValueError as exc:
+                ok, error = False, str(exc)
 
         if not ok:
             logger.warning(
-                f"[yellow]⚠[/yellow] Code generation failed after "
-                f"{self.max_retries} retries: {error} — returning empty result"
+                f"[yellow]⚠[/yellow] The model could not generate valid Python "
+                f"code after {self.max_retries} retries. This is not a library "
+                f"bug — smaller models (e.g. phi3) sometimes produce syntax "
+                f"errors or invalid logic. Returning empty result.\n"
+                f"  [dim]Last error: {error}[/dim]\n"
+                f"  [dim]Tip: try a larger model "
+                f"(model='qwen2.5-coder:7b') or increase max_retries.[/dim]"
             )
             return {}
 
@@ -310,8 +328,26 @@ class RelationalShredder:
             f"Target tables:\n{table_specs}\n\n"
             "Sample log entries:\n"
             f"{json.dumps(samples[:5], ensure_ascii=False)}\n\n"
+            "EXAMPLE (for a different log format):\n\n"
+            "import re\n\n"
+            "def extract_relations(log: str) -> dict[str, dict]:\n"
+            "    result = {}\n"
+            "    try:\n"
+            "        m = re.match("
+            "r'(\\S+) (\\S+) \\[(.*?)\\] \"(\\S+)\"', log)\n"
+            "        if m:\n"
+            "            result['requests'] = {\n"
+            "                'ip': m.group(1),\n"
+            "                'method': m.group(4),\n"
+            "            }\n"
+            "    except Exception:\n"
+            "        result['requests'] = "
+            "{'ip': '', 'method': ''}\n"
+            "    return result\n\n"
+            "Now write yours for the log format above.\n\n"
             "Rules:\n"
-            "- Use ONLY standard library modules (re, string, etc.)\n"
+            "- Use ONLY standard library modules (re, json, "
+            "datetime, collections)\n"
             "- Wrap parsing logic in try/except blocks\n"
             "- Return empty strings for fields that cannot be parsed\n"
             "- Do NOT import any third-party libraries\n\n"
@@ -319,18 +355,17 @@ class RelationalShredder:
         )
 
         raw = self.inference_engine.generate(prompt)
-        source = str(raw).strip()
-        if source.startswith("```"):
-            lines = source.split("\n")
-            lines = [line for line in lines if not line.strip().startswith("```")]
-            source = "\n".join(lines)
-        return source
+        return str(raw).strip()
 
     @staticmethod
     def _compile_function(
         source: str,
     ) -> Callable[[str], dict[str, dict[str, Any]]]:
         """Compile source code in a restricted sandbox.
+
+        Applies deterministic sanitization before compilation to fix
+        common LLM output artifacts (markdown fences, non-ASCII
+        operators, invalid literals, etc.).
 
         Args:
             source: Python source containing ``extract_relations``.
@@ -342,9 +377,10 @@ class RelationalShredder:
             ValueError: If compilation fails or function not found.
         """
         from loclean.utils.sandbox import compile_sandboxed
+        from loclean.utils.source_sanitizer import sanitize_source
 
         return compile_sandboxed(
-            source,
+            sanitize_source(source),
             "extract_relations",
             ["re", "json", "datetime", "collections"],
         )
@@ -414,12 +450,7 @@ class RelationalShredder:
         )
 
         raw = self.inference_engine.generate(prompt)
-        repaired = str(raw).strip()
-        if repaired.startswith("```"):
-            lines = repaired.split("\n")
-            lines = [line for line in lines if not line.strip().startswith("```")]
-            repaired = "\n".join(lines)
-        return repaired
+        return str(raw).strip()
 
     # ------------------------------------------------------------------
     # Phase 3: Full execution + separation
