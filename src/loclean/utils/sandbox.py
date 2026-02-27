@@ -93,9 +93,11 @@ def compile_sandboxed(
     The execution environment has:
 
     * ``__builtins__`` replaced by a curated safe subset (no ``open``,
-      ``exec``, ``eval``, ``__import__``, ``compile``, ``exit``,
-      ``quit``, ``input``, ``breakpoint``, ``globals``, ``locals``,
-      ``vars``, ``dir``).
+      ``exec``, ``eval``, ``compile``, ``exit``, ``quit``, ``input``,
+      ``breakpoint``, ``globals``, ``locals``, ``vars``, ``dir``).
+    * A restricted ``__import__`` that only permits explicitly listed
+      modules — LLM-generated ``import`` statements work for allowed
+      modules but raise ``ImportError`` for anything else.
     * Only explicitly listed standard-library modules injected.
 
     Args:
@@ -110,15 +112,39 @@ def compile_sandboxed(
     Raises:
         ValueError: If compilation fails or *fn_name* is not defined.
     """
-    safe_globals: dict[str, Any] = {"__builtins__": _SAFE_BUILTINS.copy()}
+    allowed = set(allowed_modules or [])
+    preloaded: dict[str, Any] = {}
 
-    for mod_name in allowed_modules or []:
+    for mod_name in allowed:
         try:
-            safe_globals[mod_name] = importlib.import_module(mod_name)
+            preloaded[mod_name] = importlib.import_module(mod_name)
         except ImportError:
             logger.warning(
                 f"[yellow]⚠[/yellow] Module '{mod_name}' not available, skipping"
             )
+
+    def _restricted_import(
+        name: str,
+        globals: Any = None,
+        locals: Any = None,
+        fromlist: Any = (),
+        level: int = 0,
+    ) -> Any:
+        root = name.split(".")[0]
+        if root not in allowed:
+            raise ImportError(
+                f"Import of '{name}' is not allowed in the sandbox. "
+                f"Permitted modules: {sorted(allowed)}"
+            )
+        if root in preloaded:
+            return preloaded[root]
+        return importlib.import_module(name)
+
+    builtins = _SAFE_BUILTINS.copy()
+    builtins["__import__"] = _restricted_import
+
+    safe_globals: dict[str, Any] = {"__builtins__": builtins}
+    safe_globals.update(preloaded)
 
     try:
         exec(source, safe_globals)  # noqa: S102
