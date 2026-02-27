@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from rich.console import Console
 
+from loclean.inference import model_manager
 from loclean.inference.model_manager import ensure_model, model_exists
 
 
@@ -47,6 +48,10 @@ def _make_test_console() -> Console:
 
 class TestEnsureModel:
     """Tests for ensure_model."""
+
+    @pytest.fixture(autouse=True)
+    def _clear_cache(self) -> None:
+        model_manager._verified_models.clear()
 
     @patch("loclean.inference.model_manager.model_exists", return_value=True)
     def test_model_already_exists_skips_pull(self, _mock_exists: MagicMock) -> None:

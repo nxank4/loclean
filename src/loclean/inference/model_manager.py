@@ -22,6 +22,8 @@ from loclean.utils.logging import configure_module_logger
 
 logger = configure_module_logger(__name__, level=logging.INFO)
 
+_verified_models: set[str] = set()
+
 
 def model_exists(client: Any, model: str) -> bool:
     """Check whether *model* is already available in the local Ollama registry.
@@ -38,9 +40,14 @@ def model_exists(client: Any, model: str) -> bool:
     except Exception:
         return False
 
-    models = response.get("models", [])
+    models = getattr(response, "models", None)
+    if models is None:
+        models = response.get("models", []) if isinstance(response, dict) else []
+
     for entry in models:
-        name: str = entry.get("name", "")
+        name: str = getattr(entry, "model", None) or (
+            entry.get("name", "") if isinstance(entry, dict) else ""
+        )
         if name == model or name.startswith(f"{model}:"):
             return True
     return False
@@ -64,11 +71,15 @@ def ensure_model(
     Raises:
         RuntimeError: If the pull fails or encounters an error status.
     """
+    if model in _verified_models:
+        return
+
     if model_exists(client, model):
         logger.info(
             f"[green]✓[/green] Model [bold cyan]{model}[/bold cyan] "
             "is already available."
         )
+        _verified_models.add(model)
         return
 
     if console is None:
@@ -114,3 +125,4 @@ def ensure_model(
     console.print(
         f"[green]✓[/green] Model [bold cyan]{model}[/bold cyan] pulled successfully."
     )
+    _verified_models.add(model)
